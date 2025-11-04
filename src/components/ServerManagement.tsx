@@ -1,6 +1,5 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { useLanguage } from "@/hooks/useLanguage";
 import { ConfigurationManagement } from "./ConfigurationManagement";
 import { useState, useEffect, useRef } from "react";
@@ -19,11 +18,8 @@ export function ServerManagement({ projectPath, onBack }: ServerManagementProps)
   const [serverStatus, setServerStatus] = useState<ServerStatus>('stopped');
   const [logs, setLogs] = useState<string[]>([]);
   const [isPollingLogs, setIsPollingLogs] = useState(false);
-  const [commandInput, setCommandInput] = useState('');
-  const [isSendingCommand, setIsSendingCommand] = useState(false);
   const logIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const logsEndRef = useRef<HTMLDivElement>(null);
-  const commandInputRef = useRef<HTMLInputElement>(null);
 
   // Auto-scroll to bottom of logs
   useEffect(() => {
@@ -154,46 +150,7 @@ export function ServerManagement({ projectPath, onBack }: ServerManagementProps)
     }
   };
 
-  const handleSendCommand = async (command?: string) => {
-    const cmdToSend = command || commandInput.trim();
-    if (!cmdToSend || isSendingCommand) return;
 
-    setIsSendingCommand(true);
-    try {
-      const response = await fetch('/api/server/command', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ 
-          project: projectPath, 
-          command: cmdToSend 
-        })
-      });
-      
-      const data = await response.json();
-      if (data.success) {
-        setCommandInput(''); // Clear input on success
-      } else {
-        console.error('Failed to send command:', data.error);
-      }
-    } catch (error) {
-      console.error('Error sending command:', error);
-    } finally {
-      setIsSendingCommand(false);
-    }
-  };
-
-  const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      handleSendCommand();
-    }
-  };
-
-  const handleQuickCommand = (command: string) => {
-    handleSendCommand(command);
-  };
 
   const getStatusColor = (status: ServerStatus) => {
     switch (status) {
@@ -310,38 +267,47 @@ export function ServerManagement({ projectPath, onBack }: ServerManagementProps)
                 </Button>
               </div>
 
-              {/* Live Logs and Console Section */}
+              {/* Live Logs Section */}
               {(serverStatus === 'running' || serverStatus === 'starting' || logs.length > 0) && (
                 <Card className="mt-6">
                   <CardHeader>
                     <CardTitle className="text-lg flex items-center gap-2">
-                      📋 Server Console
+                      📋 Server Logs
                       {isPollingLogs && (
                         <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
                       )}
                     </CardTitle>
                   </CardHeader>
-                  <CardContent className="space-y-4">
-                    {/* Logs Display */}
+                  <CardContent>
                     <div className="bg-black text-green-400 p-4 rounded-lg font-mono text-sm max-h-96 overflow-y-auto">
                       {logs.length === 0 ? (
                         <div className="text-gray-500">Warte auf Server-Logs...</div>
                       ) : (
                         logs.map((line, index) => {
-                          const isError = line.includes('ERROR:') || line.includes('error') || line.includes('Exception') || line.includes('failed');
-                          const isCritical = line.includes('Server stopped') || line.includes('exit code:');
-                          const isWarning = line.includes('WARN') || line.includes('warning');
-                          const isCommand = line.includes('> ');
+                          // Detect different types of console output
+                          const isError = line.includes('[ERROR]') || line.includes('ERROR:') || line.includes('Exception') || line.includes('java.lang.') || line.includes('Caused by:');
+                          const isWarning = line.includes('[WARN]') || line.includes('WARN:') || line.includes('WARNING');
+                          const isInfo = line.includes('[INFO]') || line.includes('INFO:');
+                          const isServerMessage = line.includes('Server thread/') || line.includes('[Server thread]');
+                          const isPlayerJoin = line.includes('joined the game') || line.includes('left the game');
+                          const isCritical = line.includes('Server stopped') || line.includes('exit code:') || line.includes('Stopping server');
                           
-                          let className = "whitespace-pre-wrap";
+                          let className = "whitespace-pre-wrap font-mono text-sm";
+                          
                           if (isCritical) {
                             className += " text-red-400 font-semibold";
                           } else if (isError) {
                             className += " text-red-300";
                           } else if (isWarning) {
                             className += " text-yellow-400";
-                          } else if (isCommand) {
-                            className += " text-cyan-400 font-semibold";
+                          } else if (isPlayerJoin) {
+                            className += " text-blue-300";
+                          } else if (isServerMessage) {
+                            className += " text-green-300";
+                          } else if (isInfo) {
+                            className += " text-gray-300";
+                          } else {
+                            className += " text-green-400";
                           }
                           
                           return (
@@ -353,71 +319,6 @@ export function ServerManagement({ projectPath, onBack }: ServerManagementProps)
                       )}
                       <div ref={logsEndRef} />
                     </div>
-
-                    {/* Command Input - only show when server is running */}
-                    {serverStatus === 'running' && (
-                      <div className="space-y-3">
-                        <div className="flex gap-2">
-                          <Input
-                            ref={commandInputRef}
-                            value={commandInput}
-                            onChange={(e) => setCommandInput(e.target.value)}
-                            onKeyPress={handleKeyPress}
-                            placeholder="Server-Befehl eingeben (z.B. 'help', 'stop', 'list')..."
-                            className="font-mono"
-                            disabled={isSendingCommand}
-                          />
-                          <Button 
-                            onClick={() => handleSendCommand()}
-                            disabled={!commandInput.trim() || isSendingCommand}
-                            size="sm"
-                          >
-                            {isSendingCommand ? 'Sende...' : 'Senden'}
-                          </Button>
-                        </div>
-                        
-                        {/* Quick Commands */}
-                        <div className="flex flex-wrap gap-2">
-                          <Button 
-                            variant="outline" 
-                            size="sm"
-                            onClick={() => handleQuickCommand('help')}
-                            disabled={isSendingCommand}
-                          >
-                            help
-                          </Button>
-                          <Button 
-                            variant="outline" 
-                            size="sm"
-                            onClick={() => handleQuickCommand('list')}
-                            disabled={isSendingCommand}
-                          >
-                            list
-                          </Button>
-                          <Button 
-                            variant="outline" 
-                            size="sm"
-                            onClick={() => handleQuickCommand('say Server ist bereit!')}
-                            disabled={isSendingCommand}
-                          >
-                            say
-                          </Button>
-                          <Button 
-                            variant="outline" 
-                            size="sm"
-                            onClick={() => handleQuickCommand('/eula true')}
-                            disabled={isSendingCommand}
-                            className="bg-blue-50 hover:bg-blue-100 text-blue-700 border-blue-300"
-                          >
-                            EULA akzeptieren
-                          </Button>
-                        </div>
-                        
-                        <div className="text-xs text-muted-foreground">
-                          💡 Tipp: Drücke Enter zum Senden. Für EULA-Probleme klicke "EULA akzeptieren" oder gib "/eula true" ein.
-                        </div>
-                      </div>
-                    )}
                   </CardContent>
                 </Card>
               )}

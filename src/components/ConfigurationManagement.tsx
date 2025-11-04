@@ -13,6 +13,9 @@ interface ConfigFile {
   name: string;
   path: string;
   description: string;
+  category: string;
+  exists: boolean;
+  enabled: boolean;
 }
 
 export function ConfigurationManagement({ projectPath, onBack }: ConfigurationManagementProps) {
@@ -41,6 +44,8 @@ export function ConfigurationManagement({ projectPath, onBack }: ConfigurationMa
   };
 
   const loadConfigContent = async (configFile: ConfigFile) => {
+    if (!configFile.enabled) return; // Don't load disabled files
+    
     setIsLoading(true);
     try {
       const response = await fetch(`/api/config/read?project=${encodeURIComponent(projectPath)}&file=${encodeURIComponent(configFile.name)}`);
@@ -49,6 +54,8 @@ export function ConfigurationManagement({ projectPath, onBack }: ConfigurationMa
       if (data.success) {
         setConfigContent(data.content);
         setSelectedConfig(configFile);
+      } else {
+        console.error('Failed to load config:', data.error);
       }
     } catch (error) {
       console.error('Error loading config content:', error);
@@ -120,26 +127,68 @@ export function ConfigurationManagement({ projectPath, onBack }: ConfigurationMa
                   <CardHeader>
                     <CardTitle className="text-lg">Konfigurationsdateien</CardTitle>
                   </CardHeader>
-                  <CardContent className="space-y-2">
-                    {configFiles.map((file) => (
-                      <Button
-                        key={file.name}
-                        variant={selectedConfig?.name === file.name ? "default" : "outline"}
-                        className="w-full justify-start text-left h-auto p-3"
-                        onClick={() => loadConfigContent(file)}
-                      >
-                        <div>
-                          <div className="font-medium">{file.name}</div>
-                          <div className="text-xs text-muted-foreground mt-1">
-                            {file.description}
-                          </div>
+                  <CardContent className="space-y-3">
+                    {/* Group files by category */}
+                    {Object.entries(
+                      configFiles.reduce((groups, file) => {
+                        const category = file.category || 'Andere';
+                        if (!groups[category]) groups[category] = [];
+                        groups[category].push(file);
+                        return groups;
+                      }, {} as Record<string, ConfigFile[]>)
+                    ).map(([category, files]) => (
+                      <div key={category} className="space-y-2">
+                        <div className="text-sm font-semibold text-muted-foreground px-2">
+                          {category}
                         </div>
-                      </Button>
+                        {files.map((file) => (
+                          <Button
+                            key={file.name}
+                            variant={selectedConfig?.name === file.name ? "default" : "outline"}
+                            className={`w-full justify-start text-left h-auto p-3 ${
+                              !file.enabled 
+                                ? 'opacity-50 cursor-not-allowed bg-gray-100 hover:bg-gray-100' 
+                                : ''
+                            }`}
+                            onClick={() => loadConfigContent(file)}
+                            disabled={!file.enabled}
+                          >
+                            <div className="flex items-start gap-2 w-full">
+                              <div className="flex-1">
+                                <div className="flex items-center gap-2">
+                                  <span className="font-medium">{file.name}</span>
+                                  {!file.exists && (
+                                    <span className="text-xs bg-gray-200 text-gray-600 px-2 py-1 rounded">
+                                      Nicht vorhanden
+                                    </span>
+                                  )}
+                                  {file.exists && (
+                                    <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded">
+                                      Verfügbar
+                                    </span>
+                                  )}
+                                </div>
+                                <div className="text-xs text-muted-foreground mt-1">
+                                  {file.description}
+                                </div>
+                              </div>
+                            </div>
+                          </Button>
+                        ))}
+                      </div>
                     ))}
                     
                     {configFiles.length === 0 && (
                       <div className="text-center text-muted-foreground py-4">
                         Keine Konfigurationsdateien gefunden
+                      </div>
+                    )}
+                    
+                    {/* Info about missing files */}
+                    {configFiles.some(f => !f.exists) && (
+                      <div className="text-xs text-muted-foreground bg-blue-50 p-3 rounded mt-4">
+                        💡 <strong>Hinweis:</strong> Einige Dateien werden erst nach dem ersten Serverstart erstellt.
+                        Starte den Server einmal, um alle Konfigurationsdateien zu generieren.
                       </div>
                     )}
                   </CardContent>
@@ -181,12 +230,43 @@ export function ConfigurationManagement({ projectPath, onBack }: ConfigurationMa
                           disabled={isLoading}
                         />
                         
+                        {/* File-specific help text */}
                         {selectedConfig.name === 'user_jvm_args.txt' && (
                           <div className="text-sm text-muted-foreground bg-muted/50 p-3 rounded">
-                            <strong>Hinweis:</strong> Diese Datei enthält JVM-Argumente für den Minecraft-Server.
+                            <strong>JVM-Argumente:</strong>
                             <br />• -Xms: Minimaler RAM (z.B. -Xms4G für 4GB)
                             <br />• -Xmx: Maximaler RAM (z.B. -Xmx8G für 8GB)
                             <br />• Weitere Optimierungen für bessere Performance
+                          </div>
+                        )}
+                        
+                        {selectedConfig.name === 'eula.txt' && (
+                          <div className="text-sm text-muted-foreground bg-blue-50 p-3 rounded">
+                            <strong>EULA (End User License Agreement):</strong>
+                            <br />• Setze "eula=true" um die Minecraft EULA zu akzeptieren
+                            <br />• Der Server startet nur mit akzeptierter EULA
+                            <br />• Lies die EULA unter: https://account.mojang.com/documents/minecraft_eula
+                          </div>
+                        )}
+                        
+                        {selectedConfig.name === 'server.properties' && (
+                          <div className="text-sm text-muted-foreground bg-muted/50 p-3 rounded">
+                            <strong>Server-Eigenschaften:</strong>
+                            <br />• server-port: Port des Servers (Standard: 25565)
+                            <br />• gamemode: Spielmodus (survival, creative, adventure, spectator)
+                            <br />• difficulty: Schwierigkeit (peaceful, easy, normal, hard)
+                            <br />• max-players: Maximale Spieleranzahl
+                            <br />• white-list: Whitelist aktivieren (true/false)
+                          </div>
+                        )}
+                        
+                        {(selectedConfig.name.endsWith('.json')) && (
+                          <div className="text-sm text-muted-foreground bg-yellow-50 p-3 rounded">
+                            <strong>JSON-Datei:</strong>
+                            <br />• Achte auf korrekte JSON-Syntax
+                            <br />• Verwende doppelte Anführungszeichen für Strings
+                            <br />• Keine Kommas nach dem letzten Element
+                            <br />• Teste die Syntax vor dem Speichern
                           </div>
                         )}
                       </div>

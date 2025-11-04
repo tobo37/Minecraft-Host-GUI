@@ -186,29 +186,75 @@ const server = serve({
             }, { status: 404 });
           }
           
-          // Define available config files
+          // Define all possible config files
           const configFiles = [
             {
               name: 'user_jvm_args.txt',
               path: `${serverPath}/user_jvm_args.txt`,
-              description: 'JVM-Argumente für den Minecraft-Server (RAM, Garbage Collection, etc.)'
+              description: 'JVM-Argumente für den Minecraft-Server (RAM, Garbage Collection, etc.)',
+              category: 'Server-Setup'
+            },
+            {
+              name: 'eula.txt',
+              path: `${serverPath}/eula.txt`,
+              description: 'Minecraft End User License Agreement - muss auf "true" gesetzt werden',
+              category: 'Lizenz'
+            },
+            {
+              name: 'server.properties',
+              path: `${serverPath}/server.properties`,
+              description: 'Haupt-Konfigurationsdatei des Minecraft-Servers (Port, Gamemode, etc.)',
+              category: 'Server-Einstellungen'
+            },
+            {
+              name: 'whitelist.json',
+              path: `${serverPath}/whitelist.json`,
+              description: 'Liste der erlaubten Spieler (wenn Whitelist aktiviert ist)',
+              category: 'Spieler-Verwaltung'
+            },
+            {
+              name: 'ops.json',
+              path: `${serverPath}/ops.json`,
+              description: 'Liste der Operator-Spieler mit Admin-Rechten',
+              category: 'Spieler-Verwaltung'
+            },
+            {
+              name: 'banned-players.json',
+              path: `${serverPath}/banned-players.json`,
+              description: 'Liste der gesperrten Spieler',
+              category: 'Spieler-Verwaltung'
+            },
+            {
+              name: 'banned-ips.json',
+              path: `${serverPath}/banned-ips.json`,
+              description: 'Liste der gesperrten IP-Adressen',
+              category: 'Spieler-Verwaltung'
             }
           ];
           
-          // Check which files actually exist
-          const existingFiles = [];
+          // Check which files exist and add existence status
+          const filesWithStatus = [];
           for (const file of configFiles) {
             try {
               await fs.access(file.path);
-              existingFiles.push(file);
+              filesWithStatus.push({
+                ...file,
+                exists: true,
+                enabled: true
+              });
             } catch {
-              // File doesn't exist, skip it
+              // File doesn't exist, but still include it in the list
+              filesWithStatus.push({
+                ...file,
+                exists: false,
+                enabled: false
+              });
             }
           }
           
           return Response.json({
             success: true,
-            files: existingFiles
+            files: filesWithStatus
           });
           
         } catch (error) {
@@ -450,7 +496,7 @@ const server = serve({
             serverLogs.set(project, projectLogs);
           }
           
-          // Start the server process with proper environment
+          // Start the server process with proper environment and PTY support
           console.log(`Starting server for project: ${project} in directory: ${serverPath}`);
           
           // Get current environment and add common paths
@@ -458,83 +504,67 @@ const server = serve({
             ...process.env,
             PATH: process.env.PATH + ':/usr/bin:/bin:/usr/local/bin',
             TERM: 'xterm-256color',
-            // Ensure Java can find the server files
-            PWD: serverPath
+            PWD: serverPath,
+            // Enable interactive mode for Minecraft server
+            JAVA_TOOL_OPTIONS: '-Djline.terminal=jline.UnsupportedTerminal'
           };
           
-          // Try to start the server with different approaches
-          let serverProcess;
+          // Start server with script wrapper that enables interactive mode
+          const serverProcess = Bun.spawn(['bash', '-c', `
+            # Make sure we're in the right directory
+            cd "${serverPath}"
+            
+            # Start the server with proper terminal settings
+            exec bash ./startserver.sh
+          `], {
+            cwd: serverPath,
+            stdout: 'pipe',
+            stderr: 'pipe',
+            stdin: 'pipe',
+            env: env
+          });
           
-          try {
-            // First try: Direct bash execution
-            serverProcess = Bun.spawn(['bash', './startserver.sh'], {
-              cwd: serverPath,
-              stdout: 'pipe',
-              stderr: 'pipe',
-              env: env,
-              stdin: 'pipe'
-            });
-            
-            const projectLogs = serverLogs.get(project) || [];
-            projectLogs.push(`[${new Date().toLocaleTimeString()}] Started with: bash ./startserver.sh`);
-            serverLogs.set(project, projectLogs);
-            
-          } catch (error) {
-            // Fallback: Try with full path
-            const projectLogs = serverLogs.get(project) || [];
-            projectLogs.push(`[${new Date().toLocaleTimeString()}] First attempt failed, trying with full path...`);
-            
-            try {
-              serverProcess = Bun.spawn(['bash', startScript], {
-                cwd: serverPath,
-                stdout: 'pipe',
-                stderr: 'pipe',
-                env: env,
-                stdin: 'pipe'
-              });
-              
-              projectLogs.push(`[${new Date().toLocaleTimeString()}] Started with: bash ${startScript}`);
-              serverLogs.set(project, projectLogs);
-              
-            } catch (fallbackError) {
-              projectLogs.push(`[${new Date().toLocaleTimeString()}] ERROR: Both start attempts failed`);
-              projectLogs.push(`[${new Date().toLocaleTimeString()}] Error: ${fallbackError}`);
-              serverLogs.set(project, projectLogs);
-              
-              return Response.json({
-                success: false,
-                error: `Failed to start server: ${fallbackError instanceof Error ? fallbackError.message : 'Unknown error'}`
-              }, { status: 500 });
-            }
-          }
+          const projectLogs = serverLogs.get(project) || [];
+          projectLogs.push(`[${new Date().toLocaleTimeString()}] Server started with interactive console support`);
+          serverLogs.set(project, projectLogs);
           
           // Store the process
           runningServers.set(project, serverProcess);
           
-          // Handle stdout
+          // Handle stdout - stream console output directly
           if (serverProcess.stdout) {
             const reader = serverProcess.stdout.getReader();
             const decoder = new TextDecoder();
             
             const readStdout = async () => {
               try {
+                let buffer = '';
                 while (true) {
                   const { done, value } = await reader.read();
                   if (done) break;
                   
-                  const text = decoder.decode(value);
-                  const lines = text.split('\n').filter(line => line.trim());
+                  buffer += decoder.decode(value, { stream: true });
+                  const lines = buffer.split('\n');
+                  buffer = lines.pop() || ''; // Keep incomplete line in buffer
                   
                   const projectLogs = serverLogs.get(project) || [];
                   for (const line of lines) {
                     if (line.trim()) {
-                      projectLogs.push(`[${new Date().toLocaleTimeString()}] ${line}`);
-                      // Keep only last 200 lines
-                      if (projectLogs.length > 200) {
+                      // Don't add timestamp to preserve original console formatting
+                      projectLogs.push(line);
+                      // Keep only last 300 lines for better console history
+                      if (projectLogs.length > 300) {
                         projectLogs.shift();
                       }
                     }
                   }
+                  serverLogs.set(project, projectLogs);
+                }
+                
+                // Handle any remaining buffer content
+                if (buffer.trim()) {
+                  const projectLogs = serverLogs.get(project) || [];
+                  projectLogs.push(buffer);
                   serverLogs.set(project, projectLogs);
                 }
               } catch (error) {
@@ -545,30 +575,38 @@ const server = serve({
             readStdout();
           }
           
-          // Handle stderr
+          // Handle stderr - preserve original error formatting
           if (serverProcess.stderr) {
             const reader = serverProcess.stderr.getReader();
             const decoder = new TextDecoder();
             
             const readStderr = async () => {
               try {
+                let buffer = '';
                 while (true) {
                   const { done, value } = await reader.read();
                   if (done) break;
                   
-                  const text = decoder.decode(value);
-                  const lines = text.split('\n').filter(line => line.trim());
+                  buffer += decoder.decode(value, { stream: true });
+                  const lines = buffer.split('\n');
+                  buffer = lines.pop() || '';
                   
                   const projectLogs = serverLogs.get(project) || [];
                   for (const line of lines) {
                     if (line.trim()) {
-                      projectLogs.push(`[${new Date().toLocaleTimeString()}] ERROR: ${line}`);
-                      // Keep only last 200 lines
-                      if (projectLogs.length > 200) {
+                      // Preserve original error formatting
+                      projectLogs.push(line);
+                      if (projectLogs.length > 300) {
                         projectLogs.shift();
                       }
                     }
                   }
+                  serverLogs.set(project, projectLogs);
+                }
+                
+                if (buffer.trim()) {
+                  const projectLogs = serverLogs.get(project) || [];
+                  projectLogs.push(buffer);
                   serverLogs.set(project, projectLogs);
                 }
               } catch (error) {
@@ -696,67 +734,7 @@ const server = serve({
       },
     },
 
-    "/api/server/command": {
-      async POST(req) {
-        try {
-          const body = await req.json();
-          const { project, command } = body;
-          
-          if (!project || !command) {
-            return Response.json({
-              success: false,
-              error: "Project and command parameters are required"
-            }, { status: 400 });
-          }
-          
-          const serverProcess = runningServers.get(project);
-          
-          if (!serverProcess || serverProcess.killed) {
-            return Response.json({
-              success: false,
-              error: "Server is not running"
-            }, { status: 400 });
-          }
-          
-          try {
-            // Send command to server stdin
-            const writer = serverProcess.stdin?.getWriter();
-            if (writer) {
-              const encoder = new TextEncoder();
-              await writer.write(encoder.encode(command + '\n'));
-              writer.releaseLock();
-              
-              // Add command to logs
-              const projectLogs = serverLogs.get(project) || [];
-              projectLogs.push(`[${new Date().toLocaleTimeString()}] > ${command}`);
-              serverLogs.set(project, projectLogs);
-              
-              return Response.json({
-                success: true,
-                message: "Command sent successfully"
-              });
-            } else {
-              return Response.json({
-                success: false,
-                error: "Server stdin not available"
-              }, { status: 500 });
-            }
-          } catch (error) {
-            return Response.json({
-              success: false,
-              error: `Failed to send command: ${error instanceof Error ? error.message : 'Unknown error'}`
-            }, { status: 500 });
-          }
-          
-        } catch (error) {
-          console.error('Error sending server command:', error);
-          return Response.json({
-            success: false,
-            error: error instanceof Error ? error.message : 'Unknown error'
-          }, { status: 500 });
-        }
-      },
-    },
+
 
     // Serve index.html for all unmatched routes.
     "/*": index,
