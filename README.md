@@ -9,6 +9,8 @@ Eine moderne Web-Anwendung zur Verwaltung von Minecraft-Servern, gebaut mit Bun,
 - 📊 **Live-Logs**: Echtzeit-Anzeige der Server-Logs mit farblicher Hervorhebung
 - 🌍 **Multi-Language**: Unterstützung für Deutsch und Englisch
 - 📁 **Projekt-Management**: Verwaltung mehrerer Server-Projekte
+- 📦 **Drag & Drop Upload**: Einfaches Hochladen von Server-ZIP-Dateien per Drag & Drop
+- 🗂️ **Server-Datei-Verwaltung**: Auswahl aus verschiedenen hochgeladenen Server-Versionen
 - 🔧 **Persistente Daten**: Server-Daten überleben Container-Neustarts
 
 ## Lokale Entwicklung
@@ -65,13 +67,29 @@ docker run -d \
 ├── src/
 │   ├── components/          # React-Komponenten
 │   │   ├── ServerManagement.tsx
-│   │   └── ConfigurationManagement.tsx
+│   │   ├── ConfigurationManagement.tsx
+│   │   └── WelcomePage.tsx
 │   ├── hooks/              # Custom React Hooks
 │   └── lib/                # Utilities und i18n
 ├── server/                 # Persistente Server-Daten
+├── serverfiles/            # Hochgeladene Server-ZIP-Dateien
 ├── dockerfile              # Container-Konfiguration
 └── build.ts               # Build-Skript
 ```
+
+## Server-Dateien verwalten
+
+### ZIP-Dateien hochladen
+
+1. **Drag & Drop**: Ziehe eine ZIP-Datei mit deinen Minecraft-Server-Dateien direkt auf die Upload-Zone
+2. **Datei auswählen**: Klicke auf die Upload-Zone und wähle eine ZIP-Datei aus
+3. **Server erstellen**: Wähle aus den hochgeladenen Dateien eine aus und erstelle einen neuen Server
+
+### Unterstützte Formate
+
+- Nur ZIP-Dateien werden akzeptiert
+- Maximale Dateigröße: 500MB
+- Die ZIP-Datei sollte alle notwendigen Minecraft-Server-Dateien enthalten (JAR, Skripte, etc.)
 
 ## Technologie-Stack
 

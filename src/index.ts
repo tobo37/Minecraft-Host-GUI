@@ -11,6 +11,8 @@ const server = serve({
   port: 3000,
   // Increase timeout for server creation operations
   idleTimeout: 60, // 60 seconds timeout
+  // Increase max request size for file uploads (500MB)
+  maxRequestBodySize: 500 * 1024 * 1024,
   
   routes: {
     "/api/servers": {
@@ -67,9 +69,141 @@ const server = serve({
       },
     },
 
+    "/api/serverfiles": {
+      async GET(req) {
+        try {
+          const serverFilesDir = './serverfiles';
+          const fs = require('fs').promises;
+          
+          try {
+            const entries = await fs.readdir(serverFilesDir);
+            const files = [];
+            
+            for (const entry of entries) {
+              if (entry === '.gitkeep') continue;
+              if (!entry.toLowerCase().endsWith('.zip')) continue;
+              
+              const filePath = `${serverFilesDir}/${entry}`;
+              const stat = await fs.stat(filePath);
+              
+              if (stat.isFile()) {
+                files.push({
+                  name: entry,
+                  size: stat.size,
+                  uploadedAt: stat.mtime.toISOString()
+                });
+              }
+            }
+            
+            // Sort by upload date (newest first)
+            files.sort((a, b) => new Date(b.uploadedAt).getTime() - new Date(a.uploadedAt).getTime());
+            
+            return Response.json({
+              success: true,
+              files
+            });
+          } catch (error) {
+            return Response.json({
+              success: true,
+              files: []
+            });
+          }
+        } catch (error) {
+          console.error('Error listing server files:', error);
+          return Response.json({
+            success: false,
+            error: error instanceof Error ? error.message : 'Unknown error'
+          }, { status: 500 });
+        }
+      },
+    },
+
+    "/api/upload-serverfile": {
+      async POST(req) {
+        try {
+          console.log('Upload request received');
+          const formData = await req.formData();
+          console.log('FormData parsed successfully');
+          const file = formData.get('serverfile') as File;
+          
+          if (!file) {
+            console.log('No file found in formData');
+            return Response.json({
+              success: false,
+              error: "No file provided"
+            }, { status: 400 });
+          }
+          
+          console.log(`File received: ${file.name}, size: ${file.size} bytes`);
+          
+          if (!file.name.toLowerCase().endsWith('.zip')) {
+            return Response.json({
+              success: false,
+              error: "Only ZIP files are allowed"
+            }, { status: 400 });
+          }
+          
+          // Check file size (limit to 500MB)
+          const maxSize = 500 * 1024 * 1024; // 500MB
+          if (file.size > maxSize) {
+            return Response.json({
+              success: false,
+              error: "File too large. Maximum size is 500MB"
+            }, { status: 400 });
+          }
+          
+          const serverFilesDir = './serverfiles';
+          const filePath = `${serverFilesDir}/${file.name}`;
+          
+          // Create serverfiles directory if it doesn't exist
+          const fs = require('fs').promises;
+          try {
+            await fs.access(serverFilesDir);
+          } catch {
+            await fs.mkdir(serverFilesDir, { recursive: true });
+          }
+          
+          // Check if file already exists
+          try {
+            await fs.access(filePath);
+            return Response.json({
+              success: false,
+              error: "File with this name already exists"
+            }, { status: 409 });
+          } catch {
+            // File doesn't exist, which is what we want
+          }
+          
+          // Save the file
+          console.log(`Saving file to: ${filePath}`);
+          const arrayBuffer = await file.arrayBuffer();
+          await Bun.write(filePath, arrayBuffer);
+          console.log(`File saved successfully: ${file.name}`);
+          
+          return Response.json({
+            success: true,
+            message: "File uploaded successfully",
+            filename: file.name,
+            size: file.size
+          });
+          
+        } catch (error) {
+          console.error('Error uploading server file:', error);
+          console.error('Error details:', error);
+          return Response.json({
+            success: false,
+            error: error instanceof Error ? error.message : 'Unknown error'
+          }, { status: 500 });
+        }
+      },
+    },
+
     "/api/create-server": {
       async POST(req) {
         try {
+          const body = await req.json();
+          const { serverFile } = body;
+          
           // Aktuelles Datum im Format yyyy-mm-dd
           const now = new Date();
           const dateString = now.getFullYear() + '-' + 
@@ -77,7 +211,15 @@ const server = serve({
             String(now.getDate()).padStart(2, '0');
           
           const serverPath = `./server/${dateString}`;
-          const serverFilesZip = './serverfiles/ServerFiles-4.14.zip';
+          
+          // Determine which server file to use
+          let serverFilesZip;
+          if (serverFile) {
+            serverFilesZip = `./serverfiles/${serverFile}`;
+          } else {
+            // Fallback to default file
+            serverFilesZip = './serverfiles/ServerFiles-4.14.zip';
+          }
           
           // Prüfen ob Server-Ordner bereits existiert
           const serverDir = Bun.file(serverPath);
@@ -96,7 +238,7 @@ const server = serve({
           const zipFile = Bun.file(serverFilesZip);
           if (!await zipFile.exists()) {
             return Response.json({
-              message: "Server files not found",
+              message: `Server file not found: ${serverFile || 'ServerFiles-4.14.zip'}`,
               status: "error"
             }, { status: 404 });
           }
@@ -129,7 +271,8 @@ const server = serve({
                 message: "Server created successfully",
                 status: "success",
                 serverPath: dateString,
-                createdAt: createdTimestamp
+                createdAt: createdTimestamp,
+                usedServerFile: serverFile || 'ServerFiles-4.14.zip'
               });
             } catch (writeError) {
               console.error('Error creating .created file:', writeError);
@@ -729,6 +872,53 @@ const server = serve({
           
         } catch (error) {
           console.error('Error fetching server logs:', error);
+          return Response.json({
+            success: false,
+            error: error instanceof Error ? error.message : 'Unknown error'
+          }, { status: 500 });
+        }
+      },
+    },
+
+    "/api/delete-serverfile": {
+      async DELETE(req) {
+        try {
+          const url = new URL(req.url);
+          const filename = url.searchParams.get('filename');
+          
+          if (!filename) {
+            return Response.json({
+              success: false,
+              error: "Filename parameter is required"
+            }, { status: 400 });
+          }
+          
+          // Security check: only allow deletion of .zip files
+          if (!filename.toLowerCase().endsWith('.zip')) {
+            return Response.json({
+              success: false,
+              error: "Only ZIP files can be deleted"
+            }, { status: 400 });
+          }
+          
+          const filePath = `./serverfiles/${filename}`;
+          const fs = require('fs').promises;
+          
+          try {
+            await fs.unlink(filePath);
+            return Response.json({
+              success: true,
+              message: "File deleted successfully"
+            });
+          } catch (error) {
+            return Response.json({
+              success: false,
+              error: "File not found or cannot be deleted"
+            }, { status: 404 });
+          }
+          
+        } catch (error) {
+          console.error('Error deleting server file:', error);
           return Response.json({
             success: false,
             error: error instanceof Error ? error.message : 'Unknown error'

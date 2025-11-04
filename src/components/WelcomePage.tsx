@@ -1,18 +1,159 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useLanguage } from "@/hooks/useLanguage";
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 
 interface WelcomePageProps {
   onServerCreated: (serverPath: string) => void;
+}
+
+interface ServerFile {
+  name: string;
+  size: number;
+  uploadedAt: string;
 }
 
 export function WelcomePage({ onServerCreated }: WelcomePageProps) {
   const { translations } = useLanguage();
   const [isCreating, setIsCreating] = useState(false);
   const [serverStatus, setServerStatus] = useState<string | null>(null);
+  const [isDragOver, setIsDragOver] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadStatus, setUploadStatus] = useState<string | null>(null);
+  const [serverFiles, setServerFiles] = useState<ServerFile[]>([]);
+  const [selectedServerFile, setSelectedServerFile] = useState<string>('');
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Load available server files on component mount
+  useEffect(() => {
+    loadServerFiles();
+  }, []);
+
+  const loadServerFiles = async () => {
+    try {
+      const response = await fetch('/api/serverfiles');
+      const data = await response.json();
+      if (data.success) {
+        setServerFiles(data.files);
+        // Auto-select first file if available
+        if (data.files.length > 0 && !selectedServerFile) {
+          setSelectedServerFile(data.files[0].name);
+        }
+      }
+    } catch (error) {
+      console.error('Error loading server files:', error);
+    }
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragOver(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragOver(false);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragOver(false);
+    
+    const files = Array.from(e.dataTransfer.files);
+    const zipFiles = files.filter(file => file.name.toLowerCase().endsWith('.zip'));
+    
+    if (zipFiles.length > 0 && zipFiles[0]) {
+      handleFileUpload(zipFiles[0]);
+    } else {
+      setUploadStatus('❌ Bitte nur ZIP-Dateien hochladen');
+      setTimeout(() => setUploadStatus(null), 3000);
+    }
+  };
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.name.toLowerCase().endsWith('.zip')) {
+        handleFileUpload(file);
+      } else {
+        setUploadStatus('❌ Bitte nur ZIP-Dateien auswählen');
+        setTimeout(() => setUploadStatus(null), 3000);
+      }
+    }
+  };
+
+  const handleFileUpload = async (file: File) => {
+    setIsUploading(true);
+    setUploadStatus(null);
+    
+    try {
+      const formData = new FormData();
+      formData.append('serverfile', file);
+      
+      const response = await fetch('/api/upload-serverfile', {
+        method: 'POST',
+        body: formData,
+      });
+      
+      const data = await response.json();
+      
+      if (data.success) {
+        setUploadStatus(`✅ ${file.name} erfolgreich hochgeladen`);
+        await loadServerFiles(); // Reload the list
+        setSelectedServerFile(file.name); // Auto-select the uploaded file
+        setTimeout(() => setUploadStatus(null), 3000);
+      } else {
+        setUploadStatus(`❌ Upload fehlgeschlagen: ${data.error}`);
+        setTimeout(() => setUploadStatus(null), 5000);
+      }
+    } catch (error) {
+      setUploadStatus(`❌ Upload-Fehler: ${error instanceof Error ? error.message : 'Unbekannter Fehler'}`);
+      setTimeout(() => setUploadStatus(null), 5000);
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const handleDeleteServerFile = async (filename: string) => {
+    if (!confirm(`Möchtest du die Datei "${filename}" wirklich löschen?`)) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/delete-serverfile?filename=${encodeURIComponent(filename)}`, {
+        method: 'DELETE',
+      });
+      
+      const data = await response.json();
+      
+      if (data.success) {
+        setUploadStatus(`✅ ${filename} wurde gelöscht`);
+        await loadServerFiles(); // Reload the list
+        
+        // If the deleted file was selected, clear selection
+        if (selectedServerFile === filename) {
+          setSelectedServerFile('');
+        }
+        
+        setTimeout(() => setUploadStatus(null), 3000);
+      } else {
+        setUploadStatus(`❌ Löschen fehlgeschlagen: ${data.error}`);
+        setTimeout(() => setUploadStatus(null), 5000);
+      }
+    } catch (error) {
+      setUploadStatus(`❌ Lösch-Fehler: ${error instanceof Error ? error.message : 'Unbekannter Fehler'}`);
+      setTimeout(() => setUploadStatus(null), 5000);
+    }
+  };
 
   const handleCreateServer = async () => {
+    if (!selectedServerFile) {
+      setServerStatus('❌ Bitte wähle eine Server-Datei aus');
+      setTimeout(() => setServerStatus(null), 3000);
+      return;
+    }
+
     setIsCreating(true);
     setServerStatus(null);
     
@@ -26,6 +167,9 @@ export function WelcomePage({ onServerCreated }: WelcomePageProps) {
         headers: {
           'Content-Type': 'application/json',
         },
+        body: JSON.stringify({
+          serverFile: selectedServerFile
+        }),
         signal: controller.signal,
       });
       
@@ -93,11 +237,116 @@ export function WelcomePage({ onServerCreated }: WelcomePageProps) {
                 ))}
               </div>
             </div>
+
+            {/* Server File Upload Section */}
+            <div className="space-y-4">
+              <h3 className="font-semibold text-foreground">Server-Dateien verwalten</h3>
+              
+              {serverFiles.length === 0 && (
+                <div className="text-sm text-muted-foreground bg-muted/30 p-3 rounded-lg">
+                  <p className="font-medium mb-1">Keine Server-Dateien vorhanden</p>
+                  <p>Lade eine ZIP-Datei mit deinen Minecraft-Server-Dateien hoch, um zu beginnen.</p>
+                </div>
+              )}
+              
+              {/* Drag & Drop Zone */}
+              <div
+                className={`border-2 border-dashed rounded-lg p-6 text-center transition-colors cursor-pointer ${
+                  isDragOver 
+                    ? 'border-primary bg-primary/5' 
+                    : 'border-muted-foreground/25 hover:border-primary/50'
+                }`}
+                onDragOver={handleDragOver}
+                onDragLeave={handleDragLeave}
+                onDrop={handleDrop}
+                onClick={() => fileInputRef.current?.click()}
+              >
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept=".zip"
+                  onChange={handleFileSelect}
+                  className="hidden"
+                />
+                
+                {isUploading ? (
+                  <div className="flex flex-col items-center gap-2">
+                    <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
+                    <p className="text-sm text-muted-foreground">Datei wird hochgeladen...</p>
+                  </div>
+                ) : (
+                  <div className="flex flex-col items-center gap-2">
+                    <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center">
+                      📦
+                    </div>
+                    <p className="font-medium">ZIP-Datei hier ablegen oder klicken</p>
+                    <p className="text-sm text-muted-foreground">
+                      Lade deine Minecraft-Server ZIP-Dateien hoch
+                    </p>
+                  </div>
+                )}
+              </div>
+
+              {uploadStatus && (
+                <div className="text-sm text-center">
+                  {uploadStatus}
+                </div>
+              )}
+
+              {/* Server File Selection */}
+              {serverFiles.length > 0 && (
+                <div className="space-y-3">
+                  <label className="text-sm font-medium">Server-Datei auswählen:</label>
+                  <Select value={selectedServerFile} onValueChange={setSelectedServerFile}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Wähle eine Server-Datei..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {serverFiles.map((file) => (
+                        <SelectItem key={file.name} value={file.name}>
+                          <div className="flex flex-col">
+                            <span>{file.name}</span>
+                            <span className="text-xs text-muted-foreground">
+                              {(file.size / 1024 / 1024).toFixed(1)} MB • {new Date(file.uploadedAt).toLocaleDateString()}
+                            </span>
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  
+                  {/* File Management */}
+                  <div className="space-y-2">
+                    <h4 className="text-sm font-medium text-muted-foreground">Verfügbare Server-Dateien:</h4>
+                    <div className="space-y-2 max-h-32 overflow-y-auto">
+                      {serverFiles.map((file) => (
+                        <div key={file.name} className="flex items-center justify-between p-2 bg-muted/30 rounded text-sm">
+                          <div className="flex-1 min-w-0">
+                            <div className="font-medium truncate">{file.name}</div>
+                            <div className="text-xs text-muted-foreground">
+                              {(file.size / 1024 / 1024).toFixed(1)} MB • {new Date(file.uploadedAt).toLocaleDateString()}
+                            </div>
+                          </div>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleDeleteServerFile(file.name)}
+                            className="text-red-600 hover:text-red-700 hover:bg-red-50 ml-2"
+                          >
+                            🗑️
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
             
             <div className="flex flex-col items-center gap-4 pt-4">
               <Button 
                 onClick={handleCreateServer}
-                disabled={isCreating}
+                disabled={isCreating || !selectedServerFile}
                 size="lg" 
                 className="text-lg px-12 py-6 font-semibold shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105 disabled:opacity-50"
               >
