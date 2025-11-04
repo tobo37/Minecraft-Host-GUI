@@ -6,26 +6,14 @@ const server = serve({
     // Serve index.html for all unmatched routes.
     "/*": index,
 
-    "/api/hello": {
-      async GET(req) {
+    "/api/create-server": {
+      async POST(req) {
+        // TODO: Hier wird später die Server-Erstellungslogik implementiert
         return Response.json({
-          message: "Hello, world!",
-          method: "GET",
+          message: "Server creation endpoint - implementation pending",
+          status: "pending"
         });
       },
-      async PUT(req) {
-        return Response.json({
-          message: "Hello, world!",
-          method: "PUT",
-        });
-      },
-    },
-
-    "/api/hello/:name": async req => {
-      const name = req.params.name;
-      return Response.json({
-        message: `Hello, ${name}!`,
-      });
     },
   },
 
