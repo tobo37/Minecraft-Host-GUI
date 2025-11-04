@@ -6,6 +6,9 @@ const runningServers = new Map<string, any>();
 const serverLogs = new Map<string, string[]>();
 
 const server = serve({
+  // Bind to all interfaces for Docker compatibility
+  hostname: "0.0.0.0",
+  port: 3000,
   // Increase timeout for server creation operations
   idleTimeout: 60, // 60 seconds timeout
   

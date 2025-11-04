@@ -1,27 +1,4 @@
 # Multi-stage Dockerfile for Bun + Java application
-
-# Stage 1: Build the Bun project
-FROM oven/bun:1.3 AS builder
-
-WORKDIR /app
-
-# Copy package files
-COPY package.json bun.lock* bunfig.toml ./
-
-# Install dependencies
-RUN bun install --frozen-lockfile
-
-# Copy source code and build files
-COPY src/ ./src/
-COPY build.ts ./
-COPY tsconfig.json ./
-COPY components.json ./
-COPY styles/ ./styles/
-
-# Build the application
-RUN bun run build
-
-# Stage 2: Create runtime image with Java and Bun
 FROM eclipse-temurin:24
 
 # Install Node.js and other dependencies
@@ -34,21 +11,20 @@ RUN apt-get update && apt-get install -y \
 RUN curl -fsSL https://bun.sh/install | bash
 ENV PATH="/root/.bun/bin:$PATH"
 
+# Setze das Arbeitsverzeichnis
 WORKDIR /app
 
-# Copy built application from builder stage
-COPY --from=builder /app/dist ./dist
-COPY --from=builder /app/package.json ./
-COPY --from=builder /app/src ./src
-COPY --from=builder /app/node_modules ./node_modules
+# --- HIER IST DIE KORREKTUR ---
+# Kopiere zuerst die Paketdateien für das Caching
+COPY package.json .
+COPY bun.lockb .
 
-# Copy server files if they exist
-COPY server/ ./server/
+# Installiere die Bun-Abhängigkeiten
+RUN bun install --frozen-lockfile
+# -----------------------------
 
-# Create a startup script
-RUN echo '#!/bin/bash\n\
-echo "Starting Bun application..."\n\
-exec bun start' > /app/start.sh && chmod +x /app/start.sh
+# Kopiere den Rest des Codes
+COPY . .
 
 # Expose port (adjust if your app uses a different port)
 EXPOSE 3000
@@ -57,4 +33,4 @@ EXPOSE 3000
 ENV NODE_ENV=production
 
 # Start the Bun application
-CMD ["/app/start.sh"]
+CMD ["bun","run","start"]
