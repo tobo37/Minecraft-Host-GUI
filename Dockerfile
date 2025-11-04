@@ -1,7 +1,7 @@
 # Multi-stage Dockerfile for Bun + Java application
 
 # Stage 1: Build the Bun project
-FROM oven/bun:1.1.34-alpine AS builder
+FROM oven/bun:1.3 AS builder
 
 WORKDIR /app
 
@@ -22,7 +22,7 @@ COPY styles/ ./styles/
 RUN bun run build
 
 # Stage 2: Create runtime image with Java and Bun
-FROM openjdk:21-jdk-slim
+FROM eclipse-temurin:24
 
 # Install Node.js and other dependencies
 RUN apt-get update && apt-get install -y \
