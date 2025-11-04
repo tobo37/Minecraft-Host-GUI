@@ -8,9 +8,22 @@ export interface Translations {
     items: string[];
   };
   startButton: string;
+  projectSelection: {
+    title: string;
+    description: string;
+    createNew: string;
+    selectProject: string;
+    noProjects: string;
+  };
+  serverManagement: {
+    title: string;
+    backToProjects: string;
+    serverInfo: string;
+  };
   messages: {
     serverCreating: string;
     serverError: string;
+    serverExists: string;
   };
 }
 
@@ -27,9 +40,22 @@ export const translations: Record<Language, Translations> = {
       ]
     },
     startButton: 'Jetzt starten',
+    projectSelection: {
+      title: 'Wählen Sie Ihr Projekt',
+      description: 'Sie haben bereits Server-Projekte. Wählen Sie eines aus oder erstellen Sie ein neues.',
+      createNew: 'Neuen Server erstellen',
+      selectProject: 'Projekt auswählen',
+      noProjects: 'Keine Projekte gefunden'
+    },
+    serverManagement: {
+      title: 'Server Verwaltung',
+      backToProjects: 'Zurück zu Projekten',
+      serverInfo: 'Server Informationen'
+    },
     messages: {
-      serverCreating: 'Server wird erstellt...',
-      serverError: 'Fehler beim Erstellen des Servers'
+      serverCreating: 'Server erfolgreich erstellt!',
+      serverError: 'Fehler beim Erstellen des Servers',
+      serverExists: 'Server bereits vorhanden'
     }
   },
   en: {
@@ -44,9 +70,22 @@ export const translations: Record<Language, Translations> = {
       ]
     },
     startButton: 'Get Started',
+    projectSelection: {
+      title: 'Choose Your Project',
+      description: 'You already have server projects. Choose one or create a new one.',
+      createNew: 'Create New Server',
+      selectProject: 'Select Project',
+      noProjects: 'No projects found'
+    },
+    serverManagement: {
+      title: 'Server Management',
+      backToProjects: 'Back to Projects',
+      serverInfo: 'Server Information'
+    },
     messages: {
-      serverCreating: 'Creating server...',
-      serverError: 'Error creating server'
+      serverCreating: 'Server created successfully!',
+      serverError: 'Error creating server',
+      serverExists: 'Server already exists'
     }
   }
 };

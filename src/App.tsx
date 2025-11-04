@@ -1,35 +1,69 @@
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useLanguage } from "@/hooks/useLanguage";
+import { WelcomePage } from "@/components/WelcomePage";
+import { ProjectSelection } from "@/components/ProjectSelection";
+import { ServerManagement } from "@/components/ServerManagement";
+import { useState, useEffect } from "react";
 import "./index.css";
 
-export function App() {
-  const { language, translations, toggleLanguage } = useLanguage();
+type AppState = 'loading' | 'welcome' | 'projects' | 'server';
 
-  const handleCreateServer = async () => {
+export function App() {
+  const { language, toggleLanguage } = useLanguage();
+  const [appState, setAppState] = useState<AppState>('loading');
+  const [selectedProject, setSelectedProject] = useState<string | null>(null);
+
+  useEffect(() => {
+    checkExistingServers();
+  }, []);
+
+  const checkExistingServers = async () => {
     try {
-      // TODO: Backend-Funktion "create server" wird hier implementiert
-      const response = await fetch('/api/create-server', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
+      const response = await fetch('/api/servers');
+      const data = await response.json();
       
-      if (response.ok) {
-        console.log(translations.messages.serverCreating);
+      if (data.servers && data.servers.length > 0) {
+        setAppState('projects');
       } else {
-        console.error(translations.messages.serverError);
+        setAppState('welcome');
       }
     } catch (error) {
-      console.error('Fehler:', error);
+      console.error('Error checking servers:', error);
+      setAppState('welcome');
     }
   };
 
+  const handleServerCreated = (serverPath: string) => {
+    setSelectedProject(serverPath);
+    setAppState('server');
+  };
+
+  const handleSelectProject = (projectPath: string) => {
+    setSelectedProject(projectPath);
+    setAppState('server');
+  };
+
+  const handleCreateNew = () => {
+    setAppState('welcome');
+  };
+
+  const handleBackToProjects = () => {
+    setSelectedProject(null);
+    setAppState('projects');
+  };
+
+  if (appState === 'loading') {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-background to-muted/20 flex items-center justify-center">
+        <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
+      </div>
+    );
+  }
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background to-muted/20 flex items-center justify-center p-4">
-      {/* Language Toggle */}
-      <div className="absolute top-4 right-4">
+    <div className="relative">
+      {/* Language Toggle - always visible */}
+      <div className="absolute top-4 right-4 z-50">
         <Button
           variant="outline"
           size="sm"
@@ -40,45 +74,23 @@ export function App() {
         </Button>
       </div>
 
-      <div className="w-full max-w-2xl">
-        <Card className="shadow-2xl border-0 bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/60">
-          <CardHeader className="space-y-6 text-center">
-            <div className="mx-auto w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mb-4">
-              <div className="w-8 h-8 bg-primary rounded-sm"></div>
-            </div>
-            <CardTitle className="text-4xl font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text">
-              {translations.title}
-            </CardTitle>
-            <CardDescription className="text-lg text-muted-foreground max-w-md mx-auto">
-              {translations.description}
-            </CardDescription>
-          </CardHeader>
-          
-          <CardContent className="space-y-8">
-            <div className="grid gap-4 text-left">
-              <h3 className="font-semibold text-foreground mb-2">{translations.features.title}</h3>
-              <div className="grid gap-3">
-                {translations.features.items.map((item, index) => (
-                  <div key={index} className="flex items-center gap-3 text-muted-foreground">
-                    <div className="w-2 h-2 bg-primary rounded-full flex-shrink-0"></div>
-                    <span>{item}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-            
-            <div className="flex justify-center pt-4">
-              <Button 
-                onClick={handleCreateServer}
-                size="lg" 
-                className="text-lg px-12 py-6 font-semibold shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105"
-              >
-                {translations.startButton}
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+      {appState === 'welcome' && (
+        <WelcomePage onServerCreated={handleServerCreated} />
+      )}
+
+      {appState === 'projects' && (
+        <ProjectSelection 
+          onSelectProject={handleSelectProject}
+          onCreateNew={handleCreateNew}
+        />
+      )}
+
+      {appState === 'server' && selectedProject && (
+        <ServerManagement 
+          projectPath={selectedProject}
+          onBack={handleBackToProjects}
+        />
+      )}
     </div>
   );
 }
