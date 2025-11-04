@@ -17,7 +17,7 @@ WORKDIR /app
 # --- HIER IST DIE KORREKTUR ---
 # Kopiere zuerst die Paketdateien für das Caching
 COPY package.json .
-COPY bun.lockb .
+COPY bun.lock .
 
 # Installiere die Bun-Abhängigkeiten
 RUN bun install --frozen-lockfile
