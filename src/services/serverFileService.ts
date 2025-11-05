@@ -43,7 +43,7 @@ async function saveFileStream(file: File, filePath: string): Promise<void> {
       }
     };
     
-    stream.on('error', (error) => {
+    stream.on('error', (error: any) => {
       console.error('Write stream error:', error);
       reject(error);
     });
@@ -87,13 +87,13 @@ export async function listServerFiles(): Promise<Response> {
         success: true,
         files
       });
-    } catch (error) {
+    } catch (error: any) {
       return Response.json({
         success: true,
         files: []
       });
     }
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error listing server files:', error);
     return Response.json({
       success: false,
@@ -200,7 +200,7 @@ export async function uploadServerFile(req: Request): Promise<Response> {
       size: file.size
     });
     
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error uploading server file:', error);
     return Response.json({
       success: false,
@@ -241,22 +241,23 @@ export async function deleteServerFile(req: Request): Promise<Response> {
         success: true,
         message: "File deleted successfully"
       });
-    } catch (error) {
+    } catch (error: any) {
       return Response.json({
         success: false,
         error: "File not found or cannot be deleted"
       }, { status: 404 });
     }
     
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error deleting server file:', error);
     return Response.json({
       success: false,
       error: error instanceof Error ? error.message : 'Unknown error'
     }, { status: 500 });
   }
-}/**
+}
 
+/**
  * Handle chunked upload for very large files
  */
 export async function uploadServerFileChunked(req: Request): Promise<Response> {
@@ -274,7 +275,7 @@ export async function uploadServerFileChunked(req: Request): Promise<Response> {
       }, { status: 400 });
     }
     
-    console.log(`Receiving chunk ${chunkIndex + 1}/${totalChunks} for ${fileName}`);
+    console.log(`Receiving chunk ${chunkIndex + 1}/${totalChunks} for ${fileName} (${Math.round(((chunkIndex + 1) / totalChunks) * 100)}%)`);
     
     const serverFilesDir = './serverfiles';
     const tempDir = `${serverFilesDir}/.temp`;
@@ -285,63 +286,248 @@ export async function uploadServerFileChunked(req: Request): Promise<Response> {
     const fs = require('fs').promises;
     try {
       await fs.mkdir(tempDir, { recursive: true });
-    } catch {}
+    } catch (mkdirError) {
+      // Directory might already exist
+    }
     
-    // Save chunk
-    const arrayBuffer = await req.arrayBuffer();
-    await Bun.write(chunkPath, arrayBuffer);
-    
-    // Check if all chunks are received
-    const chunks = [];
-    for (let i = 0; i < totalChunks; i++) {
-      const chunkFile = `${tempDir}/${fileName}.chunk.${i}`;
+    // Check if file already exists (only on first chunk)
+    if (chunkIndex === 0) {
       try {
-        await fs.access(chunkFile);
-        chunks.push(chunkFile);
-      } catch {
-        // Chunk not yet received
+        await fs.access(finalPath);
         return Response.json({
-          success: true,
-          message: `Chunk ${chunkIndex + 1}/${totalChunks} received`,
-          completed: false
-        });
+          success: false,
+          error: "File with this name already exists"
+        }, { status: 409 });
+      } catch {
+        // File doesn't exist, which is what we want
       }
     }
     
-    // All chunks received, combine them
-    console.log(`All chunks received for ${fileName}, combining...`);
-    
-    const writeStream = require('fs').createWriteStream(finalPath);
-    
-    for (let i = 0; i < totalChunks; i++) {
-      const chunkFile = `${tempDir}/${fileName}.chunk.${i}`;
-      const chunkData = await Bun.file(chunkFile).arrayBuffer();
-      writeStream.write(Buffer.from(chunkData));
-      
-      // Clean up chunk file
-      await fs.unlink(chunkFile);
+    // Save chunk
+    try {
+      const arrayBuffer = await req.arrayBuffer();
+      console.log(`Chunk ${chunkIndex} size: ${arrayBuffer.byteLength} bytes`);
+      await Bun.write(chunkPath, arrayBuffer);
+      console.log(`Chunk ${chunkIndex + 1}/${totalChunks} saved successfully`);
+    } catch (saveError) {
+      console.error(`Error saving chunk ${chunkIndex}:`, saveError);
+      return Response.json({
+        success: false,
+        error: `Failed to save chunk ${chunkIndex + 1}`
+      }, { status: 500 });
     }
     
-    writeStream.end();
+    // Check if this is the last chunk
+    if (chunkIndex === totalChunks - 1) {
+      console.log(`Last chunk received for ${fileName}, combining all chunks...`);
+      
+      try {
+        // Combine all chunks
+        const writeStream = require('fs').createWriteStream(finalPath);
+        
+        for (let i = 0; i < totalChunks; i++) {
+          const chunkFile = `${tempDir}/${fileName}.chunk.${i}`;
+          
+          // Verify chunk exists
+          try {
+            await fs.access(chunkFile);
+          } catch {
+            throw new Error(`Missing chunk ${i + 1}/${totalChunks}`);
+          }
+          
+          const chunkData = await Bun.file(chunkFile).arrayBuffer();
+          writeStream.write(Buffer.from(chunkData));
+          console.log(`Combined chunk ${i + 1}/${totalChunks}`);
+        }
+        
+        writeStream.end();
+        
+        // Wait for write to complete
+        await new Promise((resolve, reject) => {
+          writeStream.on('finish', resolve);
+          writeStream.on('error', reject);
+        });
+        
+        // Clean up chunk files
+        for (let i = 0; i < totalChunks; i++) {
+          const chunkFile = `${tempDir}/${fileName}.chunk.${i}`;
+          try {
+            await fs.unlink(chunkFile);
+          } catch (cleanupError) {
+            console.warn(`Failed to cleanup chunk ${i}:`, cleanupError);
+          }
+        }
+        
+        console.log(`File ${fileName} assembled successfully from ${totalChunks} chunks`);
+        
+        return Response.json({
+          success: true,
+          message: "File uploaded successfully",
+          filename: fileName,
+          size: fileSize,
+          completed: true
+        });
+        
+      } catch (combineError) {
+        console.error('Error combining chunks:', combineError);
+        return Response.json({
+          success: false,
+          error: `Failed to combine chunks: ${combineError instanceof Error ? combineError.message : 'Unknown error'}`
+        }, { status: 500 });
+      }
+    } else {
+      // Not the last chunk, just acknowledge receipt
+      return Response.json({
+        success: true,
+        message: `Chunk ${chunkIndex + 1}/${totalChunks} received`,
+        completed: false,
+        progress: Math.round(((chunkIndex + 1) / totalChunks) * 100)
+      });
+    }
     
-    // Wait for write to complete
-    await new Promise((resolve, reject) => {
-      writeStream.on('finish', resolve);
-      writeStream.on('error', reject);
-    });
-    
-    console.log(`File ${fileName} assembled successfully`);
-    
-    return Response.json({
-      success: true,
-      message: "File uploaded successfully",
-      filename: fileName,
-      size: fileSize,
-      completed: true
-    });
-    
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error in chunked upload:', error);
+    return Response.json({
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error'
+    }, { status: 500 });
+  }
+}/**
+
+ * Upload large files via raw stream (bypasses formData memory issues)
+ */
+export async function uploadServerFileStream(req: Request): Promise<Response> {
+  try {
+    const url = new URL(req.url);
+    const fileName = url.searchParams.get('fileName');
+    const fileSize = parseInt(url.searchParams.get('fileSize') || '0');
+    
+    if (!fileName) {
+      return Response.json({
+        success: false,
+        error: "Filename is required"
+      }, { status: 400 });
+    }
+    
+    if (!fileName.toLowerCase().endsWith('.zip')) {
+      return Response.json({
+        success: false,
+        error: "Only ZIP files are allowed"
+      }, { status: 400 });
+    }
+    
+    // Check file size (limit to 2GB)
+    const maxSize = 2 * 1024 * 1024 * 1024; // 2GB
+    if (fileSize > maxSize) {
+      return Response.json({
+        success: false,
+        error: "File too large. Maximum size is 2GB"
+      }, { status: 400 });
+    }
+    
+    console.log(`Stream upload request: ${fileName}, size: ${fileSize} bytes`);
+    
+    const serverFilesDir = './serverfiles';
+    const filePath = `${serverFilesDir}/${fileName}`;
+    
+    // Create serverfiles directory if it doesn't exist
+    const fs = require('fs').promises;
+    try {
+      await fs.access(serverFilesDir);
+    } catch {
+      await fs.mkdir(serverFilesDir, { recursive: true });
+    }
+    
+    // Check if file already exists
+    try {
+      await fs.access(filePath);
+      return Response.json({
+        success: false,
+        error: "File with this name already exists"
+      }, { status: 409 });
+    } catch {
+      // File doesn't exist, which is what we want
+    }
+    
+    // Stream the request body directly to file
+    console.log(`Starting stream upload to: ${filePath}`);
+    
+    const writeStream = require('fs').createWriteStream(filePath);
+    let bytesWritten = 0;
+    
+    try {
+      // Get the request body as a readable stream
+      const reader = req.body?.getReader();
+      
+      if (!reader) {
+        throw new Error('No request body stream available');
+      }
+      
+      // Stream data directly from request to file
+      while (true) {
+        const { done, value } = await reader.read();
+        
+        if (done) {
+          break;
+        }
+        
+        bytesWritten += value.length;
+        
+        // Write chunk to file
+        if (!writeStream.write(Buffer.from(value))) {
+          // Wait for drain event if buffer is full
+          await new Promise(resolve => writeStream.once('drain', resolve));
+        }
+        
+        // Log progress for large files
+        if (bytesWritten % (100 * 1024 * 1024) === 0) {
+          console.log(`Stream progress: ${Math.round(bytesWritten / 1024 / 1024)} MB written`);
+        }
+      }
+      
+      // Close the write stream
+      writeStream.end();
+      
+      // Wait for write to complete
+      await new Promise((resolve, reject) => {
+        writeStream.on('finish', resolve);
+        writeStream.on('error', reject);
+      });
+      
+      console.log(`Stream upload completed: ${fileName}, ${bytesWritten} bytes written`);
+      
+      // Verify file size matches expected
+      const stat = await fs.stat(filePath);
+      if (fileSize > 0 && stat.size !== fileSize) {
+        console.warn(`File size mismatch: expected ${fileSize}, got ${stat.size}`);
+      }
+      
+      return Response.json({
+        success: true,
+        message: "File uploaded successfully via stream",
+        filename: fileName,
+        size: stat.size
+      });
+      
+    } catch (streamError) {
+      console.error('Stream upload error:', streamError);
+      
+      // Clean up partial file on error
+      try {
+        writeStream.destroy();
+        await fs.unlink(filePath);
+      } catch (cleanupError) {
+        console.warn('Failed to cleanup partial file:', cleanupError);
+      }
+      
+      return Response.json({
+        success: false,
+        error: `Stream upload failed: ${streamError instanceof Error ? streamError.message : 'Unknown error'}`
+      }, { status: 500 });
+    }
+    
+  } catch (error: any) {
+    console.error('Error in stream upload:', error);
     return Response.json({
       success: false,
       error: error instanceof Error ? error.message : 'Unknown error'

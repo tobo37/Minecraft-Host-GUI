@@ -92,12 +92,12 @@ export function WelcomePage({ onServerCreated }: WelcomePageProps) {
     try {
       const fileSizeGB = file.size / (1024 * 1024 * 1024);
       
-      // Use chunked upload for files larger than 500MB
+      // Use stream upload for files larger than 500MB to avoid formData memory issues
       if (file.size > 500 * 1024 * 1024) {
-        setUploadStatus(`📤 Uploading ${fileSizeGB.toFixed(1)} GB file in chunks - this may take several minutes...`);
-        await handleChunkedUpload(file);
+        setUploadStatus(`📤 Uploading ${fileSizeGB.toFixed(1)} GB file with direct streaming - this may take 10-20 minutes...`);
+        await handleStreamUpload(file);
       } else {
-        // Use regular upload for smaller files
+        // Use regular FormData upload for smaller files
         if (fileSizeGB > 0.1) {
           setUploadStatus(`📤 Uploading ${fileSizeGB.toFixed(1)} GB file - this may take several minutes...`);
         }
@@ -126,9 +126,9 @@ export function WelcomePage({ onServerCreated }: WelcomePageProps) {
     const formData = new FormData();
     formData.append('serverfile', file);
     
-    // Create AbortController for timeout (10 minutes for large files)
+    // Create AbortController for timeout (20 minutes for very large files)
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 10 * 60 * 1000); // 10 minutes
+    const timeoutId = setTimeout(() => controller.abort(), 20 * 60 * 1000); // 20 minutes
     
     const response = await fetch('/api/upload-serverfile', {
       method: 'POST',
@@ -145,38 +145,36 @@ export function WelcomePage({ onServerCreated }: WelcomePageProps) {
     }
   };
 
-  const handleChunkedUpload = async (file: File) => {
-    const chunkSize = 50 * 1024 * 1024; // 50MB chunks
-    const totalChunks = Math.ceil(file.size / chunkSize);
+  const handleStreamUpload = async (file: File) => {
+    // Create AbortController for timeout (30 minutes for very large files)
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 30 * 60 * 1000); // 30 minutes
     
-    for (let chunkIndex = 0; chunkIndex < totalChunks; chunkIndex++) {
-      const start = chunkIndex * chunkSize;
-      const end = Math.min(start + chunkSize, file.size);
-      const chunk = file.slice(start, end);
-      
-      setUploadProgress(Math.round((chunkIndex / totalChunks) * 100));
-      setUploadStatus(`📤 Uploading chunk ${chunkIndex + 1}/${totalChunks} (${Math.round((chunkIndex / totalChunks) * 100)}%)`);
-      
-      const response = await fetch(`/api/upload-serverfile-chunked?chunk=${chunkIndex}&totalChunks=${totalChunks}&fileName=${encodeURIComponent(file.name)}&fileSize=${file.size}`, {
-        method: 'POST',
-        body: chunk,
-        headers: {
-          'Content-Type': 'application/octet-stream',
-        },
-      });
-      
-      const data = await response.json();
-      
-      if (!data.success) {
-        throw new Error(data.error || 'Chunk upload failed');
-      }
-      
-      // If this was the last chunk and upload is completed
-      if (data.completed) {
-        setUploadProgress(100);
-        break;
-      }
+    console.log(`Starting stream upload for ${file.name} (${file.size} bytes)`);
+    
+    const response = await fetch(`/api/upload-serverfile-stream?fileName=${encodeURIComponent(file.name)}&fileSize=${file.size}`, {
+      method: 'POST',
+      body: file, // Send file directly as body (no FormData!)
+      signal: controller.signal,
+      headers: {
+        'Content-Type': 'application/octet-stream',
+        'Content-Length': file.size.toString(),
+      },
+    });
+    
+    clearTimeout(timeoutId);
+    
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
     }
+    
+    const data = await response.json();
+    
+    if (!data.success) {
+      throw new Error(data.error || 'Stream upload failed');
+    }
+    
+    console.log('Stream upload completed successfully');
   };
 
   const handleDeleteServerFile = async (filename: string) => {

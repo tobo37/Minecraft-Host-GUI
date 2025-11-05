@@ -13,7 +13,7 @@ import {
 import { 
   listServerFiles, 
   uploadServerFile, 
-  uploadServerFileChunked,
+  uploadServerFileStream,
   deleteServerFile 
 } from "./services/serverFileService";
 import { 
@@ -27,7 +27,7 @@ const server = serve({
   hostname: "0.0.0.0",
   port: 3000,
   // Increase timeout for server creation operations and large file uploads
-  idleTimeout: 600, // 10 minutes timeout for very large uploads
+  idleTimeout: 255, // Maximum allowed timeout (255 seconds)
   // Increase max request size for file uploads (2GB)
   maxRequestBodySize: 2 * 1024 * 1024 * 1024,
   
@@ -50,11 +50,13 @@ const server = serve({
       },
     },
 
-    "/api/upload-serverfile-chunked": {
+    "/api/upload-serverfile-stream": {
       async POST(req) {
-        return await uploadServerFileChunked(req);
+        return await uploadServerFileStream(req);
       },
     },
+
+
 
     "/api/create-server": {
       async POST(req) {
