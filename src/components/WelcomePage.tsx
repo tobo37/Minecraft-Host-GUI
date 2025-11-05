@@ -21,6 +21,7 @@ export function WelcomePage({ onServerCreated }: WelcomePageProps) {
   const [isDragOver, setIsDragOver] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadStatus, setUploadStatus] = useState<string | null>(null);
+  const [uploadProgress, setUploadProgress] = useState<number>(0);
   const [serverFiles, setServerFiles] = useState<ServerFile[]>([]);
   const [selectedServerFile, setSelectedServerFile] = useState<string>('');
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -86,32 +87,95 @@ export function WelcomePage({ onServerCreated }: WelcomePageProps) {
   const handleFileUpload = async (file: File) => {
     setIsUploading(true);
     setUploadStatus(null);
+    setUploadProgress(0);
     
     try {
-      const formData = new FormData();
-      formData.append('serverfile', file);
+      const fileSizeGB = file.size / (1024 * 1024 * 1024);
       
-      const response = await fetch('/api/upload-serverfile', {
+      // Use chunked upload for files larger than 500MB
+      if (file.size > 500 * 1024 * 1024) {
+        setUploadStatus(`📤 Uploading ${fileSizeGB.toFixed(1)} GB file in chunks - this may take several minutes...`);
+        await handleChunkedUpload(file);
+      } else {
+        // Use regular upload for smaller files
+        if (fileSizeGB > 0.1) {
+          setUploadStatus(`📤 Uploading ${fileSizeGB.toFixed(1)} GB file - this may take several minutes...`);
+        }
+        await handleRegularUpload(file);
+      }
+      
+      setUploadStatus(`✅ ${file.name} erfolgreich hochgeladen`);
+      await loadServerFiles(); // Reload the list
+      setSelectedServerFile(file.name); // Auto-select the uploaded file
+      setTimeout(() => setUploadStatus(null), 3000);
+      
+    } catch (error) {
+      if (error instanceof Error && error.name === 'AbortError') {
+        setUploadStatus(`❌ Upload-Timeout: Datei zu groß oder Verbindung zu langsam`);
+      } else {
+        setUploadStatus(`❌ Upload-Fehler: ${error instanceof Error ? error.message : 'Unbekannter Fehler'}`);
+      }
+      setTimeout(() => setUploadStatus(null), 5000);
+    } finally {
+      setIsUploading(false);
+      setUploadProgress(0);
+    }
+  };
+
+  const handleRegularUpload = async (file: File) => {
+    const formData = new FormData();
+    formData.append('serverfile', file);
+    
+    // Create AbortController for timeout (10 minutes for large files)
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10 * 60 * 1000); // 10 minutes
+    
+    const response = await fetch('/api/upload-serverfile', {
+      method: 'POST',
+      body: formData,
+      signal: controller.signal,
+    });
+    
+    clearTimeout(timeoutId);
+    
+    const data = await response.json();
+    
+    if (!data.success) {
+      throw new Error(data.error || 'Upload failed');
+    }
+  };
+
+  const handleChunkedUpload = async (file: File) => {
+    const chunkSize = 50 * 1024 * 1024; // 50MB chunks
+    const totalChunks = Math.ceil(file.size / chunkSize);
+    
+    for (let chunkIndex = 0; chunkIndex < totalChunks; chunkIndex++) {
+      const start = chunkIndex * chunkSize;
+      const end = Math.min(start + chunkSize, file.size);
+      const chunk = file.slice(start, end);
+      
+      setUploadProgress(Math.round((chunkIndex / totalChunks) * 100));
+      setUploadStatus(`📤 Uploading chunk ${chunkIndex + 1}/${totalChunks} (${Math.round((chunkIndex / totalChunks) * 100)}%)`);
+      
+      const response = await fetch(`/api/upload-serverfile-chunked?chunk=${chunkIndex}&totalChunks=${totalChunks}&fileName=${encodeURIComponent(file.name)}&fileSize=${file.size}`, {
         method: 'POST',
-        body: formData,
+        body: chunk,
+        headers: {
+          'Content-Type': 'application/octet-stream',
+        },
       });
       
       const data = await response.json();
       
-      if (data.success) {
-        setUploadStatus(`✅ ${file.name} erfolgreich hochgeladen`);
-        await loadServerFiles(); // Reload the list
-        setSelectedServerFile(file.name); // Auto-select the uploaded file
-        setTimeout(() => setUploadStatus(null), 3000);
-      } else {
-        setUploadStatus(`❌ Upload fehlgeschlagen: ${data.error}`);
-        setTimeout(() => setUploadStatus(null), 5000);
+      if (!data.success) {
+        throw new Error(data.error || 'Chunk upload failed');
       }
-    } catch (error) {
-      setUploadStatus(`❌ Upload-Fehler: ${error instanceof Error ? error.message : 'Unbekannter Fehler'}`);
-      setTimeout(() => setUploadStatus(null), 5000);
-    } finally {
-      setIsUploading(false);
+      
+      // If this was the last chunk and upload is completed
+      if (data.completed) {
+        setUploadProgress(100);
+        break;
+      }
     }
   };
 
@@ -273,6 +337,7 @@ export function WelcomePage({ onServerCreated }: WelcomePageProps) {
                   <div className="flex flex-col items-center gap-2">
                     <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
                     <p className="text-sm text-muted-foreground">Datei wird hochgeladen...</p>
+                    <p className="text-xs text-muted-foreground">Bei großen Dateien kann dies mehrere Minuten dauern</p>
                   </div>
                 ) : (
                   <div className="flex flex-col items-center gap-2">
@@ -281,7 +346,7 @@ export function WelcomePage({ onServerCreated }: WelcomePageProps) {
                     </div>
                     <p className="font-medium">ZIP-Datei hier ablegen oder klicken</p>
                     <p className="text-sm text-muted-foreground">
-                      Lade deine Minecraft-Server ZIP-Dateien hoch
+                      Lade deine Minecraft-Server ZIP-Dateien hoch (max. 2GB)
                     </p>
                   </div>
                 )}
@@ -290,6 +355,14 @@ export function WelcomePage({ onServerCreated }: WelcomePageProps) {
               {uploadStatus && (
                 <div className="text-sm text-center">
                   {uploadStatus}
+                  {uploadProgress > 0 && uploadProgress < 100 && (
+                    <div className="w-full bg-gray-200 rounded-full h-2 mt-2">
+                      <div 
+                        className="bg-primary h-2 rounded-full transition-all duration-300" 
+                        style={{ width: `${uploadProgress}%` }}
+                      ></div>
+                    </div>
+                  )}
                 </div>
               )}
 
@@ -307,7 +380,9 @@ export function WelcomePage({ onServerCreated }: WelcomePageProps) {
                           <div className="flex flex-col">
                             <span>{file.name}</span>
                             <span className="text-xs text-muted-foreground">
-                              {(file.size / 1024 / 1024).toFixed(1)} MB • {new Date(file.uploadedAt).toLocaleDateString()}
+                              {file.size > 1024 * 1024 * 1024 
+                                ? `${(file.size / 1024 / 1024 / 1024).toFixed(1)} GB` 
+                                : `${(file.size / 1024 / 1024).toFixed(1)} MB`} • {new Date(file.uploadedAt).toLocaleDateString()}
                             </span>
                           </div>
                         </SelectItem>
@@ -324,7 +399,9 @@ export function WelcomePage({ onServerCreated }: WelcomePageProps) {
                           <div className="flex-1 min-w-0">
                             <div className="font-medium truncate">{file.name}</div>
                             <div className="text-xs text-muted-foreground">
-                              {(file.size / 1024 / 1024).toFixed(1)} MB • {new Date(file.uploadedAt).toLocaleDateString()}
+                              {file.size > 1024 * 1024 * 1024 
+                                ? `${(file.size / 1024 / 1024 / 1024).toFixed(1)} GB` 
+                                : `${(file.size / 1024 / 1024).toFixed(1)} MB`} • {new Date(file.uploadedAt).toLocaleDateString()}
                             </div>
                           </div>
                           <Button
