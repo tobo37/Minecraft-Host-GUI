@@ -50,6 +50,11 @@ export function ServerManagement({
   const [newDescription, setNewDescription] = useState("");
   const [validationError, setValidationError] = useState("");
 
+  // Delete dialog state
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [deleteConfirmName, setDeleteConfirmName] = useState("");
+  const [deleteValidationError, setDeleteValidationError] = useState("");
+
   // Auto-scroll to bottom of logs
   useEffect(() => {
     if (logsEndRef.current) {
@@ -265,6 +270,39 @@ export function ServerManagement({
       }
     } catch (error) {
       console.error("Error updating description:", error);
+    }
+  };
+
+  const handleDeleteServer = async () => {
+    // Validate that the user typed the correct server name
+    const serverName =
+      serverInfo?.customName || serverInfo?.name || projectPath;
+    if (deleteConfirmName.trim() !== serverName) {
+      setDeleteValidationError(
+        translations.serverManagement.deleteDialog.validationError
+      );
+      return;
+    }
+
+    try {
+      const response = await fetch(
+        `/api/server/delete?project=${encodeURIComponent(projectPath)}`,
+        {
+          method: "DELETE",
+        }
+      );
+
+      const data = await response.json();
+      if (data.success) {
+        // Navigate back to project list after successful deletion
+        setIsDeleteDialogOpen(false);
+        onBack();
+      } else {
+        setDeleteValidationError(data.error || "Failed to delete server");
+      }
+    } catch (error) {
+      console.error("Error deleting server:", error);
+      setDeleteValidationError("Failed to delete server");
     }
   };
 
@@ -596,6 +634,22 @@ export function ServerManagement({
                   </CardContent>
                 </Card>
               )}
+
+              {/* Delete Server Button */}
+              <div className="mt-8 pt-6 border-t border-border">
+                <Button
+                  size="lg"
+                  variant="destructive"
+                  className="w-full h-14 bg-red-600 hover:bg-red-700 text-white"
+                  onClick={() => {
+                    setDeleteConfirmName("");
+                    setDeleteValidationError("");
+                    setIsDeleteDialogOpen(true);
+                  }}
+                >
+                  🗑️ {translations.serverManagement.deleteButton}
+                </Button>
+              </div>
             </div>
           </CardContent>
         </Card>
@@ -646,6 +700,71 @@ export function ServerManagement({
             </Button>
             <Button onClick={handleRename}>
               {translations.serverManagement.renameDialog.save}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>
+              {translations.serverManagement.deleteDialog.title}
+            </DialogTitle>
+            <DialogDescription>
+              {translations.serverManagement.deleteDialog.warning}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <p className="text-sm font-medium">
+                {translations.serverManagement.deleteDialog.serverInfo}
+              </p>
+              <div className="bg-muted p-3 rounded-md">
+                <p className="font-semibold">
+                  {serverInfo?.customName || serverInfo?.name || projectPath}
+                </p>
+                <p className="text-sm text-muted-foreground">{projectPath}</p>
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="deleteConfirm">
+                {translations.serverManagement.deleteDialog.confirmLabel}
+              </Label>
+              <Input
+                id="deleteConfirm"
+                value={deleteConfirmName}
+                onChange={(e) => {
+                  setDeleteConfirmName(e.target.value);
+                  setDeleteValidationError("");
+                }}
+                placeholder={
+                  translations.serverManagement.deleteDialog.confirmPlaceholder
+                }
+              />
+              {deleteValidationError && (
+                <p className="text-sm text-red-500">{deleteValidationError}</p>
+              )}
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setIsDeleteDialogOpen(false);
+                setDeleteConfirmName("");
+                setDeleteValidationError("");
+              }}
+            >
+              {translations.serverManagement.deleteDialog.cancel}
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleDeleteServer}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              {translations.serverManagement.deleteDialog.delete}
             </Button>
           </DialogFooter>
         </DialogContent>

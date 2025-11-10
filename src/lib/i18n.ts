@@ -30,12 +30,23 @@ export interface Translations {
     description: string;
     renameButton: string;
     editDescriptionButton: string;
+    deleteButton: string;
     renameDialog: {
       title: string;
       currentName: string;
       newNameLabel: string;
       cancel: string;
       save: string;
+      validationError: string;
+    };
+    deleteDialog: {
+      title: string;
+      warning: string;
+      confirmLabel: string;
+      confirmPlaceholder: string;
+      serverInfo: string;
+      cancel: string;
+      delete: string;
       validationError: string;
     };
   };
@@ -83,6 +94,7 @@ export const translations: Record<Language, Translations> = {
       description: "Beschreibung",
       renameButton: "Umbenennen",
       editDescriptionButton: "Beschreibung bearbeiten",
+      deleteButton: "Server löschen",
       renameDialog: {
         title: "Server umbenennen",
         currentName: "Aktueller Name",
@@ -91,6 +103,17 @@ export const translations: Record<Language, Translations> = {
         save: "Speichern",
         validationError:
           "Der Name darf nicht leer sein und muss gültige Zeichen enthalten",
+      },
+      deleteDialog: {
+        title: "Server löschen",
+        warning:
+          "⚠️ Warnung: Diese Aktion kann nicht rückgängig gemacht werden!",
+        confirmLabel: "Geben Sie den Servernamen ein, um zu bestätigen:",
+        confirmPlaceholder: "Servernamen eingeben",
+        serverInfo: "Sie sind dabei zu löschen:",
+        cancel: "Abbrechen",
+        delete: "Löschen",
+        validationError: "Der eingegebene Name stimmt nicht überein",
       },
     },
     messages: {
@@ -135,6 +158,7 @@ export const translations: Record<Language, Translations> = {
       description: "Description",
       renameButton: "Rename",
       editDescriptionButton: "Edit Description",
+      deleteButton: "Delete Server",
       renameDialog: {
         title: "Rename Server",
         currentName: "Current Name",
@@ -143,6 +167,16 @@ export const translations: Record<Language, Translations> = {
         save: "Save",
         validationError:
           "Name cannot be empty and must contain valid characters",
+      },
+      deleteDialog: {
+        title: "Delete Server",
+        warning: "⚠️ Warning: This action cannot be undone!",
+        confirmLabel: "Type the server name to confirm:",
+        confirmPlaceholder: "Enter server name",
+        serverInfo: "You are about to delete:",
+        cancel: "Cancel",
+        delete: "Delete",
+        validationError: "The entered name does not match",
       },
     },
     messages: {

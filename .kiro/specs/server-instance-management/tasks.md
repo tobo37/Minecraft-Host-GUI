@@ -97,16 +97,17 @@
     - Add "Edit Description" button or inline editing
     - _Requirements: 3.5, 4.3_
 
-- [ ] 8. Implement server deletion functionality
+- [x] 8. Implement server deletion functionality
 
-  - [ ] 8.1 Add delete confirmation dialog
+  - [x] 8.1 Add delete confirmation dialog
 
     - Create modal with warning message
     - Require typing server name to confirm
     - Show server name and path in dialog
     - _Requirements: 7.1, 7.2, 7.3_
 
-  - [ ] 8.2 Add delete button to ServerManagement component
+  - [x] 8.2 Add delete button to ServerManagement component
+
     - Place delete button at bottom of page (red styling)
     - Open confirmation dialog on click
     - Call delete API after confirmation
