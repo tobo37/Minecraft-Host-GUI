@@ -1,9 +1,26 @@
 // Type definitions for the Minecraft server manager
 
+export interface ServerMetadata {
+  customName: string;
+  description: string;
+  createdAt: string;
+  lastModified: string;
+  sourceZipFile: string;
+  modpackInfo?: {
+    name: string;
+    version: string;
+  };
+}
+
 export interface Server {
   name: string;
   path: string;
   createdAt: string;
+  customName?: string;
+  description?: string;
+  sourceZipFile?: string;
+  status?: "running" | "stopped";
+  lastModified?: string;
 }
 
 export interface ServerFile {
@@ -29,7 +46,7 @@ export interface ApiResponse<T = any> {
 }
 
 export interface ServerStatus {
-  status: 'running' | 'stopped';
+  status: "running" | "stopped";
 }
 
 export interface ServerLogs {
