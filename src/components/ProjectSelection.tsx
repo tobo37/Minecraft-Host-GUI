@@ -1,35 +1,47 @@
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { useLanguage } from "@/hooks/useLanguage";
 import { useState, useEffect } from "react";
-
-interface Server {
-  name: string;
-  path: string;
-  createdAt: string;
-}
+import type { Server } from "@/services/types";
 
 interface ProjectSelectionProps {
   onSelectProject: (projectPath: string) => void;
   onCreateNew: () => void;
 }
 
-export function ProjectSelection({ onSelectProject, onCreateNew }: ProjectSelectionProps) {
+export function ProjectSelection({
+  onSelectProject,
+  onCreateNew,
+}: ProjectSelectionProps) {
   const { translations } = useLanguage();
   const [servers, setServers] = useState<Server[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     fetchServers();
+
+    // Poll server status every 5 seconds
+    const interval = setInterval(() => {
+      fetchServers();
+    }, 5000);
+
+    return () => clearInterval(interval);
   }, []);
 
   const fetchServers = async () => {
     try {
-      const response = await fetch('/api/servers');
+      const response = await fetch("/api/servers");
       const data = await response.json();
       setServers(data.servers || []);
     } catch (error) {
-      console.error('Error fetching servers:', error);
+      console.error("Error fetching servers:", error);
     } finally {
       setLoading(false);
     }
@@ -38,12 +50,12 @@ export function ProjectSelection({ onSelectProject, onCreateNew }: ProjectSelect
   const formatDate = (dateString: string) => {
     try {
       const date = new Date(dateString);
-      return date.toLocaleDateString('de-DE', {
-        year: 'numeric',
-        month: '2-digit',
-        day: '2-digit',
-        hour: '2-digit',
-        minute: '2-digit'
+      return date.toLocaleDateString("de-DE", {
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit",
       });
     } catch {
       return dateString;
@@ -73,14 +85,10 @@ export function ProjectSelection({ onSelectProject, onCreateNew }: ProjectSelect
               {translations.projectSelection.description}
             </CardDescription>
           </CardHeader>
-          
+
           <CardContent className="space-y-6">
             <div className="flex justify-center mb-6">
-              <Button 
-                onClick={onCreateNew}
-                size="lg"
-                className="px-8 py-3"
-              >
+              <Button onClick={onCreateNew} size="lg" className="px-8 py-3">
                 {translations.projectSelection.createNew}
               </Button>
             </div>
@@ -95,22 +103,66 @@ export function ProjectSelection({ onSelectProject, onCreateNew }: ProjectSelect
                   {translations.projectSelection.selectProject}
                 </h3>
                 {servers.map((server) => (
-                  <Card 
+                  <Card
                     key={server.path}
-                    className="cursor-pointer hover:shadow-lg transition-all duration-200 hover:scale-[1.02]"
+                    className="cursor-pointer hover:shadow-lg transition-all duration-200 hover:scale-[1.02] relative"
                     onClick={() => onSelectProject(server.path)}
                   >
-                    <CardContent className="p-4">
-                      <div className="flex justify-between items-center">
-                        <div>
-                          <h4 className="font-semibold text-lg">{server.name}</h4>
-                          <p className="text-sm text-muted-foreground">
-                            Erstellt: {formatDate(server.createdAt)}
+                    <CardContent className="p-6">
+                      {/* Status Badge */}
+                      <div className="absolute top-4 right-4">
+                        <Badge
+                          variant={
+                            server.status === "running"
+                              ? "default"
+                              : "secondary"
+                          }
+                          className={
+                            server.status === "running"
+                              ? "bg-green-500 hover:bg-green-600"
+                              : "bg-gray-500 hover:bg-gray-600"
+                          }
+                        >
+                          {server.status === "running"
+                            ? translations.projectSelection.status.running
+                            : translations.projectSelection.status.stopped}
+                        </Badge>
+                      </div>
+
+                      {/* Custom Name as Primary Heading */}
+                      <h4 className="font-bold text-xl mb-2 pr-24">
+                        {server.customName || server.name}
+                      </h4>
+
+                      {/* Description (truncated if long) */}
+                      {server.description && (
+                        <p className="text-sm text-muted-foreground mb-3 line-clamp-2">
+                          {server.description}
+                        </p>
+                      )}
+
+                      {/* Metadata Information */}
+                      <div className="space-y-1 text-sm text-muted-foreground">
+                        <p>
+                          <span className="font-medium">
+                            {translations.projectSelection.createdLabel}:
+                          </span>{" "}
+                          {formatDate(server.createdAt)}
+                        </p>
+                        {server.sourceZipFile && (
+                          <p>
+                            <span className="font-medium">
+                              {translations.projectSelection.sourceLabel}:
+                            </span>{" "}
+                            {server.sourceZipFile}
                           </p>
-                        </div>
-                        <Button variant="outline" size="sm">
-                          Auswählen
-                        </Button>
+                        )}
+                        <p>
+                          <span className="font-medium">
+                            {translations.projectSelection.pathLabel}:
+                          </span>{" "}
+                          server/{server.path}
+                        </p>
                       </div>
                     </CardContent>
                   </Card>

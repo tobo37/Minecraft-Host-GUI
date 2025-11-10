@@ -46,9 +46,9 @@
   - Include status field in server list response
   - _Requirements: 8.1, 8.2_
 
-- [ ] 5. Enhance ProjectSelection component with metadata display
+- [x] 5. Enhance ProjectSelection component with metadata display
 
-  - [ ] 5.1 Update server card layout
+  - [x] 5.1 Update server card layout
 
     - Display custom name as primary heading
     - Show description (truncated if long)
@@ -56,7 +56,8 @@
     - Add status badge (green for running, gray for stopped)
     - _Requirements: 5.1, 5.2, 5.3, 8.3, 8.4_
 
-  - [ ] 5.2 Implement status polling
+  - [x] 5.2 Implement status polling
+
     - Poll server status every 5 seconds while on project selection page
     - Update status badges without full page refresh
     - _Requirements: 8.5_

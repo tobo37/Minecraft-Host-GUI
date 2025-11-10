@@ -61,6 +61,16 @@ docker run -d \
 - **3000**: Web-Interface
 - **25565**: Standard Minecraft-Server Port
 
+## Testumgebung (Build + Container)
+
+Nutze das Skript `./scripts/test-environment.sh`, um das Projekt lokal zu bauen und direkt den Docker-Container zu starten:
+
+```bash
+./scripts/test-environment.sh
+```
+
+Das Skript führt `bun install`, `bun run build` sowie `docker compose -f docker-compose.test.yml up --build` aus. Beende die Tests mit `Ctrl+C`; optional kannst du anschließend `docker compose -f docker-compose.test.yml down` ausführen, um Container und Netzwerk zu entfernen.
+
 ## Projektstruktur
 
 ```
@@ -73,7 +83,10 @@ docker run -d \
 │   └── lib/                # Utilities und i18n
 ├── server/                 # Persistente Server-Daten
 ├── serverfiles/            # Hochgeladene Server-ZIP-Dateien
-├── dockerfile              # Container-Konfiguration
+├── Dockerfile              # Container-Konfiguration
+├── docker-compose.test.yml # Test-Compose-Setup
+├── scripts/
+│   └── test-environment.sh # Build+Run Testskript
 └── build.ts               # Build-Skript
 ```
 
