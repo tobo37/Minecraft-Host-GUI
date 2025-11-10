@@ -62,9 +62,9 @@
     - Update status badges without full page refresh
     - _Requirements: 8.5_
 
-- [ ] 6. Create API endpoints for metadata updates
+- [x] 6. Create API endpoints for metadata updates
 
-  - [ ] 6.1 Add POST `/api/server/metadata` endpoint
+  - [x] 6.1 Add POST `/api/server/metadata` endpoint
 
     - Accept project path, custom name, and description
     - Validate input parameters
@@ -72,16 +72,17 @@
     - Return updated metadata
     - _Requirements: 3.2, 3.3, 3.4_
 
-  - [ ] 6.2 Add DELETE `/api/server/delete` endpoint
+  - [x] 6.2 Add DELETE `/api/server/delete` endpoint
+
     - Accept project path parameter
     - Check if server is running and stop if necessary
     - Validate path to prevent traversal attacks
     - Delete entire server directory recursively
     - _Requirements: 7.2, 7.4, 7.5_
 
-- [ ] 7. Implement server rename functionality
+- [x] 7. Implement server rename functionality
 
-  - [ ] 7.1 Add rename dialog to ServerManagement component
+  - [x] 7.1 Add rename dialog to ServerManagement component
 
     - Create modal dialog with input field
     - Pre-fill with current custom name
@@ -89,7 +90,8 @@
     - Call metadata update API
     - _Requirements: 3.1, 3.2, 3.3_
 
-  - [ ] 7.2 Update server info display
+  - [x] 7.2 Update server info display
+
     - Show custom name and description in server info section
     - Add "Rename" button next to custom name
     - Add "Edit Description" button or inline editing

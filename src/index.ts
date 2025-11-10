@@ -2,25 +2,29 @@ import { serve } from "bun";
 import index from "./index.html";
 
 // Import services
-import { 
-  listServers, 
-  createServer, 
-  getServerStatus, 
-  startServer, 
-  stopServer, 
-  getServerLogs 
+import {
+  listServers,
+  createServer,
+  getServerStatus,
+  startServer,
+  stopServer,
+  getServerLogs,
 } from "./services/serverService";
-import { 
-  listServerFiles, 
-  uploadServerFile, 
+import {
+  listServerFiles,
+  uploadServerFile,
   uploadServerFileStream,
-  deleteServerFile 
+  deleteServerFile,
 } from "./services/serverFileService";
-import { 
-  listConfigFiles, 
-  readConfigFile, 
-  saveConfigFile 
+import {
+  listConfigFiles,
+  readConfigFile,
+  saveConfigFile,
 } from "./services/configService";
+import {
+  updateServerMetadata,
+  deleteServerInstance,
+} from "./services/metadataApiService";
 
 const server = serve({
   // Bind to all interfaces for Docker compatibility
@@ -30,7 +34,7 @@ const server = serve({
   idleTimeout: 255, // Maximum allowed timeout (255 seconds)
   // Increase max request size for file uploads (2GB)
   maxRequestBodySize: 2 * 1024 * 1024 * 1024,
-  
+
   routes: {
     "/api/servers": {
       async GET(req) {
@@ -55,8 +59,6 @@ const server = serve({
         return await uploadServerFileStream(req);
       },
     },
-
-
 
     "/api/create-server": {
       async POST(req) {
@@ -112,7 +114,17 @@ const server = serve({
       },
     },
 
+    "/api/server/metadata": {
+      async POST(req) {
+        return await updateServerMetadata(req);
+      },
+    },
 
+    "/api/server/delete": {
+      async DELETE(req) {
+        return await deleteServerInstance(req);
+      },
+    },
 
     // Serve index.html for all unmatched routes.
     "/*": index,

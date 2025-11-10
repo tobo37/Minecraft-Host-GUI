@@ -63,13 +63,14 @@ docker run -d \
 
 ## Testumgebung (Build + Container)
 
-Nutze das Skript `./scripts/test-environment.sh`, um das Projekt lokal zu bauen und direkt den Docker-Container zu starten:
+Nutze den Befehl `bun run test:environment`, um das Projekt lokal zu bauen und anschließend den Container zu starten:
 
 ```bash
-./scripts/test-environment.sh
+bun run test:environment
 ```
 
-Das Skript führt `bun install`, `bun run build` sowie `docker compose -f docker-compose.test.yml up --build` aus. Beende die Tests mit `Ctrl+C`; optional kannst du anschließend `docker compose -f docker-compose.test.yml down` ausführen, um Container und Netzwerk zu entfernen.
+Das Skript (`scripts/test-environment.ts`) führt `bun install`, `bun run build` sowie `podman compose/docker compose -f docker-compose.test.yml up --build` aus. Beende die Tests mit `Ctrl+C`; optional kannst du anschließend `podman compose -f docker-compose.test.yml down` bzw. `docker compose -f docker-compose.test.yml down` ausführen, um Container und Netzwerk zu entfernen.
+Falls Podman verfügbar ist, verwendet das Skript automatisch `podman compose`; andernfalls fällt es auf `docker compose` zurück.
 
 ## Projektstruktur
 
@@ -86,7 +87,7 @@ Das Skript führt `bun install`, `bun run build` sowie `docker compose -f docker
 ├── Dockerfile              # Container-Konfiguration
 ├── docker-compose.test.yml # Test-Compose-Setup
 ├── scripts/
-│   └── test-environment.sh # Build+Run Testskript
+│   └── test-environment.ts # Build+Run Testskript
 └── build.ts               # Build-Skript
 ```
 

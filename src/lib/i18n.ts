@@ -26,6 +26,18 @@ export interface Translations {
     title: string;
     backToProjects: string;
     serverInfo: string;
+    customName: string;
+    description: string;
+    renameButton: string;
+    editDescriptionButton: string;
+    renameDialog: {
+      title: string;
+      currentName: string;
+      newNameLabel: string;
+      cancel: string;
+      save: string;
+      validationError: string;
+    };
   };
   messages: {
     serverCreating: string;
@@ -67,6 +79,19 @@ export const translations: Record<Language, Translations> = {
       title: "Server Verwaltung",
       backToProjects: "Zurück zu Projekten",
       serverInfo: "Server Informationen",
+      customName: "Servername",
+      description: "Beschreibung",
+      renameButton: "Umbenennen",
+      editDescriptionButton: "Beschreibung bearbeiten",
+      renameDialog: {
+        title: "Server umbenennen",
+        currentName: "Aktueller Name",
+        newNameLabel: "Neuer Name",
+        cancel: "Abbrechen",
+        save: "Speichern",
+        validationError:
+          "Der Name darf nicht leer sein und muss gültige Zeichen enthalten",
+      },
     },
     messages: {
       serverCreating: "Server erfolgreich erstellt!",
@@ -106,6 +131,19 @@ export const translations: Record<Language, Translations> = {
       title: "Server Management",
       backToProjects: "Back to Projects",
       serverInfo: "Server Information",
+      customName: "Server Name",
+      description: "Description",
+      renameButton: "Rename",
+      editDescriptionButton: "Edit Description",
+      renameDialog: {
+        title: "Rename Server",
+        currentName: "Current Name",
+        newNameLabel: "New Name",
+        cancel: "Cancel",
+        save: "Save",
+        validationError:
+          "Name cannot be empty and must contain valid characters",
+      },
     },
     messages: {
       serverCreating: "Server created successfully!",
