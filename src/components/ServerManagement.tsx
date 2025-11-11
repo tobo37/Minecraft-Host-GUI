@@ -1,25 +1,16 @@
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import { useLanguage } from "@/hooks/useLanguage";
 import { ConfigurationManagement } from "./ConfigurationManagement";
-import { useState, useEffect, useRef } from "react";
+import { ServerHeader } from "./server/ServerHeader";
+import { ServerInfoCard } from "./server/ServerInfoCard";
+import { ServerControls } from "./server/ServerControls";
+import { ServerLogs } from "./server/ServerLogs";
+import { RenameDialog } from "./server/RenameDialog";
+import { DeleteDialog } from "./server/DeleteDialog";
+import { StartFileDialog } from "./server/StartFileDialog";
+import { useServerStatus } from "@/hooks/useServerStatus";
+import { useState, useEffect } from "react";
 import type { Server } from "@/services/types";
 
 interface ServerManagementProps {
@@ -28,7 +19,6 @@ interface ServerManagementProps {
 }
 
 type ServerView = "overview" | "configuration" | "files" | "logs";
-type ServerStatus = "stopped" | "starting" | "running" | "stopping";
 
 export function ServerManagement({
   projectPath,
@@ -36,11 +26,10 @@ export function ServerManagement({
 }: ServerManagementProps) {
   const { translations } = useLanguage();
   const [currentView, setCurrentView] = useState<ServerView>("overview");
-  const [serverStatus, setServerStatus] = useState<ServerStatus>("stopped");
-  const [logs, setLogs] = useState<string[]>([]);
-  const [isPollingLogs, setIsPollingLogs] = useState(false);
-  const logIntervalRef = useRef<NodeJS.Timeout | null>(null);
-  const logsEndRef = useRef<HTMLDivElement>(null);
+
+  // Use custom hook for server status and logs
+  const { serverStatus, logs, isPollingLogs, startServer, stopServer } =
+    useServerStatus(projectPath);
 
   // Server metadata state
   const [serverInfo, setServerInfo] = useState<Server | null>(null);
@@ -61,37 +50,10 @@ export function ServerManagement({
   const [selectedStartFile, setSelectedStartFile] = useState<string>("");
   const [isSearchingStartFiles, setIsSearchingStartFiles] = useState(false);
 
-  // Auto-scroll to bottom of logs
-  useEffect(() => {
-    if (logsEndRef.current) {
-      logsEndRef.current.scrollIntoView({ behavior: "smooth" });
-    }
-  }, [logs]);
-
   // Fetch server info on mount
   useEffect(() => {
     fetchServerInfo();
   }, [projectPath]);
-
-  // Poll server status and logs
-  useEffect(() => {
-    checkServerStatus();
-
-    return () => {
-      if (logIntervalRef.current) {
-        clearInterval(logIntervalRef.current);
-      }
-    };
-  }, [projectPath]);
-
-  // Start log polling when server is running
-  useEffect(() => {
-    if (serverStatus === "running" && !isPollingLogs) {
-      startLogPolling();
-    } else if (serverStatus === "stopped" && isPollingLogs) {
-      stopLogPolling();
-    }
-  }, [serverStatus, isPollingLogs]);
 
   const fetchServerInfo = async () => {
     try {
@@ -110,116 +72,7 @@ export function ServerManagement({
     }
   };
 
-  const checkServerStatus = async () => {
-    try {
-      const response = await fetch(
-        `/api/server/status?project=${encodeURIComponent(projectPath)}`
-      );
-      const data = await response.json();
-      if (data.success) {
-        setServerStatus(data.status);
-      }
-    } catch (error) {
-      console.error("Error checking server status:", error);
-    }
-  };
-
-  const startLogPolling = () => {
-    if (logIntervalRef.current) return;
-
-    setIsPollingLogs(true);
-    logIntervalRef.current = setInterval(async () => {
-      try {
-        // Check both logs and server status
-        const [logsResponse, statusResponse] = await Promise.all([
-          fetch(`/api/server/logs?project=${encodeURIComponent(projectPath)}`),
-          fetch(
-            `/api/server/status?project=${encodeURIComponent(projectPath)}`
-          ),
-        ]);
-
-        const logsData = await logsResponse.json();
-        const statusData = await statusResponse.json();
-
-        if (logsData.success && logsData.logs) {
-          setLogs(logsData.logs);
-        }
-
-        if (statusData.success && statusData.status !== serverStatus) {
-          // If server was running but is now stopped, it likely crashed
-          if (serverStatus === "running" && statusData.status === "stopped") {
-            console.warn(
-              "Server appears to have crashed or stopped unexpectedly"
-            );
-          }
-          setServerStatus(statusData.status);
-        }
-      } catch (error) {
-        console.error("Error fetching logs/status:", error);
-      }
-    }, 1000); // Poll every second
-  };
-
-  const stopLogPolling = () => {
-    if (logIntervalRef.current) {
-      clearInterval(logIntervalRef.current);
-      logIntervalRef.current = null;
-    }
-    setIsPollingLogs(false);
-  };
-
-  const handleStartServer = async () => {
-    setServerStatus("starting");
-    try {
-      const response = await fetch("/api/server/start", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ project: projectPath }),
-      });
-
-      const data = await response.json();
-      if (data.success) {
-        setServerStatus("running");
-        setLogs([]); // Clear old logs
-      } else {
-        setServerStatus("stopped");
-        console.error("Failed to start server:", data.error);
-      }
-    } catch (error) {
-      setServerStatus("stopped");
-      console.error("Error starting server:", error);
-    }
-  };
-
-  const handleStopServer = async () => {
-    setServerStatus("stopping");
-    try {
-      const response = await fetch("/api/server/stop", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ project: projectPath }),
-      });
-
-      const data = await response.json();
-      if (data.success) {
-        setServerStatus("stopped");
-        stopLogPolling();
-      } else {
-        setServerStatus("running");
-        console.error("Failed to stop server:", data.error);
-      }
-    } catch (error) {
-      setServerStatus("running");
-      console.error("Error stopping server:", error);
-    }
-  };
-
   const handleRename = async () => {
-    // Validate name
     const nameRegex = /^[a-zA-Z0-9\s\-_]+$/;
     if (!newName.trim() || !nameRegex.test(newName)) {
       setValidationError(
@@ -244,7 +97,7 @@ export function ServerManagement({
       if (data.success) {
         setIsRenameDialogOpen(false);
         setValidationError("");
-        await fetchServerInfo(); // Refresh server info
+        await fetchServerInfo();
       } else {
         setValidationError(data.error || "Failed to rename server");
       }
@@ -270,7 +123,7 @@ export function ServerManagement({
       const data = await response.json();
       if (data.success) {
         setIsEditingDescription(false);
-        await fetchServerInfo(); // Refresh server info
+        await fetchServerInfo();
       } else {
         console.error("Failed to update description:", data.error);
       }
@@ -280,7 +133,6 @@ export function ServerManagement({
   };
 
   const handleDeleteServer = async () => {
-    // Validate that the user typed the correct server name
     const serverName =
       serverInfo?.customName || serverInfo?.name || projectPath;
     if (deleteConfirmName.trim() !== serverName) {
@@ -300,7 +152,6 @@ export function ServerManagement({
 
       const data = await response.json();
       if (data.success) {
-        // Navigate back to project list after successful deletion
         setIsDeleteDialogOpen(false);
         onBack();
       } else {
@@ -315,22 +166,24 @@ export function ServerManagement({
   const handleFindStartFiles = async () => {
     setIsSearchingStartFiles(true);
     setIsStartFileDialogOpen(true);
-    
+
     try {
       const response = await fetch(
         `/api/server/find-start-files?project=${encodeURIComponent(projectPath)}`
       );
       const data = await response.json();
-      
+
       if (data.success) {
         setStartFileCandidates(data.candidates || []);
-        // Pre-select current start file if it exists
         if (serverInfo?.startFile) {
           setSelectedStartFile(serverInfo.startFile);
         } else if (data.candidates && data.candidates.length > 0) {
-          // Pre-select the first high-confidence candidate
-          const highConfidence = data.candidates.find((c: any) => c.confidence === "high");
-          setSelectedStartFile(highConfidence?.path || data.candidates[0].path);
+          const highConfidence = data.candidates.find(
+            (c: any) => c.confidence === "high"
+          );
+          setSelectedStartFile(
+            highConfidence?.path || data.candidates[0].path
+          );
         }
       } else {
         console.error("Failed to find start files:", data.error);
@@ -360,55 +213,12 @@ export function ServerManagement({
       const data = await response.json();
       if (data.success) {
         setIsStartFileDialogOpen(false);
-        await fetchServerInfo(); // Refresh server info
+        await fetchServerInfo();
       } else {
         console.error("Failed to set start file:", data.error);
       }
     } catch (error) {
       console.error("Error setting start file:", error);
-    }
-  };
-
-  const getConfidenceBadgeColor = (confidence: string) => {
-    switch (confidence) {
-      case "high":
-        return "bg-green-100 text-green-800 border-green-300";
-      case "medium":
-        return "bg-yellow-100 text-yellow-800 border-yellow-300";
-      case "low":
-        return "bg-gray-100 text-gray-800 border-gray-300";
-      default:
-        return "bg-gray-100 text-gray-800 border-gray-300";
-    }
-  };
-
-  const getStatusColor = (status: ServerStatus) => {
-    switch (status) {
-      case "running":
-        return "text-green-600";
-      case "starting":
-        return "text-yellow-600";
-      case "stopping":
-        return "text-orange-600";
-      case "stopped":
-        return "text-red-600";
-      default:
-        return "text-gray-600";
-    }
-  };
-
-  const getStatusText = (status: ServerStatus) => {
-    switch (status) {
-      case "running":
-        return "Läuft";
-      case "starting":
-        return "Startet...";
-      case "stopping":
-        return "Stoppt...";
-      case "stopped":
-        return "Gestoppt";
-      default:
-        return "Unbekannt";
     }
   };
 
@@ -432,304 +242,45 @@ export function ServerManagement({
         </div>
 
         <Card className="shadow-2xl border-0 bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/60">
-          <CardHeader className="text-center space-y-4">
-            <div className="mx-auto w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mb-4">
-              <div className="w-8 h-8 bg-primary rounded-sm"></div>
-            </div>
-            <CardTitle className="text-3xl font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
-              {serverInfo?.customName || serverInfo?.name || projectPath}
-            </CardTitle>
-            <CardDescription className="text-lg text-muted-foreground">
-              {serverInfo?.description || `Projekt: ${projectPath}`}
-            </CardDescription>
-          </CardHeader>
+          <ServerHeader serverInfo={serverInfo} projectPath={projectPath} />
 
           <CardContent className="space-y-6">
             <div className="grid gap-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-xl">
-                    {translations.serverManagement.serverInfo}
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid gap-4 text-sm">
-                    {/* Custom Name */}
-                    <div className="space-y-2">
-                      <div className="flex justify-between items-center">
-                        <Label className="text-muted-foreground">
-                          {translations.serverManagement.customName}:
-                        </Label>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => {
-                            setNewName(
-                              serverInfo?.customName || serverInfo?.name || ""
-                            );
-                            setValidationError("");
-                            setIsRenameDialogOpen(true);
-                          }}
-                        >
-                          {translations.serverManagement.renameButton}
-                        </Button>
-                      </div>
-                      <div className="font-semibold text-base">
-                        {serverInfo?.customName ||
-                          serverInfo?.name ||
-                          projectPath}
-                      </div>
-                    </div>
+              <ServerInfoCard
+                serverInfo={serverInfo}
+                projectPath={projectPath}
+                serverStatus={serverStatus}
+                isEditingDescription={isEditingDescription}
+                newDescription={newDescription}
+                onRenameClick={() => {
+                  setNewName(serverInfo?.customName || serverInfo?.name || "");
+                  setValidationError("");
+                  setIsRenameDialogOpen(true);
+                }}
+                onEditDescriptionClick={() => {
+                  setNewDescription(serverInfo?.description || "");
+                  setIsEditingDescription(!isEditingDescription);
+                }}
+                onDescriptionChange={setNewDescription}
+                onCancelDescription={() => {
+                  setIsEditingDescription(false);
+                  setNewDescription(serverInfo?.description || "");
+                }}
+                onSaveDescription={handleUpdateDescription}
+              />
 
-                    {/* Description */}
-                    <div className="space-y-2">
-                      <div className="flex justify-between items-center">
-                        <Label className="text-muted-foreground">
-                          {translations.serverManagement.description}:
-                        </Label>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => {
-                            setNewDescription(serverInfo?.description || "");
-                            setIsEditingDescription(!isEditingDescription);
-                          }}
-                        >
-                          {translations.serverManagement.editDescriptionButton}
-                        </Button>
-                      </div>
-                      {isEditingDescription ? (
-                        <div className="space-y-2">
-                          <Textarea
-                            value={newDescription}
-                            onChange={(e) => setNewDescription(e.target.value)}
-                            placeholder="Describe your server..."
-                            maxLength={500}
-                            rows={3}
-                          />
-                          <div className="flex justify-between items-center">
-                            <span className="text-xs text-muted-foreground">
-                              {newDescription.length}/500
-                            </span>
-                            <div className="flex gap-2">
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => {
-                                  setIsEditingDescription(false);
-                                  setNewDescription(
-                                    serverInfo?.description || ""
-                                  );
-                                }}
-                              >
-                                {
-                                  translations.serverManagement.renameDialog
-                                    .cancel
-                                }
-                              </Button>
-                              <Button
-                                size="sm"
-                                onClick={handleUpdateDescription}
-                              >
-                                {
-                                  translations.serverManagement.renameDialog
-                                    .save
-                                }
-                              </Button>
-                            </div>
-                          </div>
-                        </div>
-                      ) : (
-                        <div className="text-sm">
-                          {serverInfo?.description || (
-                            <span className="text-muted-foreground italic">
-                              No description
-                            </span>
-                          )}
-                        </div>
-                      )}
-                    </div>
+              <ServerControls
+                serverStatus={serverStatus}
+                onStart={startServer}
+                onStop={stopServer}
+                onFindStartFiles={handleFindStartFiles}
+                onConfiguration={() => setCurrentView("configuration")}
+              />
 
-                    {/* Project Path */}
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">
-                        Projekt-Pfad:
-                      </span>
-                      <span className="font-mono">/server/{projectPath}</span>
-                    </div>
-
-                    {/* Status */}
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Status:</span>
-                      <span
-                        className={`font-semibold ${getStatusColor(
-                          serverStatus
-                        )}`}
-                      >
-                        {getStatusText(serverStatus)}
-                      </span>
-                    </div>
-
-                    {/* Additional metadata */}
-                    {serverInfo?.sourceZipFile && (
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">Source:</span>
-                        <span className="font-mono text-xs">
-                          {serverInfo.sourceZipFile}
-                        </span>
-                      </div>
-                    )}
-                    {serverInfo?.createdAt && (
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">Created:</span>
-                        <span className="text-xs">
-                          {new Date(serverInfo.createdAt).toLocaleDateString()}
-                        </span>
-                      </div>
-                    )}
-                    {serverInfo?.startFile && (
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">Start File:</span>
-                        <span className="font-mono text-xs">
-                          {serverInfo.startFile}
-                        </span>
-                      </div>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="flex gap-2">
-                  {serverStatus === "stopped" || serverStatus === "starting" ? (
-                    <>
-                      <Button
-                        size="lg"
-                        className="h-16 flex-1"
-                        onClick={handleStartServer}
-                        disabled={serverStatus === "starting"}
-                      >
-                        🚀{" "}
-                        {serverStatus === "starting"
-                          ? "Startet..."
-                          : "Server starten"}
-                      </Button>
-                      <Button
-                        size="lg"
-                        variant="outline"
-                        className="h-16 px-4"
-                        onClick={handleFindStartFiles}
-                        title="Startdatei suchen"
-                      >
-                        🔍
-                      </Button>
-                    </>
-                  ) : (
-                    <Button
-                      size="lg"
-                      className="h-16 flex-1 bg-red-600 hover:bg-red-700 text-white border-red-600"
-                      onClick={handleStopServer}
-                      disabled={serverStatus === "stopping"}
-                    >
-                      🛑{" "}
-                      {serverStatus === "stopping"
-                        ? "Stoppt..."
-                        : "Server stoppen"}
-                    </Button>
-                  )}
-                </div>
-
-                <Button
-                  size="lg"
-                  variant="outline"
-                  className="h-16"
-                  onClick={() => setCurrentView("configuration")}
-                >
-                  ⚙️ Konfiguration
-                </Button>
-                <Button size="lg" variant="outline" className="h-16">
-                  📁 Dateien verwalten
-                </Button>
-                <Button size="lg" variant="outline" className="h-16">
-                  📊 Logs anzeigen
-                </Button>
-              </div>
-
-              {/* Live Logs Section */}
               {(serverStatus === "running" ||
                 serverStatus === "starting" ||
                 logs.length > 0) && (
-                <Card className="mt-6">
-                  <CardHeader>
-                    <CardTitle className="text-lg flex items-center gap-2">
-                      📋 Server Logs
-                      {isPollingLogs && (
-                        <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                      )}
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="bg-black text-green-400 p-4 rounded-lg font-mono text-sm max-h-96 overflow-y-auto">
-                      {logs.length === 0 ? (
-                        <div className="text-gray-500">
-                          Warte auf Server-Logs...
-                        </div>
-                      ) : (
-                        logs.map((line, index) => {
-                          // Detect different types of console output
-                          const isError =
-                            line.includes("[ERROR]") ||
-                            line.includes("ERROR:") ||
-                            line.includes("Exception") ||
-                            line.includes("java.lang.") ||
-                            line.includes("Caused by:");
-                          const isWarning =
-                            line.includes("[WARN]") ||
-                            line.includes("WARN:") ||
-                            line.includes("WARNING");
-                          const isInfo =
-                            line.includes("[INFO]") || line.includes("INFO:");
-                          const isServerMessage =
-                            line.includes("Server thread/") ||
-                            line.includes("[Server thread]");
-                          const isPlayerJoin =
-                            line.includes("joined the game") ||
-                            line.includes("left the game");
-                          const isCritical =
-                            line.includes("Server stopped") ||
-                            line.includes("exit code:") ||
-                            line.includes("Stopping server");
-
-                          let className =
-                            "whitespace-pre-wrap font-mono text-sm";
-
-                          if (isCritical) {
-                            className += " text-red-400 font-semibold";
-                          } else if (isError) {
-                            className += " text-red-300";
-                          } else if (isWarning) {
-                            className += " text-yellow-400";
-                          } else if (isPlayerJoin) {
-                            className += " text-blue-300";
-                          } else if (isServerMessage) {
-                            className += " text-green-300";
-                          } else if (isInfo) {
-                            className += " text-gray-300";
-                          } else {
-                            className += " text-green-400";
-                          }
-
-                          return (
-                            <div key={index} className={className}>
-                              {line}
-                            </div>
-                          );
-                        })
-                      )}
-                      <div ref={logsEndRef} />
-                    </div>
-                  </CardContent>
-                </Card>
+                <ServerLogs logs={logs} isPolling={isPollingLogs} />
               )}
 
               {/* Delete Server Button */}
@@ -752,228 +303,59 @@ export function ServerManagement({
         </Card>
       </div>
 
-      {/* Rename Dialog */}
-      <Dialog open={isRenameDialogOpen} onOpenChange={setIsRenameDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>
-              {translations.serverManagement.renameDialog.title}
-            </DialogTitle>
-            <DialogDescription>
-              {translations.serverManagement.renameDialog.currentName}:{" "}
-              {serverInfo?.customName || serverInfo?.name || projectPath}
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <Label htmlFor="newName">
-                {translations.serverManagement.renameDialog.newNameLabel}
-              </Label>
-              <Input
-                id="newName"
-                value={newName}
-                onChange={(e) => {
-                  setNewName(e.target.value);
-                  setValidationError("");
-                }}
-                placeholder="Enter new server name"
-                maxLength={100}
-              />
-              {validationError && (
-                <p className="text-sm text-red-500">{validationError}</p>
-              )}
-            </div>
-          </div>
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => {
-                setIsRenameDialogOpen(false);
-                setValidationError("");
-                setNewName(serverInfo?.customName || serverInfo?.name || "");
-              }}
-            >
-              {translations.serverManagement.renameDialog.cancel}
-            </Button>
-            <Button onClick={handleRename}>
-              {translations.serverManagement.renameDialog.save}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <RenameDialog
+        open={isRenameDialogOpen}
+        serverInfo={serverInfo}
+        projectPath={projectPath}
+        newName={newName}
+        validationError={validationError}
+        onOpenChange={setIsRenameDialogOpen}
+        onNameChange={(value) => {
+          setNewName(value);
+          setValidationError("");
+        }}
+        onSave={handleRename}
+        onCancel={() => {
+          setIsRenameDialogOpen(false);
+          setValidationError("");
+          setNewName(serverInfo?.customName || serverInfo?.name || "");
+        }}
+      />
 
-      {/* Delete Confirmation Dialog */}
-      <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>
-              {translations.serverManagement.deleteDialog.title}
-            </DialogTitle>
-            <DialogDescription>
-              {translations.serverManagement.deleteDialog.warning}
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <p className="text-sm font-medium">
-                {translations.serverManagement.deleteDialog.serverInfo}
-              </p>
-              <div className="bg-muted p-3 rounded-md">
-                <p className="font-semibold">
-                  {serverInfo?.customName || serverInfo?.name || projectPath}
-                </p>
-                <p className="text-sm text-muted-foreground">{projectPath}</p>
-              </div>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="deleteConfirm">
-                {translations.serverManagement.deleteDialog.confirmLabel}
-              </Label>
-              <Input
-                id="deleteConfirm"
-                value={deleteConfirmName}
-                onChange={(e) => {
-                  setDeleteConfirmName(e.target.value);
-                  setDeleteValidationError("");
-                }}
-                placeholder={
-                  translations.serverManagement.deleteDialog.confirmPlaceholder
-                }
-              />
-              {deleteValidationError && (
-                <p className="text-sm text-red-500">{deleteValidationError}</p>
-              )}
-            </div>
-          </div>
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => {
-                setIsDeleteDialogOpen(false);
-                setDeleteConfirmName("");
-                setDeleteValidationError("");
-              }}
-            >
-              {translations.serverManagement.deleteDialog.cancel}
-            </Button>
-            <Button
-              variant="destructive"
-              onClick={handleDeleteServer}
-              className="bg-red-600 hover:bg-red-700"
-            >
-              {translations.serverManagement.deleteDialog.delete}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <DeleteDialog
+        open={isDeleteDialogOpen}
+        serverInfo={serverInfo}
+        projectPath={projectPath}
+        confirmName={deleteConfirmName}
+        validationError={deleteValidationError}
+        onOpenChange={setIsDeleteDialogOpen}
+        onConfirmNameChange={(value) => {
+          setDeleteConfirmName(value);
+          setDeleteValidationError("");
+        }}
+        onDelete={handleDeleteServer}
+        onCancel={() => {
+          setIsDeleteDialogOpen(false);
+          setDeleteConfirmName("");
+          setDeleteValidationError("");
+        }}
+      />
 
-      {/* Start File Selection Dialog */}
-      <Dialog open={isStartFileDialogOpen} onOpenChange={setIsStartFileDialogOpen}>
-        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>🔍 Startdatei suchen</DialogTitle>
-            <DialogDescription>
-              Wähle die richtige Startdatei für dein Modpack. Die Datei wird beim nächsten Start verwendet.
-            </DialogDescription>
-          </DialogHeader>
-          
-          {isSearchingStartFiles ? (
-            <div className="py-8 text-center">
-              <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full mx-auto mb-4"></div>
-              <p className="text-muted-foreground">Durchsuche Server-Dateien...</p>
-            </div>
-          ) : startFileCandidates.length === 0 ? (
-            <div className="py-8 text-center">
-              <p className="text-muted-foreground">Keine Startdateien gefunden.</p>
-              <p className="text-sm text-muted-foreground mt-2">
-                Stelle sicher, dass dein Server korrekt entpackt wurde.
-              </p>
-            </div>
-          ) : (
-            <div className="space-y-4 py-4">
-              <div className="space-y-2">
-                <Label>Gefundene Startdateien ({startFileCandidates.length})</Label>
-                <div className="space-y-2 max-h-96 overflow-y-auto">
-                  {startFileCandidates.map((candidate) => (
-                    <div
-                      key={candidate.path}
-                      className={`p-3 border rounded-lg cursor-pointer transition-colors ${
-                        selectedStartFile === candidate.path
-                          ? "border-primary bg-primary/5"
-                          : "border-border hover:border-primary/50"
-                      }`}
-                      onClick={() => setSelectedStartFile(candidate.path)}
-                    >
-                      <div className="flex items-start justify-between gap-2">
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 mb-1">
-                            <span className="font-mono text-sm font-medium truncate">
-                              {candidate.name}
-                            </span>
-                            <span
-                              className={`text-xs px-2 py-0.5 rounded-full border ${getConfidenceBadgeColor(
-                                candidate.confidence
-                              )}`}
-                            >
-                              {candidate.confidence === "high" && "Empfohlen"}
-                              {candidate.confidence === "medium" && "Möglich"}
-                              {candidate.confidence === "low" && "Unwahrscheinlich"}
-                            </span>
-                            {candidate.isExecutable && (
-                              <span className="text-xs px-2 py-0.5 rounded-full bg-blue-100 text-blue-800 border border-blue-300">
-                                Ausführbar
-                              </span>
-                            )}
-                          </div>
-                          <p className="text-xs text-muted-foreground font-mono truncate">
-                            {candidate.path}
-                          </p>
-                          <p className="text-xs text-muted-foreground mt-1">
-                            {(candidate.size / 1024).toFixed(1)} KB
-                          </p>
-                        </div>
-                        <div className="flex-shrink-0">
-                          {selectedStartFile === candidate.path && (
-                            <div className="w-5 h-5 rounded-full bg-primary flex items-center justify-center">
-                              <span className="text-white text-xs">✓</span>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-              
-              {serverInfo?.startFile && (
-                <div className="bg-muted p-3 rounded-md">
-                  <p className="text-sm font-medium mb-1">Aktuelle Startdatei:</p>
-                  <p className="text-xs font-mono">{serverInfo.startFile}</p>
-                </div>
-              )}
-            </div>
-          )}
-          
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => {
-                setIsStartFileDialogOpen(false);
-                setStartFileCandidates([]);
-                setSelectedStartFile("");
-              }}
-            >
-              Abbrechen
-            </Button>
-            <Button
-              onClick={handleSetStartFile}
-              disabled={!selectedStartFile || isSearchingStartFiles}
-            >
-              Startdatei festlegen
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <StartFileDialog
+        open={isStartFileDialogOpen}
+        serverInfo={serverInfo}
+        candidates={startFileCandidates}
+        selectedFile={selectedStartFile}
+        isSearching={isSearchingStartFiles}
+        onOpenChange={setIsStartFileDialogOpen}
+        onSelectFile={setSelectedStartFile}
+        onConfirm={handleSetStartFile}
+        onCancel={() => {
+          setIsStartFileDialogOpen(false);
+          setStartFileCandidates([]);
+          setSelectedStartFile("");
+        }}
+      />
     </div>
   );
 }
