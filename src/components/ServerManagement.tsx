@@ -2,6 +2,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useLanguage } from "@/hooks/useLanguage";
 import { ConfigurationManagement } from "./ConfigurationManagement";
+import { JavaManagement } from "./JavaManagement";
 import { ServerHeader } from "./server/ServerHeader";
 import { ServerInfoCard } from "./server/ServerInfoCard";
 import { ServerControls } from "./server/ServerControls";
@@ -18,7 +19,7 @@ interface ServerManagementProps {
   onBack: () => void;
 }
 
-type ServerView = "overview" | "configuration" | "files" | "logs";
+type ServerView = "overview" | "configuration" | "files" | "logs" | "java";
 
 export function ServerManagement({
   projectPath,
@@ -232,6 +233,14 @@ export function ServerManagement({
     );
   }
 
+  if (currentView === "java") {
+    return (
+      <JavaManagement
+        onBack={() => setCurrentView("overview")}
+      />
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-background to-muted/20 p-4">
       <div className="container mx-auto max-w-4xl">
@@ -242,7 +251,11 @@ export function ServerManagement({
         </div>
 
         <Card className="shadow-2xl border-0 bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/60">
-          <ServerHeader serverInfo={serverInfo} projectPath={projectPath} />
+          <ServerHeader 
+            serverInfo={serverInfo} 
+            projectPath={projectPath}
+            onJavaClick={() => setCurrentView("java")}
+          />
 
           <CardContent className="space-y-6">
             <div className="grid gap-6">

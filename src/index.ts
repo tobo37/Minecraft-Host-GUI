@@ -29,6 +29,14 @@ import {
   findStartFiles,
   setStartFile,
 } from "./services/startFileService";
+import {
+  handleJavaInfo,
+  handleJabbaInfo,
+  handleJabbaInstall,
+  handleJabbaLsRemote,
+  handleJabbaInstallVersion,
+  handleJabbaUse,
+} from "./services/javaService";
 
 const server = serve({
   // Bind to all interfaces for Docker compatibility
@@ -139,6 +147,42 @@ const server = serve({
     "/api/server/set-start-file": {
       async POST(req) {
         return await setStartFile(req);
+      },
+    },
+
+    "/api/java/info": {
+      async GET(req) {
+        return await handleJavaInfo();
+      },
+    },
+
+    "/api/java/jabba/info": {
+      async GET(req) {
+        return await handleJabbaInfo();
+      },
+    },
+
+    "/api/java/jabba/install": {
+      async POST(req) {
+        return await handleJabbaInstall();
+      },
+    },
+
+    "/api/java/jabba/ls-remote": {
+      async GET(req) {
+        return await handleJabbaLsRemote();
+      },
+    },
+
+    "/api/java/jabba/install-version": {
+      async POST(req) {
+        return await handleJabbaInstallVersion(req);
+      },
+    },
+
+    "/api/java/jabba/use": {
+      async POST(req) {
+        return await handleJabbaUse(req);
       },
     },
 

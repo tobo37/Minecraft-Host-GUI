@@ -55,6 +55,28 @@ export interface Translations {
     serverError: string;
     serverExists: string;
   };
+  javaManagement: {
+    title: string;
+    back: string;
+    currentJava: string;
+    version: string;
+    path: string;
+    noJava: string;
+    jabbaTitle: string;
+    jabbaDescription: string;
+    installJabba: string;
+    installing: string;
+    jabbaInstalled: string;
+    currentVersion: string;
+    availableVersions: string;
+    active: string;
+    use: string;
+    noVersionsInstalled: string;
+    recommendedVersions: string;
+    install: string;
+    refresh: string;
+    installNote: string;
+  };
 }
 
 export const translations: Record<Language, Translations> = {
@@ -121,6 +143,28 @@ export const translations: Record<Language, Translations> = {
       serverError: "Fehler beim Erstellen des Servers",
       serverExists: "Server bereits vorhanden",
     },
+    javaManagement: {
+      title: "Java Verwaltung",
+      back: "Zurück",
+      currentJava: "Aktuelle Java Installation",
+      version: "Version",
+      path: "Pfad",
+      noJava: "Java ist nicht installiert",
+      jabbaTitle: "Jabba - Java Version Manager",
+      jabbaDescription: "Jabba ermöglicht es Ihnen, mehrere Java-Versionen zu installieren und einfach zwischen ihnen zu wechseln.",
+      installJabba: "Jabba installieren",
+      installing: "Installiere...",
+      jabbaInstalled: "Jabba ist installiert",
+      currentVersion: "Aktuelle Version",
+      availableVersions: "Installierte Versionen",
+      active: "Aktiv",
+      use: "Verwenden",
+      noVersionsInstalled: "Keine Java-Versionen installiert. Installieren Sie eine Version, um zu beginnen.",
+      recommendedVersions: "Empfohlene Versionen:",
+      install: "Installieren",
+      refresh: "Aktualisieren",
+      installNote: "Nach der Installation wird Jabba direkt verwendet. Klicken Sie auf 'Aktualisieren', wenn die Versionen nicht angezeigt werden.",
+    },
   },
   en: {
     title: "Minecraft Server Manager",
@@ -183,6 +227,28 @@ export const translations: Record<Language, Translations> = {
       serverCreating: "Server created successfully!",
       serverError: "Error creating server",
       serverExists: "Server already exists",
+    },
+    javaManagement: {
+      title: "Java Management",
+      back: "Back",
+      currentJava: "Current Java Installation",
+      version: "Version",
+      path: "Path",
+      noJava: "Java is not installed",
+      jabbaTitle: "Jabba - Java Version Manager",
+      jabbaDescription: "Jabba allows you to install multiple Java versions and easily switch between them.",
+      installJabba: "Install Jabba",
+      installing: "Installing...",
+      jabbaInstalled: "Jabba is installed",
+      currentVersion: "Current Version",
+      availableVersions: "Installed Versions",
+      active: "Active",
+      use: "Use",
+      noVersionsInstalled: "No Java versions installed. Install a version to get started.",
+      recommendedVersions: "Recommended versions:",
+      install: "Install",
+      refresh: "Refresh",
+      installNote: "After installation, Jabba will be used directly. Click 'Refresh' if versions don't appear.",
     },
   },
 };
