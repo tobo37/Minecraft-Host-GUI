@@ -12,8 +12,9 @@ export function validateCustomName(name: string): {
   valid: boolean;
   error?: string;
 } {
+  // Empty name is valid - will use fallback (date)
   if (!name || name.trim().length === 0) {
-    return { valid: false, error: "Custom name cannot be empty" };
+    return { valid: true };
   }
 
   if (name.length > 100) {
@@ -23,12 +24,13 @@ export function validateCustomName(name: string): {
     };
   }
 
-  const validNameRegex = /^[a-zA-Z0-9\s\-_]+$/;
+  // Allow more characters including dots, parentheses, etc. for server names
+  const validNameRegex = /^[a-zA-Z0-9\s\-_.,()]+$/;
   if (!validNameRegex.test(name)) {
     return {
       valid: false,
       error:
-        "Custom name can only contain letters, numbers, spaces, hyphens, and underscores",
+        "Custom name can only contain letters, numbers, spaces, and common punctuation (.-_,())",
     };
   }
 

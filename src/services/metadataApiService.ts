@@ -58,6 +58,17 @@ export async function updateServerMetadata(req: Request): Promise<Response> {
 
     // Validate custom name if provided
     if (customName !== undefined) {
+      // When updating, empty names are not allowed
+      if (!customName || customName.trim().length === 0) {
+        return Response.json(
+          {
+            success: false,
+            error: "Custom name cannot be empty when updating",
+          },
+          { status: 400 }
+        );
+      }
+      
       const nameValidation = validateCustomName(customName);
       if (!nameValidation.valid) {
         return Response.json(

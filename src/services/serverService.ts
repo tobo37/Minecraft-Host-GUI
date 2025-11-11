@@ -86,6 +86,7 @@ export async function listServers(): Promise<Response> {
     );
 
     return Response.json({
+      success: true,
       servers,
       count: servers.length,
     });
@@ -213,13 +214,17 @@ export async function createServer(req: Request): Promise<Response> {
         // Extract ZIP filename from path
         const zipFileName = serverFile || "ServerFiles-4.14.zip";
 
-        // Determine the custom name to use (provided or default to ZIP filename)
-        const finalCustomName = customName || zipFileName.replace(".zip", "");
+        // Determine the custom name to use:
+        // 1. User-provided customName (highest priority)
+        // 2. Date string as fallback (e.g., "2025-11-11")
+        const finalCustomName = customName && customName.trim() 
+          ? customName.trim() 
+          : dateString;
 
         // Create metadata file
         const metadata = {
           customName: finalCustomName,
-          description: description || "",
+          description: description && description.trim() ? description.trim() : "",
           createdAt: createdTimestamp,
           lastModified: createdTimestamp,
           sourceZipFile: zipFileName,

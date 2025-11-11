@@ -361,10 +361,10 @@ export function ServerManagement({
               <div className="w-8 h-8 bg-primary rounded-sm"></div>
             </div>
             <CardTitle className="text-3xl font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
-              {translations.serverManagement.title}
+              {serverInfo?.customName || serverInfo?.name || projectPath}
             </CardTitle>
             <CardDescription className="text-lg text-muted-foreground">
-              Projekt: {projectPath}
+              {serverInfo?.description || `Projekt: ${projectPath}`}
             </CardDescription>
           </CardHeader>
 
