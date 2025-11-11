@@ -18,6 +18,7 @@ Eine moderne Web-Anwendung zur Verwaltung von Minecraft-Servern, gebaut mit Bun,
 ### Voraussetzungen
 - [Bun](https://bun.sh) (v1.1.34 oder höher)
 - Java 21 (für Minecraft-Server)
+- Keine zusätzlichen Tools nötig - ZIP-Extraktion erfolgt mit reinem TypeScript
 
 ### Installation und Start
 
@@ -104,6 +105,16 @@ Falls Podman verfügbar ist, verwendet das Skript automatisch `podman compose`; 
 - Nur ZIP-Dateien werden akzeptiert
 - Maximale Dateigröße: 500MB
 - Die ZIP-Datei sollte alle notwendigen Minecraft-Server-Dateien enthalten (JAR, Skripte, etc.)
+
+## Plattform-Unterstützung
+
+Die Anwendung ist **cross-platform** und läuft auf:
+- ✅ **Linux**
+- ✅ **Windows**
+- ✅ **macOS**
+- ✅ **Docker/Container**
+
+ZIP-Extraktion erfolgt mit reinem TypeScript (unzipper library) - keine Shell-Befehle nötig!
 
 ## Technologie-Stack
 

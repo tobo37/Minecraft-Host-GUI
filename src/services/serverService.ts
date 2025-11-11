@@ -6,6 +6,7 @@ import {
   readMetadata,
   migrateMetadata,
 } from "./metadataService";
+import AdmZip from "adm-zip";
 
 // Global server process management
 export const runningServers = new Map<string, any>();
@@ -183,18 +184,18 @@ export async function createServer(req: Request): Promise<Response> {
       );
     }
 
-    // ZIP entpacken mit Bun
+    // ZIP entpacken mit reinem TypeScript (cross-platform: Linux/Windows)
     console.log(`Starting extraction of ${serverFilesZip} to ${serverPath}`);
-    const proc = Bun.spawn(["unzip", "-q", serverFilesZip, "-d", serverPath], {
-      cwd: process.cwd(),
-      stdout: "pipe",
-      stderr: "pipe",
-    });
-
-    const exitCode = await proc.exited;
-    console.log(`Unzip process exited with code: ${exitCode}`);
-
-    if (exitCode === 0) {
+    
+    try {
+      // Pure TypeScript ZIP extraction using adm-zip library
+      // Works on all platforms without external shell commands
+      console.log("Using adm-zip library for cross-platform extraction");
+      
+      const zip = new AdmZip(serverFilesZip);
+      zip.extractAllTo(serverPath, true);
+      
+      console.log(`Successfully extracted ZIP file with adm-zip library`);
       // Marker-Datei erstellen um zu zeigen, dass Server erfolgreich erstellt wurde
       const createdTimestamp = new Date().toISOString();
       console.log(`Creating .created file with timestamp: ${createdTimestamp}`);
@@ -249,19 +250,22 @@ export async function createServer(req: Request): Promise<Response> {
           { status: 500 }
         );
       }
-    } else {
-      const stderr = await new Response(proc.stderr).text();
-      const stdout = await new Response(proc.stdout).text();
-      console.error(
-        `Unzip failed. Exit code: ${exitCode}, stderr: ${stderr}, stdout: ${stdout}`
-      );
+    } catch (extractError) {
+      console.error("ZIP extraction failed:", extractError);
+      
+      // Clean up on failure
+      try {
+        const fs = require("fs").promises;
+        await fs.rm(serverPath, { recursive: true, force: true });
+      } catch (cleanupError) {
+        console.error("Cleanup failed:", cleanupError);
+      }
 
       return Response.json(
         {
           message: "Failed to extract server files",
           status: "error",
-          error: stderr || `Process exited with code ${exitCode}`,
-          stdout: stdout,
+          error: extractError instanceof Error ? extractError.message : "Unknown extraction error",
         },
         { status: 500 }
       );
