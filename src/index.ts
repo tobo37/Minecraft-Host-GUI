@@ -25,6 +25,10 @@ import {
   updateServerMetadata,
   deleteServerInstance,
 } from "./services/metadataApiService";
+import {
+  findStartFiles,
+  setStartFile,
+} from "./services/startFileService";
 
 const server = serve({
   // Bind to all interfaces for Docker compatibility
@@ -123,6 +127,18 @@ const server = serve({
     "/api/server/delete": {
       async DELETE(req) {
         return await deleteServerInstance(req);
+      },
+    },
+
+    "/api/server/find-start-files": {
+      async GET(req) {
+        return await findStartFiles(req);
+      },
+    },
+
+    "/api/server/set-start-file": {
+      async POST(req) {
+        return await setStartFile(req);
       },
     },
 

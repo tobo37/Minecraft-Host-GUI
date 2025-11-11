@@ -73,6 +73,7 @@ export async function listServers(): Promise<Response> {
         customName: metadata.customName,
         description: metadata.description,
         sourceZipFile: metadata.sourceZipFile,
+        startFile: metadata.startFile,
         status,
         lastModified: metadata.lastModified,
       });
@@ -360,7 +361,11 @@ export async function startServer(req: Request): Promise<Response> {
     }
 
     const serverPath = `./server/${project}`;
-    const startScript = `${serverPath}/startserver.sh`;
+    
+    // Get start file from metadata, fallback to default
+    const metadata = await readMetadata(project);
+    const startFileName = metadata?.startFile || "startserver.sh";
+    const startScript = `${serverPath}/${startFileName}`;
 
     // Check if server directory and start script exist
     const fs = require("fs").promises;
@@ -371,38 +376,43 @@ export async function startServer(req: Request): Promise<Response> {
       return Response.json(
         {
           success: false,
-          error: "Server directory or start script not found",
+          error: `Server directory or start script not found. Looking for: ${startFileName}`,
         },
         { status: 404 }
       );
     }
 
-    // Make start script executable
-    console.log(`Making ${startScript} executable...`);
-    const chmodResult = await Bun.spawn(["chmod", "+x", startScript]).exited;
-    if (chmodResult !== 0) {
-      console.warn(`chmod failed with exit code: ${chmodResult}`);
+    // Make start script executable (only on Unix-like systems)
+    if (process.platform !== "win32") {
+      console.log(`Making ${startScript} executable...`);
+      const chmodResult = await Bun.spawn(["chmod", "+x", startScript]).exited;
+      if (chmodResult !== 0) {
+        console.warn(`chmod failed with exit code: ${chmodResult}`);
+      }
     }
 
-    // Also make any other .sh files executable for good measure
-    try {
-      const fs = require("fs").promises;
-      const files = await fs.readdir(serverPath);
-      const shFiles = files.filter((file: string) => file.endsWith(".sh"));
+    // Also make any other .sh files executable for good measure (Unix-like only)
+    if (process.platform !== "win32") {
+      try {
+        const fs = require("fs").promises;
+        const files = await fs.readdir(serverPath);
+        const shFiles = files.filter((file: string) => file.endsWith(".sh"));
 
-      for (const shFile of shFiles as string[]) {
-        const shPath = `${serverPath}/${shFile}`;
-        console.log(`Making ${shPath} executable...`);
-        await Bun.spawn(["chmod", "+x", shPath]).exited;
+        for (const shFile of shFiles as string[]) {
+          const shPath = `${serverPath}/${shFile}`;
+          console.log(`Making ${shPath} executable...`);
+          await Bun.spawn(["chmod", "+x", shPath]).exited;
+        }
+      } catch (error) {
+        console.warn("Error making additional .sh files executable:", error);
       }
-    } catch (error) {
-      console.warn("Error making additional .sh files executable:", error);
     }
 
     // Initialize logs for this project with debug info
     const debugInfo = [
       `[${new Date().toLocaleTimeString()}] Starting Minecraft server...`,
       `[${new Date().toLocaleTimeString()}] Working directory: ${serverPath}`,
+      `[${new Date().toLocaleTimeString()}] Start file: ${startFileName}`,
       `[${new Date().toLocaleTimeString()}] Java version check...`,
     ];
     serverLogs.set(project, debugInfo);
@@ -455,26 +465,45 @@ export async function startServer(req: Request): Promise<Response> {
     };
 
     // Start server with script wrapper that enables interactive mode
-    const serverProcess = Bun.spawn(
-      [
-        "bash",
-        "-c",
-        `
-      # Make sure we're in the right directory
-      cd "${serverPath}"
-      
-      # Start the server with proper terminal settings
-      exec bash ./startserver.sh
-    `,
-      ],
-      {
-        cwd: serverPath,
-        stdout: "pipe",
-        stderr: "pipe",
-        stdin: "pipe",
-        env: env,
-      }
-    );
+    // Support both Unix and Windows start files
+    const isWindowsScript = startFileName.endsWith(".bat") || startFileName.endsWith(".cmd");
+    
+    let serverProcess;
+    if (process.platform === "win32" || isWindowsScript) {
+      // Windows: use cmd.exe
+      serverProcess = Bun.spawn(
+        ["cmd", "/c", startFileName],
+        {
+          cwd: serverPath,
+          stdout: "pipe",
+          stderr: "pipe",
+          stdin: "pipe",
+          env: env,
+        }
+      );
+    } else {
+      // Unix-like: use bash
+      serverProcess = Bun.spawn(
+        [
+          "bash",
+          "-c",
+          `
+        # Make sure we're in the right directory
+        cd "${serverPath}"
+        
+        # Start the server with proper terminal settings
+        exec bash ./${startFileName}
+      `,
+        ],
+        {
+          cwd: serverPath,
+          stdout: "pipe",
+          stderr: "pipe",
+          stdin: "pipe",
+          env: env,
+        }
+      );
+    }
 
     const projectLogs = serverLogs.get(project) || [];
     projectLogs.push(

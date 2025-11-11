@@ -6,6 +6,7 @@ export interface ServerMetadata {
   createdAt: string;
   lastModified: string;
   sourceZipFile: string;
+  startFile?: string; // Custom start file path (e.g., "startserver.sh" or "start.bat")
   modpackInfo?: {
     name: string;
     version: string;
@@ -19,6 +20,7 @@ export interface Server {
   customName?: string;
   description?: string;
   sourceZipFile?: string;
+  startFile?: string;
   status?: "running" | "stopped";
   lastModified?: string;
 }

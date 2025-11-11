@@ -55,6 +55,12 @@ export function ServerManagement({
   const [deleteConfirmName, setDeleteConfirmName] = useState("");
   const [deleteValidationError, setDeleteValidationError] = useState("");
 
+  // Start file dialog state
+  const [isStartFileDialogOpen, setIsStartFileDialogOpen] = useState(false);
+  const [startFileCandidates, setStartFileCandidates] = useState<any[]>([]);
+  const [selectedStartFile, setSelectedStartFile] = useState<string>("");
+  const [isSearchingStartFiles, setIsSearchingStartFiles] = useState(false);
+
   // Auto-scroll to bottom of logs
   useEffect(() => {
     if (logsEndRef.current) {
@@ -306,6 +312,76 @@ export function ServerManagement({
     }
   };
 
+  const handleFindStartFiles = async () => {
+    setIsSearchingStartFiles(true);
+    setIsStartFileDialogOpen(true);
+    
+    try {
+      const response = await fetch(
+        `/api/server/find-start-files?project=${encodeURIComponent(projectPath)}`
+      );
+      const data = await response.json();
+      
+      if (data.success) {
+        setStartFileCandidates(data.candidates || []);
+        // Pre-select current start file if it exists
+        if (serverInfo?.startFile) {
+          setSelectedStartFile(serverInfo.startFile);
+        } else if (data.candidates && data.candidates.length > 0) {
+          // Pre-select the first high-confidence candidate
+          const highConfidence = data.candidates.find((c: any) => c.confidence === "high");
+          setSelectedStartFile(highConfidence?.path || data.candidates[0].path);
+        }
+      } else {
+        console.error("Failed to find start files:", data.error);
+      }
+    } catch (error) {
+      console.error("Error finding start files:", error);
+    } finally {
+      setIsSearchingStartFiles(false);
+    }
+  };
+
+  const handleSetStartFile = async () => {
+    if (!selectedStartFile) return;
+
+    try {
+      const response = await fetch("/api/server/set-start-file", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          project: projectPath,
+          startFile: selectedStartFile,
+        }),
+      });
+
+      const data = await response.json();
+      if (data.success) {
+        setIsStartFileDialogOpen(false);
+        await fetchServerInfo(); // Refresh server info
+      } else {
+        console.error("Failed to set start file:", data.error);
+      }
+    } catch (error) {
+      console.error("Error setting start file:", error);
+    }
+  };
+
+  const getConfidenceBadgeColor = (confidence: string) => {
+    switch (confidence) {
+      case "high":
+        return "bg-green-100 text-green-800 border-green-300";
+      case "medium":
+        return "bg-yellow-100 text-yellow-800 border-yellow-300";
+      case "low":
+        return "bg-gray-100 text-gray-800 border-gray-300";
+      default:
+        return "bg-gray-100 text-gray-800 border-gray-300";
+    }
+  };
+
   const getStatusColor = (status: ServerStatus) => {
     switch (status) {
       case "running":
@@ -511,36 +587,57 @@ export function ServerManagement({
                         </span>
                       </div>
                     )}
+                    {serverInfo?.startFile && (
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Start File:</span>
+                        <span className="font-mono text-xs">
+                          {serverInfo.startFile}
+                        </span>
+                      </div>
+                    )}
                   </div>
                 </CardContent>
               </Card>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {serverStatus === "stopped" || serverStatus === "starting" ? (
-                  <Button
-                    size="lg"
-                    className="h-16"
-                    onClick={handleStartServer}
-                    disabled={serverStatus === "starting"}
-                  >
-                    🚀{" "}
-                    {serverStatus === "starting"
-                      ? "Startet..."
-                      : "Server starten"}
-                  </Button>
-                ) : (
-                  <Button
-                    size="lg"
-                    className="h-16 bg-red-600 hover:bg-red-700 text-white border-red-600"
-                    onClick={handleStopServer}
-                    disabled={serverStatus === "stopping"}
-                  >
-                    🛑{" "}
-                    {serverStatus === "stopping"
-                      ? "Stoppt..."
-                      : "Server stoppen"}
-                  </Button>
-                )}
+                <div className="flex gap-2">
+                  {serverStatus === "stopped" || serverStatus === "starting" ? (
+                    <>
+                      <Button
+                        size="lg"
+                        className="h-16 flex-1"
+                        onClick={handleStartServer}
+                        disabled={serverStatus === "starting"}
+                      >
+                        🚀{" "}
+                        {serverStatus === "starting"
+                          ? "Startet..."
+                          : "Server starten"}
+                      </Button>
+                      <Button
+                        size="lg"
+                        variant="outline"
+                        className="h-16 px-4"
+                        onClick={handleFindStartFiles}
+                        title="Startdatei suchen"
+                      >
+                        🔍
+                      </Button>
+                    </>
+                  ) : (
+                    <Button
+                      size="lg"
+                      className="h-16 flex-1 bg-red-600 hover:bg-red-700 text-white border-red-600"
+                      onClick={handleStopServer}
+                      disabled={serverStatus === "stopping"}
+                    >
+                      🛑{" "}
+                      {serverStatus === "stopping"
+                        ? "Stoppt..."
+                        : "Server stoppen"}
+                    </Button>
+                  )}
+                </div>
 
                 <Button
                   size="lg"
@@ -765,6 +862,114 @@ export function ServerManagement({
               className="bg-red-600 hover:bg-red-700"
             >
               {translations.serverManagement.deleteDialog.delete}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Start File Selection Dialog */}
+      <Dialog open={isStartFileDialogOpen} onOpenChange={setIsStartFileDialogOpen}>
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>🔍 Startdatei suchen</DialogTitle>
+            <DialogDescription>
+              Wähle die richtige Startdatei für dein Modpack. Die Datei wird beim nächsten Start verwendet.
+            </DialogDescription>
+          </DialogHeader>
+          
+          {isSearchingStartFiles ? (
+            <div className="py-8 text-center">
+              <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full mx-auto mb-4"></div>
+              <p className="text-muted-foreground">Durchsuche Server-Dateien...</p>
+            </div>
+          ) : startFileCandidates.length === 0 ? (
+            <div className="py-8 text-center">
+              <p className="text-muted-foreground">Keine Startdateien gefunden.</p>
+              <p className="text-sm text-muted-foreground mt-2">
+                Stelle sicher, dass dein Server korrekt entpackt wurde.
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-4 py-4">
+              <div className="space-y-2">
+                <Label>Gefundene Startdateien ({startFileCandidates.length})</Label>
+                <div className="space-y-2 max-h-96 overflow-y-auto">
+                  {startFileCandidates.map((candidate) => (
+                    <div
+                      key={candidate.path}
+                      className={`p-3 border rounded-lg cursor-pointer transition-colors ${
+                        selectedStartFile === candidate.path
+                          ? "border-primary bg-primary/5"
+                          : "border-border hover:border-primary/50"
+                      }`}
+                      onClick={() => setSelectedStartFile(candidate.path)}
+                    >
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="font-mono text-sm font-medium truncate">
+                              {candidate.name}
+                            </span>
+                            <span
+                              className={`text-xs px-2 py-0.5 rounded-full border ${getConfidenceBadgeColor(
+                                candidate.confidence
+                              )}`}
+                            >
+                              {candidate.confidence === "high" && "Empfohlen"}
+                              {candidate.confidence === "medium" && "Möglich"}
+                              {candidate.confidence === "low" && "Unwahrscheinlich"}
+                            </span>
+                            {candidate.isExecutable && (
+                              <span className="text-xs px-2 py-0.5 rounded-full bg-blue-100 text-blue-800 border border-blue-300">
+                                Ausführbar
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-xs text-muted-foreground font-mono truncate">
+                            {candidate.path}
+                          </p>
+                          <p className="text-xs text-muted-foreground mt-1">
+                            {(candidate.size / 1024).toFixed(1)} KB
+                          </p>
+                        </div>
+                        <div className="flex-shrink-0">
+                          {selectedStartFile === candidate.path && (
+                            <div className="w-5 h-5 rounded-full bg-primary flex items-center justify-center">
+                              <span className="text-white text-xs">✓</span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              
+              {serverInfo?.startFile && (
+                <div className="bg-muted p-3 rounded-md">
+                  <p className="text-sm font-medium mb-1">Aktuelle Startdatei:</p>
+                  <p className="text-xs font-mono">{serverInfo.startFile}</p>
+                </div>
+              )}
+            </div>
+          )}
+          
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setIsStartFileDialogOpen(false);
+                setStartFileCandidates([]);
+                setSelectedStartFile("");
+              }}
+            >
+              Abbrechen
+            </Button>
+            <Button
+              onClick={handleSetStartFile}
+              disabled={!selectedStartFile || isSearchingStartFiles}
+            >
+              Startdatei festlegen
             </Button>
           </DialogFooter>
         </DialogContent>
