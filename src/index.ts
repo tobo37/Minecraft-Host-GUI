@@ -25,10 +25,7 @@ import {
   updateServerMetadata,
   deleteServerInstance,
 } from "./services/metadataApiService";
-import {
-  findStartFiles,
-  setStartFile,
-} from "./services/startFileService";
+import { findStartFiles, setStartFile } from "./services/startFileService";
 import {
   handleJavaInfo,
   handleJabbaInfo,
@@ -40,7 +37,7 @@ import {
 
 const server = serve({
   // Bind to all interfaces for Docker compatibility
-  hostname: "0.0.0.0",
+  hostname: "localhost",
   port: 3000,
   // Increase timeout for server creation operations and large file uploads
   idleTimeout: 255, // Maximum allowed timeout (255 seconds)
