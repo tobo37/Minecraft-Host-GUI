@@ -37,7 +37,7 @@ import {
 
 const server = serve({
   // Bind to all interfaces for Docker compatibility
-  hostname: "localhost",
+  hostname: "0.0.0.0",
   port: 3000,
   // Increase timeout for server creation operations and large file uploads
   idleTimeout: 255, // Maximum allowed timeout (255 seconds)
