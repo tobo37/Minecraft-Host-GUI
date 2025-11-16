@@ -49,6 +49,17 @@ export interface Translations {
       delete: string;
       validationError: string;
     };
+    projectPathDialog: {
+      title: string;
+      description: string;
+      label: string;
+      exampleTitle: string;
+      exampleDescription: string;
+    };
+  };
+  common: {
+    cancel: string;
+    save: string;
   };
   messages: {
     serverCreating: string;
@@ -137,6 +148,19 @@ export const translations: Record<Language, Translations> = {
         delete: "Löschen",
         validationError: "Der eingegebene Name stimmt nicht überein",
       },
+      projectPathDialog: {
+        title: "Projektpfad festlegen",
+        description:
+          "Wählen Sie den Ordner aus, in dem sich Ihre Server-Dateien (startserver.sh, server.properties) befinden. Klicken Sie auf einen Ordner, um ihn auszuwählen.",
+        label: "Ausgewählter Pfad",
+        exampleTitle: "Beispiel:",
+        exampleDescription:
+          "Wenn Ihre startserver.sh in 'server/2025-11-16/BM_Revelations_II-2.2.2_server/' liegt, geben Sie 'BM_Revelations_II-2.2.2_server' ein",
+      },
+    },
+    common: {
+      cancel: "Abbrechen",
+      save: "Speichern",
     },
     messages: {
       serverCreating: "Server erfolgreich erstellt!",
@@ -222,6 +246,19 @@ export const translations: Record<Language, Translations> = {
         delete: "Delete",
         validationError: "The entered name does not match",
       },
+      projectPathDialog: {
+        title: "Set Project Path",
+        description:
+          "Select the folder where your server files (startserver.sh, server.properties) are located. Click on a folder to select it.",
+        label: "Selected Path",
+        exampleTitle: "Example:",
+        exampleDescription:
+          "If your startserver.sh is in 'server/2025-11-16/BM_Revelations_II-2.2.2_server/', enter 'BM_Revelations_II-2.2.2_server'",
+      },
+    },
+    common: {
+      cancel: "Cancel",
+      save: "Save",
     },
     messages: {
       serverCreating: "Server created successfully!",

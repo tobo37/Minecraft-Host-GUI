@@ -188,6 +188,13 @@ const server = serve({
       },
     },
 
+    "/api/server/browse-directory": {
+      async GET(req) {
+        const { handleBrowseDirectory } = await import("./services/directoryBrowser");
+        return await handleBrowseDirectory(req);
+      },
+    },
+
     // Serve index.html for all unmatched routes.
     "/*": index,
   },

@@ -8,6 +8,7 @@ import { ServerLogs } from "./ServerLogs";
 import { RenameDialog } from "./RenameDialog";
 import { DeleteDialog } from "./DeleteDialog";
 import { StartFileDialog } from "./StartFileDialog";
+import { ProjectPathDialog } from "./ProjectPathDialog";
 import type { Server, ServerStatus } from "@/services/types";
 import type { StartFileCandidate } from "@/services/startFileClient";
 
@@ -61,6 +62,15 @@ interface ServerOverviewProps {
     closeStartFileDialog: () => void;
     setIsStartFileDialogOpen: (_open: boolean) => void;
   };
+  projectPathHook: {
+    isDialogOpen: boolean;
+    newProjectPath: string;
+    validationError: string;
+    setNewProjectPath: (_path: string) => void;
+    handleSetProjectPath: () => Promise<void>;
+    openDialog: () => void;
+    closeDialog: () => void;
+  };
 }
 
 export function ServerOverview({
@@ -78,6 +88,7 @@ export function ServerOverview({
   description,
   deleteServer,
   startFile,
+  projectPathHook,
 }: ServerOverviewProps) {
   const { translations } = useLanguage();
 
@@ -130,6 +141,7 @@ export function ServerOverview({
                 onStop={onStopServer}
                 onFindStartFiles={startFile.handleFindStartFiles}
                 onConfiguration={onConfigurationClick}
+                onSetProjectPath={projectPathHook.openDialog}
               />
 
               {(serverStatus === "running" ||
@@ -217,6 +229,16 @@ export function ServerOverview({
         onSelectFile={startFile.setSelectedStartFile}
         onConfirm={startFile.handleSetStartFile}
         onCancel={startFile.closeStartFileDialog}
+      />
+
+      <ProjectPathDialog
+        isOpen={projectPathHook.isDialogOpen}
+        projectPath={projectPathHook.newProjectPath}
+        serverProject={projectPath}
+        validationError={projectPathHook.validationError}
+        onProjectPathChange={projectPathHook.setNewProjectPath}
+        onSave={projectPathHook.handleSetProjectPath}
+        onClose={projectPathHook.closeDialog}
       />
     </div>
   );

@@ -135,8 +135,13 @@ export async function listConfigFiles(req: Request): Promise<Response> {
   try {
     const { project, error } = validateConfigPath(req);
     if (error) return error;
+    if (!project) return Response.json({ success: false, error: "Project is required" }, { status: 400 });
     
-    const serverPath = `./server/${project}`;
+    const { readMetadata } = await import('./metadataService');
+    const { getActualServerPath } = await import('./server/serverRepository');
+    
+    const metadata = await readMetadata(project);
+    const serverPath = getActualServerPath(project, metadata?.projectPath);
     
     const dirError = await scanConfigDirectory(serverPath);
     if (dirError) return dirError;
@@ -170,12 +175,17 @@ export async function readConfigFile(req: Request): Promise<Response> {
       }, { status: 400 });
     }
     
-    const filePath = `./server/${project}/${file}`;
+    const { readMetadata } = await import('./metadataService');
+    const { getActualServerPath } = await import('./server/serverRepository');
+    const path = require('path');
+    
+    const metadata = await readMetadata(project);
+    const serverPath = getActualServerPath(project, metadata?.projectPath);
+    const filePath = path.join(serverPath, file);
     
     // Security check: ensure file is within server directory
-    const path = require('path');
     const resolvedPath = path.resolve(filePath);
-    const serverDir = path.resolve(`./server/${project}`);
+    const serverDir = path.resolve(serverPath);
     
     if (!resolvedPath.startsWith(serverDir)) {
       return Response.json({
@@ -221,12 +231,17 @@ export async function saveConfigFile(req: Request): Promise<Response> {
       }, { status: 400 });
     }
     
-    const filePath = `./server/${project}/${file}`;
+    const { readMetadata } = await import('./metadataService');
+    const { getActualServerPath } = await import('./server/serverRepository');
+    const path = require('path');
+    
+    const metadata = await readMetadata(project);
+    const serverPath = getActualServerPath(project, metadata?.projectPath);
+    const filePath = path.join(serverPath, file);
     
     // Security check: ensure file is within server directory
-    const path = require('path');
     const resolvedPath = path.resolve(filePath);
-    const serverDir = path.resolve(`./server/${project}`);
+    const serverDir = path.resolve(serverPath);
     
     if (!resolvedPath.startsWith(serverDir)) {
       return Response.json({

@@ -89,6 +89,14 @@ export function getServerPath(serverName: string): string {
 }
 
 /**
+ * Get actual project path (includes projectPath if set in metadata)
+ */
+export function getActualServerPath(serverName: string, projectPath?: string): string {
+  const basePath = getServerPath(serverName);
+  return projectPath ? path.join(basePath, projectPath) : basePath;
+}
+
+/**
  * Get serverfiles base directory path
  */
 export function getServerFilesBasePath(): string {

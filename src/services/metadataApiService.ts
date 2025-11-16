@@ -11,6 +11,8 @@ interface MetadataUpdateRequest {
   project: string;
   customName?: string;
   description?: string;
+  projectPath?: string;
+  startFile?: string;
 }
 
 interface ValidationResult {
@@ -148,7 +150,9 @@ async function validateMetadata(
  */
 function mergeMetadata(
   customName?: string,
-  description?: string
+  description?: string,
+  projectPath?: string,
+  startFile?: string
 ): Record<string, string> {
   const updates: Record<string, string> = {};
 
@@ -157,6 +161,12 @@ function mergeMetadata(
   }
   if (description !== undefined) {
     updates.description = description;
+  }
+  if (projectPath !== undefined) {
+    updates.projectPath = projectPath;
+  }
+  if (startFile !== undefined) {
+    updates.startFile = startFile;
   }
 
   return updates;
@@ -171,13 +181,13 @@ async function saveMetadata(project: string, updates: Record<string, string>) {
 }
 
 /**
- * Update server metadata (rename, change description)
+ * Update server metadata (rename, change description, set project path, set start file)
  * POST /api/server/metadata
  */
 export async function updateServerMetadata(req: Request): Promise<Response> {
   try {
     const body = await req.json();
-    const { project, customName, description } = body as MetadataUpdateRequest;
+    const { project, customName, description, projectPath, startFile } = body as MetadataUpdateRequest;
 
     // Validate metadata
     const validation = await validateMetadata(project, customName, description);
@@ -192,7 +202,7 @@ export async function updateServerMetadata(req: Request): Promise<Response> {
     }
 
     // Merge updates
-    const updates = mergeMetadata(customName, description);
+    const updates = mergeMetadata(customName, description, projectPath, startFile);
 
     // Save metadata and get updated version
     const updatedMetadata = await saveMetadata(project, updates);

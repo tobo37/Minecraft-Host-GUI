@@ -19,6 +19,7 @@ export interface ServerMetadata {
   lastModified?: string;
   sourceZipFile?: string;
   startFile?: string;
+  projectPath?: string;
   javaVersion?: string;
 }
 
@@ -30,6 +31,7 @@ export interface ServerInfo {
   description?: string;
   sourceZipFile?: string;
   startFile?: string;
+  projectPath?: string;
   status?: 'running' | 'stopped' | 'unknown';
   lastModified?: string;
 }

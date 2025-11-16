@@ -7,6 +7,7 @@ export interface ServerMetadata {
   lastModified: string;
   sourceZipFile: string;
   startFile?: string; // Custom start file path (e.g., "startserver.sh" or "start.bat")
+  projectPath?: string; // Relative path to actual server folder (e.g., "BM_Revelations_II-2.2.2_server")
   modpackInfo?: {
     name: string;
     version: string;
@@ -21,6 +22,7 @@ export interface Server {
   description?: string;
   sourceZipFile?: string;
   startFile?: string;
+  projectPath?: string;
   status?: "running" | "stopped";
   lastModified?: string;
 }

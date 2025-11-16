@@ -5,6 +5,7 @@ import { useServerMetadata } from "@/hooks/useServerMetadata";
 import { useServerDescription } from "@/hooks/useServerDescription";
 import { useServerDelete } from "@/hooks/useServerDelete";
 import { useStartFile } from "@/hooks/useStartFile";
+import { useProjectPath } from "@/hooks/useProjectPath";
 import { ServerOverview } from "@/components/server/ServerOverview";
 import { ConfigurationManagement } from "@/features/config";
 import { JavaManagement } from "@/features/java/JavaManagement";
@@ -53,6 +54,13 @@ export function ServerManagement({
     onSuccess: refetchServerInfo,
   });
 
+  // Project path management
+  const projectPathHook = useProjectPath({
+    projectPath,
+    currentProjectPath: serverInfo?.projectPath,
+    onSuccess: refetchServerInfo,
+  });
+
   // Handle different views
   if (currentView === "configuration") {
     return (
@@ -85,6 +93,7 @@ export function ServerManagement({
       description={description}
       deleteServer={deleteServer}
       startFile={startFile}
+      projectPathHook={projectPathHook}
     />
   );
 }

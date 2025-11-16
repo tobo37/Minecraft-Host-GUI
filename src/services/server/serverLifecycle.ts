@@ -36,8 +36,9 @@ async function loadServerConfiguration(project: string): Promise<{
   startFileName: string;
   startScript: string;
 }> {
-  const serverPath = getServerPath(project);
   const metadata = await readMetadata(project);
+  const { getActualServerPath } = await import('./serverRepository');
+  const serverPath = getActualServerPath(project, metadata?.projectPath);
   const startFileName = metadata?.startFile || 'startserver.sh';
   const startScript = `${serverPath}/${startFileName}`;
 
