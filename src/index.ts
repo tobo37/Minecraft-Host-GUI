@@ -50,13 +50,13 @@ const server = serve({
 
   routes: {
     "/api/servers": {
-      async GET(req) {
+      async GET(_req) {
         return await listServers();
       },
     },
 
     "/api/serverfiles": {
-      async GET(req) {
+      async GET(_req) {
         return await listServerFiles();
       },
     },
@@ -152,25 +152,25 @@ const server = serve({
     },
 
     "/api/java/info": {
-      async GET(req) {
+      async GET(_req) {
         return await handleJavaInfo();
       },
     },
 
     "/api/java/jabba/info": {
-      async GET(req) {
+      async GET(_req) {
         return await handleJabbaInfo();
       },
     },
 
     "/api/java/jabba/install": {
-      async POST(req) {
+      async POST(_req) {
         return await handleJabbaInstall();
       },
     },
 
     "/api/java/jabba/ls-remote": {
-      async GET(req) {
+      async GET(_req) {
         return await handleJabbaLsRemote();
       },
     },
