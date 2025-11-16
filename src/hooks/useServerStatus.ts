@@ -1,6 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-
-type ServerStatus = "stopped" | "starting" | "running" | "stopping";
+import type { ServerStatus } from "@/services/types";
 
 export function useServerStatus(projectPath: string) {
   const [serverStatus, setServerStatus] = useState<ServerStatus>("stopped");

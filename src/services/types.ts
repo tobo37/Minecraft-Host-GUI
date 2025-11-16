@@ -47,8 +47,10 @@ export interface ApiResponse<T = any> {
   data?: T;
 }
 
-export interface ServerStatus {
-  status: "running" | "stopped";
+export type ServerStatus = "stopped" | "starting" | "running" | "stopping";
+
+export interface ServerStatusResponse {
+  status: ServerStatus;
 }
 
 export interface ServerLogs {
