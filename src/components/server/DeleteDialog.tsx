@@ -25,6 +25,10 @@ interface DeleteDialogProps {
   onCancel: () => void;
 }
 
+function getServerDisplayName(serverInfo: Server | null, projectPath: string): string {
+  return serverInfo?.customName || serverInfo?.name || projectPath;
+}
+
 export function DeleteDialog({
   open,
   serverInfo,
@@ -38,7 +42,7 @@ export function DeleteDialog({
 }: DeleteDialogProps) {
   const { translations } = useLanguage();
   
-  const serverName = serverInfo?.customName || serverInfo?.name || projectPath;
+  const serverName = getServerDisplayName(serverInfo, projectPath);
   const { error: localError, clearError } = useDeleteValidation({
     serverName,
     confirmName,
@@ -70,7 +74,7 @@ export function DeleteDialog({
             </p>
             <div className="bg-muted p-3 rounded-md">
               <p className="font-semibold">
-                {serverInfo?.customName || serverInfo?.name || projectPath}
+                {serverName}
               </p>
               <p className="text-sm text-muted-foreground">{projectPath}</p>
             </div>
