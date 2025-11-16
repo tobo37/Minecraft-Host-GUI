@@ -1,3 +1,5 @@
+import { Button } from "@/components/ui/button";
+import { FolderOpen } from "lucide-react";
 import type { Server } from "@/services/types";
 
 type ServerStatus = "stopped" | "starting" | "running" | "stopping";
@@ -6,12 +8,14 @@ interface ServerInfoDetailsProps {
   serverInfo: Server | null;
   projectPath: string;
   serverStatus: ServerStatus;
+  onSetProjectPath: () => void;
 }
 
 export function ServerInfoDetails({
   serverInfo,
   projectPath,
   serverStatus,
+  onSetProjectPath,
 }: ServerInfoDetailsProps) {
   const getStatusColor = (status: ServerStatus) => {
     switch (status) {
@@ -45,10 +49,42 @@ export function ServerInfoDetails({
 
   return (
     <>
-      <div className="flex justify-between">
+      <div className="flex justify-between items-center">
         <span className="text-muted-foreground">Projekt-Pfad:</span>
         <span className="font-mono">/server/{projectPath}</span>
       </div>
+
+      {serverInfo?.projectPath && (
+        <div className="flex justify-between items-center bg-muted/50 p-2 rounded-md">
+          <span className="text-muted-foreground text-xs">Server-Ordner:</span>
+          <div className="flex items-center gap-2">
+            <span className="font-mono text-xs">{serverInfo.projectPath}</span>
+            <Button
+              size="sm"
+              variant="ghost"
+              className="h-6 px-2"
+              onClick={onSetProjectPath}
+            >
+              <FolderOpen className="h-3 w-3" />
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {!serverInfo?.projectPath && (
+        <div className="flex justify-between items-center">
+          <span className="text-muted-foreground text-xs">Server-Ordner:</span>
+          <Button
+            size="sm"
+            variant="outline"
+            className="h-7 text-xs"
+            onClick={onSetProjectPath}
+          >
+            <FolderOpen className="h-3 w-3 mr-1" />
+            Festlegen
+          </Button>
+        </div>
+      )}
 
       <div className="flex justify-between">
         <span className="text-muted-foreground">Status:</span>

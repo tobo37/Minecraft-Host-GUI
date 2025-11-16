@@ -9,7 +9,6 @@ interface ServerControlsProps {
   onStop: () => void;
   onFindStartFiles: () => void;
   onConfiguration: () => void;
-  onSetProjectPath: () => void;
 }
 
 export function ServerControls({
@@ -18,7 +17,6 @@ export function ServerControls({
   onStop,
   onFindStartFiles,
   onConfiguration,
-  onSetProjectPath,
 }: ServerControlsProps) {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -38,14 +36,6 @@ export function ServerControls({
         onClick={onConfiguration}
       >
         ⚙️ Konfiguration
-      </Button>
-      <Button
-        size="lg"
-        variant="outline"
-        className="h-16"
-        onClick={onSetProjectPath}
-      >
-        📂 Projektpfad
       </Button>
       <Button size="lg" variant="outline" className="h-16">
         📁 Dateien verwalten

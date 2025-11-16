@@ -11,15 +11,19 @@ export interface StartFileCandidate {
 }
 
 /**
- * Validate server path and return it
+ * Validate server path and return actual path (including projectPath if set)
  */
 async function validateServerPath(project: string | null): Promise<string> {
   if (!project) {
     throw new Error("Project parameter is required");
   }
 
-  const serverPath = `./server/${project}`;
+  const { readMetadata } = await import("./metadataService");
+  const { getActualServerPath } = await import("./server/serverRepository");
   const fs = require("fs").promises;
+
+  const metadata = await readMetadata(project);
+  const serverPath = getActualServerPath(project, metadata?.projectPath);
 
   try {
     await fs.access(serverPath);
@@ -240,9 +244,13 @@ async function validateStartFile(
     throw new Error("Project and startFile parameters are required");
   }
 
-  const serverPath = `./server/${project}`;
-  const startFilePath = `${serverPath}/${startFile}`;
+  const { readMetadata } = await import("./metadataService");
+  const { getActualServerPath } = await import("./server/serverRepository");
   const fs = require("fs").promises;
+
+  const metadata = await readMetadata(project);
+  const serverPath = getActualServerPath(project, metadata?.projectPath);
+  const startFilePath = `${serverPath}/${startFile}`;
 
   try {
     await fs.access(startFilePath);

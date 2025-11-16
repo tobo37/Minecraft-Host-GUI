@@ -40,8 +40,18 @@ The dialog shows an interactive folder tree:
 When you set a project path, the system automatically uses it for:
 
 - **Server Start**: Looks for `startserver.sh` in the correct directory
+- **Start File Search**: Searches for start files relative to the project path
 - **Configuration Files**: Reads/writes config files from the correct location
 - **Server Logs**: Runs the server process in the correct working directory
+
+### Start File Search
+
+The "Find Start Files" feature now searches **relative to the project path**:
+
+- **Without project path**: Searches in `server/2025-11-16/`
+- **With project path** (`BM_Revelations_II-2.2.2_server`): Searches in `server/2025-11-16/BM_Revelations_II-2.2.2_server/`
+
+This means you don't need to worry about the full path structure - just set the project path once, and all operations work correctly.
 
 ## Technical Details
 

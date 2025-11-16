@@ -18,6 +18,7 @@ interface ServerInfoCardProps {
   onDescriptionChange: (_value: string) => void;
   onCancelDescription: () => void;
   onSaveDescription: () => void;
+  onSetProjectPath: () => void;
 }
 
 export function ServerInfoCard({
@@ -31,6 +32,7 @@ export function ServerInfoCard({
   onDescriptionChange,
   onCancelDescription,
   onSaveDescription,
+  onSetProjectPath,
 }: ServerInfoCardProps) {
   const { translations } = useLanguage();
 
@@ -63,6 +65,7 @@ export function ServerInfoCard({
             serverInfo={serverInfo}
             projectPath={projectPath}
             serverStatus={serverStatus}
+            onSetProjectPath={onSetProjectPath}
           />
         </div>
       </CardContent>

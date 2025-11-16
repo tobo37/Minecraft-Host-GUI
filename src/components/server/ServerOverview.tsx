@@ -133,6 +133,7 @@ export function ServerOverview({
                   description.cancelEditing(serverInfo?.description || "");
                 }}
                 onSaveDescription={description.handleUpdateDescription}
+                onSetProjectPath={projectPathHook.openDialog}
               />
 
               <ServerControls
@@ -141,7 +142,6 @@ export function ServerOverview({
                 onStop={onStopServer}
                 onFindStartFiles={startFile.handleFindStartFiles}
                 onConfiguration={onConfigurationClick}
-                onSetProjectPath={projectPathHook.openDialog}
               />
 
               {(serverStatus === "running" ||
