@@ -213,13 +213,17 @@ export function ServerManagement({
 
       const data = await response.json();
       if (data.success) {
-        setIsStartFileDialogOpen(false);
         await fetchServerInfo();
+        setIsStartFileDialogOpen(false);
+        setStartFileCandidates([]);
+        setSelectedStartFile("");
       } else {
         console.error("Failed to set start file:", data.error);
+        alert("Fehler beim Speichern der Startdatei: " + (data.error || "Unbekannter Fehler"));
       }
     } catch (error) {
       console.error("Error setting start file:", error);
+      alert("Fehler beim Speichern der Startdatei");
     }
   };
 
@@ -360,7 +364,13 @@ export function ServerManagement({
         candidates={startFileCandidates}
         selectedFile={selectedStartFile}
         isSearching={isSearchingStartFiles}
-        onOpenChange={setIsStartFileDialogOpen}
+        onOpenChange={(open) => {
+          setIsStartFileDialogOpen(open);
+          if (!open) {
+            setStartFileCandidates([]);
+            setSelectedStartFile("");
+          }
+        }}
         onSelectFile={setSelectedStartFile}
         onConfirm={handleSetStartFile}
         onCancel={() => {
