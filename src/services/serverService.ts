@@ -470,9 +470,16 @@ export async function startServer(req: Request): Promise<Response> {
     
     let serverProcess;
     if (process.platform === "win32" || isWindowsScript) {
-      // Windows: use cmd.exe
+      // Windows: use cmd.exe with call to properly execute batch files
+      // The 'call' command ensures the batch file is executed in the current context
+      const projectLogs = serverLogs.get(project) || [];
+      projectLogs.push(
+        `[${new Date().toLocaleTimeString()}] Executing: cmd /c call "${startFileName}"`
+      );
+      serverLogs.set(project, projectLogs);
+      
       serverProcess = Bun.spawn(
-        ["cmd", "/c", startFileName],
+        ["cmd", "/c", "call", startFileName],
         {
           cwd: serverPath,
           stdout: "pipe",

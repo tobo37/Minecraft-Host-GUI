@@ -48,12 +48,22 @@ bun start
 # Build for production
 bun run build
 
+# Code quality
+bun lint              # Check for linting errors
+bun lint:fix          # Auto-fix linting errors
+
 # Docker build
 docker build -t minecraft-server-manager .
 
 # Docker run with persistent data
 docker run -d --name minecraft-manager -p 3000:3000 -p 25565:25565 -v $(pwd)/server:/app/server minecraft-server-manager
 ```
+
+## Code Quality Tools
+
+- **ESLint**: Configured with TypeScript, React, and React Hooks plugins
+- **Rules**: Enforces max file size (300 lines), max function size (50 lines), complexity limits
+- **Auto-fix**: Many issues can be automatically fixed with `bun lint:fix`
 
 ## Key Dependencies
 

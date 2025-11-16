@@ -29,6 +29,29 @@ function getJabbaPath(): string {
 }
 
 /**
+ * Get Jabba environment variables for a specific version
+ */
+async function getJabbaEnv(version: string): Promise<Record<string, string>> {
+  const home = homedir();
+  const isWindows = process.platform === 'win32';
+  
+  // Construct the Java home path based on Jabba's directory structure
+  const jabbaDir = join(home, '.jabba', 'jdk', version);
+  
+  if (isWindows) {
+    return {
+      JAVA_HOME: jabbaDir,
+      PATH: `${join(jabbaDir, 'bin')};${process.env.PATH || ''}`,
+    };
+  } else {
+    return {
+      JAVA_HOME: jabbaDir,
+      PATH: `${join(jabbaDir, 'bin')}:${process.env.PATH || ''}`,
+    };
+  }
+}
+
+/**
  * Execute Jabba command directly
  */
 async function execJabba(args: string[]): Promise<{ exitCode: number; stdout: string; stderr: string }> {
@@ -48,6 +71,24 @@ async function execJabba(args: string[]): Promise<{ exitCode: number; stdout: st
       stdout: "",
       stderr: error instanceof Error ? error.message : "Unknown error",
     };
+  }
+}
+
+/**
+ * Load Jabba environment if a version is currently selected
+ */
+export async function loadJabbaEnvironment(): Promise<void> {
+  try {
+    const jabbaInfo = await getJabbaInfo();
+    
+    if (jabbaInfo.installed && jabbaInfo.current) {
+      const jabbaEnv = await getJabbaEnv(jabbaInfo.current);
+      process.env.JAVA_HOME = jabbaEnv.JAVA_HOME;
+      process.env.PATH = jabbaEnv.PATH;
+      console.log(`Loaded Jabba environment: ${jabbaInfo.current} (JAVA_HOME=${jabbaEnv.JAVA_HOME})`);
+    }
+  } catch (error) {
+    console.error("Error loading Jabba environment:", error);
   }
 }
 
@@ -267,13 +308,20 @@ export async function installJabbaVersion(version: string): Promise<{ success: b
 }
 
 /**
- * Switch Java version using Jabba
+ * Switch Java version using Jabba and update process environment
  */
 export async function useJabbaVersion(version: string): Promise<{ success: boolean; error?: string }> {
   try {
     const result = await execJabba(['use', version]);
 
     if (result.exitCode === 0) {
+      // Update the current process environment variables
+      const jabbaEnv = await getJabbaEnv(version);
+      process.env.JAVA_HOME = jabbaEnv.JAVA_HOME;
+      process.env.PATH = jabbaEnv.PATH;
+      
+      console.log(`Updated environment: JAVA_HOME=${jabbaEnv.JAVA_HOME}`);
+      
       return { success: true };
     }
 

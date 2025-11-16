@@ -33,7 +33,11 @@ import {
   handleJabbaLsRemote,
   handleJabbaInstallVersion,
   handleJabbaUse,
+  loadJabbaEnvironment,
 } from "./services/javaService";
+
+// Load Jabba environment on startup if available
+await loadJabbaEnvironment();
 
 const server = serve({
   // Bind to all interfaces for Docker compatibility
