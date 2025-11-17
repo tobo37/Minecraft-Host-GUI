@@ -21,15 +21,8 @@ import {
   uploadServerFileStream,
   deleteServerFile,
 } from "./services/serverFile";
-import {
-  listConfigFiles,
-  readConfigFile,
-  saveConfigFile,
-} from "./services/configService";
-import {
-  updateServerMetadata,
-  deleteServerInstance,
-} from "./services/metadataApiService";
+import { listConfigFiles, readConfigFile, saveConfigFile } from "./services/configService";
+import { updateServerMetadata, deleteServerInstance } from "./services/metadataApiService";
 import { findStartFiles, setStartFile } from "./services/startFileService";
 import {
   handleJavaInfo,
@@ -299,9 +292,7 @@ const server = serve({
 
     "/api/server/browse-directory": {
       async GET(req) {
-        const { handleBrowseDirectory } = await import(
-          "./services/directoryBrowser"
-        );
+        const { handleBrowseDirectory } = await import("./services/directoryBrowser");
         return await handleBrowseDirectory(req);
       },
     },

@@ -27,19 +27,14 @@ export function ServerFileList({ files, onDelete }: ServerFileListProps) {
     return (
       <div className="text-sm text-muted-foreground bg-muted/30 p-3 rounded-lg">
         <p className="font-medium mb-1">Keine Server-Dateien vorhanden</p>
-        <p>
-          Lade eine ZIP-Datei mit deinen Minecraft-Server-Dateien hoch, um zu
-          beginnen.
-        </p>
+        <p>Lade eine ZIP-Datei mit deinen Minecraft-Server-Dateien hoch, um zu beginnen.</p>
       </div>
     );
   }
 
   return (
     <div className="space-y-2">
-      <h4 className="text-sm font-medium text-muted-foreground">
-        Verfügbare Server-Dateien:
-      </h4>
+      <h4 className="text-sm font-medium text-muted-foreground">Verfügbare Server-Dateien:</h4>
       <div className="space-y-2 max-h-32 overflow-y-auto">
         {files.map((file) => (
           <div

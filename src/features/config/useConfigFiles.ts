@@ -24,7 +24,7 @@ interface UseConfigFilesReturn {
 export function useConfigFiles(projectPath: string): UseConfigFilesReturn {
   const [configFiles, setConfigFiles] = useState<ConfigFile[]>([]);
   const [selectedConfig, setSelectedConfig] = useState<ConfigFile | null>(null);
-  const [configContent, setConfigContent] = useState<string>('');
+  const [configContent, setConfigContent] = useState<string>("");
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
 
@@ -32,12 +32,12 @@ export function useConfigFiles(projectPath: string): UseConfigFilesReturn {
     try {
       const response = await fetch(`/api/config/list?project=${encodeURIComponent(projectPath)}`);
       const data = await response.json();
-      
+
       if (data.success) {
         setConfigFiles(data.files);
       }
     } catch (error) {
-      console.error('Error loading config files:', error);
+      console.error("Error loading config files:", error);
     }
   }, [projectPath]);
 
@@ -45,28 +45,31 @@ export function useConfigFiles(projectPath: string): UseConfigFilesReturn {
     loadConfigFiles();
   }, [loadConfigFiles]);
 
-  const selectConfig = useCallback(async (configFile: ConfigFile) => {
-    if (!configFile.enabled) return;
-    
-    setIsLoading(true);
-    try {
-      const response = await fetch(
-        `/api/config/read?project=${encodeURIComponent(projectPath)}&file=${encodeURIComponent(configFile.name)}`
-      );
-      const data = await response.json();
-      
-      if (data.success) {
-        setConfigContent(data.content);
-        setSelectedConfig(configFile);
-      } else {
-        console.error('Failed to load config:', data.error);
+  const selectConfig = useCallback(
+    async (configFile: ConfigFile) => {
+      if (!configFile.enabled) return;
+
+      setIsLoading(true);
+      try {
+        const response = await fetch(
+          `/api/config/read?project=${encodeURIComponent(projectPath)}&file=${encodeURIComponent(configFile.name)}`
+        );
+        const data = await response.json();
+
+        if (data.success) {
+          setConfigContent(data.content);
+          setSelectedConfig(configFile);
+        } else {
+          console.error("Failed to load config:", data.error);
+        }
+      } catch (error) {
+        console.error("Error loading config content:", error);
+      } finally {
+        setIsLoading(false);
       }
-    } catch (error) {
-      console.error('Error loading config content:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  }, [projectPath]);
+    },
+    [projectPath]
+  );
 
   const updateContent = useCallback((content: string) => {
     setConfigContent(content);
@@ -74,27 +77,27 @@ export function useConfigFiles(projectPath: string): UseConfigFilesReturn {
 
   const saveConfig = useCallback(async () => {
     if (!selectedConfig) return;
-    
+
     setIsSaving(true);
     try {
-      const response = await fetch('/api/config/save', {
-        method: 'POST',
+      const response = await fetch("/api/config/save", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({
           project: projectPath,
           file: selectedConfig.name,
-          content: configContent
-        })
+          content: configContent,
+        }),
       });
-      
+
       const data = await response.json();
       if (data.success) {
         // Config saved successfully
       }
     } catch (error) {
-      console.error('Error saving config:', error);
+      console.error("Error saving config:", error);
     } finally {
       setIsSaving(false);
     }

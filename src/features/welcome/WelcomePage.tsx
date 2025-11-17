@@ -1,10 +1,4 @@
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useLanguage } from "@/hooks/useLanguage";
 import { useState, useEffect, useCallback } from "react";
@@ -114,9 +108,7 @@ export function WelcomePage({ onServerCreated }: WelcomePageProps) {
       )} GB file with direct streaming - this may take 10-20 minutes...`;
     }
     if (sizeGB > 0.1) {
-      return `📤 Uploading ${sizeGB.toFixed(
-        1
-      )} GB file - this may take several minutes...`;
+      return `📤 Uploading ${sizeGB.toFixed(1)} GB file - this may take several minutes...`;
     }
     return "📤 Uploading file...";
   };
@@ -151,8 +143,7 @@ export function WelcomePage({ onServerCreated }: WelcomePageProps) {
         setTimeout(() => setUploadStatus(null), 5000);
       }
     } catch (error) {
-      const errorMsg =
-        error instanceof Error ? error.message : "Unbekannter Fehler";
+      const errorMsg = error instanceof Error ? error.message : "Unbekannter Fehler";
       setUploadStatus(`❌ Lösch-Fehler: ${errorMsg}`);
       setTimeout(() => setUploadStatus(null), 5000);
     }
@@ -203,27 +194,18 @@ export function WelcomePage({ onServerCreated }: WelcomePageProps) {
     }
   };
 
-  const handleServerCreationSuccess = (data: {
-    status: string;
-    serverPath: string;
-  }) => {
+  const handleServerCreationSuccess = (data: { status: string; serverPath: string }) => {
     if (data.status === "success") {
-      setServerStatus(
-        `✅ ${translations.messages.serverCreating} (${data.serverPath})`
-      );
+      setServerStatus(`✅ ${translations.messages.serverCreating} (${data.serverPath})`);
     } else if (data.status === "exists") {
-      setServerStatus(
-        `ℹ️ ${translations.messages.serverExists} (${data.serverPath})`
-      );
+      setServerStatus(`ℹ️ ${translations.messages.serverExists} (${data.serverPath})`);
     }
     setTimeout(() => onServerCreated(data.serverPath), 1500);
   };
 
   const handleServerCreationError = (error: unknown) => {
     if (error instanceof Error && error.name === "AbortError") {
-      setServerStatus(
-        `❌ ${translations.messages.serverError}: Timeout nach 60 Sekunden`
-      );
+      setServerStatus(`❌ ${translations.messages.serverError}: Timeout nach 60 Sekunden`);
     } else {
       const message =
         typeof error === "object" && error !== null && "message" in error
@@ -251,15 +233,10 @@ export function WelcomePage({ onServerCreated }: WelcomePageProps) {
 
           <CardContent className="space-y-8">
             <div className="grid gap-4 text-left">
-              <h3 className="font-semibold text-foreground mb-2">
-                {translations.features.title}
-              </h3>
+              <h3 className="font-semibold text-foreground mb-2">{translations.features.title}</h3>
               <div className="grid gap-3">
                 {translations.features.items.map((item, index) => (
-                  <div
-                    key={index}
-                    className="flex items-center gap-3 text-muted-foreground"
-                  >
+                  <div key={index} className="flex items-center gap-3 text-muted-foreground">
                     <div className="w-2 h-2 bg-primary rounded-full flex-shrink-0"></div>
                     <span>{item}</span>
                   </div>
@@ -289,10 +266,7 @@ export function WelcomePage({ onServerCreated }: WelcomePageProps) {
                   onNameChange={setCustomName}
                   onDescriptionChange={setDescription}
                 />
-                <ServerFileList
-                  files={serverFiles}
-                  onDelete={handleDeleteServerFile}
-                />
+                <ServerFileList files={serverFiles} onDelete={handleDeleteServerFile} />
               </>
             )}
 
@@ -313,11 +287,7 @@ export function WelcomePage({ onServerCreated }: WelcomePageProps) {
                 )}
               </Button>
 
-              {serverStatus && (
-                <div className="text-sm text-center max-w-md">
-                  {serverStatus}
-                </div>
-              )}
+              {serverStatus && <div className="text-sm text-center max-w-md">{serverStatus}</div>}
             </div>
           </CardContent>
         </Card>

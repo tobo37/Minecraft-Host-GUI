@@ -79,17 +79,14 @@ export function RconManagement({ projectPath, onBack }: RconManagementProps) {
   useEffect(() => {
     // Scroll only within the response container, not the whole page
     if (responseContainerRef.current) {
-      responseContainerRef.current.scrollTop =
-        responseContainerRef.current.scrollHeight;
+      responseContainerRef.current.scrollTop = responseContainerRef.current.scrollHeight;
     }
   }, [responses]);
 
   const checkRconStatus = async () => {
     setIsCheckingStatus(true);
     try {
-      const res = await fetch(
-        `/api/server/rcon/status?project=${encodeURIComponent(projectPath)}`
-      );
+      const res = await fetch(`/api/server/rcon/status?project=${encodeURIComponent(projectPath)}`);
       const result = await res.json();
       setRconEnabled(result.enabled || false);
     } catch {
@@ -168,23 +165,16 @@ export function RconManagement({ projectPath, onBack }: RconManagementProps) {
     setResponses((prev) => [...prev, "", "🔍 Teste RCON-Verbindung..."]);
 
     try {
-      const res = await fetch(
-        `/api/server/rcon?project=${encodeURIComponent(projectPath)}`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ command: "list" }),
-        }
-      );
+      const res = await fetch(`/api/server/rcon?project=${encodeURIComponent(projectPath)}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ command: "list" }),
+      });
 
       const result = await res.json();
 
       if (res.ok) {
-        setResponses((prev) => [
-          ...prev,
-          "✅ RCON funktioniert!",
-          result.response || "",
-        ]);
+        setResponses((prev) => [...prev, "✅ RCON funktioniert!", result.response || ""]);
       } else {
         setResponses((prev) => [
           ...prev,
@@ -208,10 +198,7 @@ export function RconManagement({ projectPath, onBack }: RconManagementProps) {
 
     // Check if server is running
     if (!isServerRunning) {
-      setResponses((prev) => [
-        ...prev,
-        "❌ Server läuft nicht. Starte den Server zuerst.",
-      ]);
+      setResponses((prev) => [...prev, "❌ Server läuft nicht. Starte den Server zuerst."]);
       return;
     }
 
@@ -285,10 +272,7 @@ export function RconManagement({ projectPath, onBack }: RconManagementProps) {
       setCommand(suggestions[nextIndex] || "");
     } else if (e.key === "ArrowDown" && suggestions.length > 0) {
       e.preventDefault();
-      const nextIndex = Math.min(
-        selectedSuggestion + 1,
-        suggestions.length - 1
-      );
+      const nextIndex = Math.min(selectedSuggestion + 1, suggestions.length - 1);
       setSelectedSuggestion(nextIndex);
     } else if (e.key === "ArrowUp" && suggestions.length > 0) {
       e.preventDefault();
@@ -313,15 +297,9 @@ export function RconManagement({ projectPath, onBack }: RconManagementProps) {
           <CardHeader>
             <CardTitle className="text-2xl flex items-center gap-3">
               🎮 RCON Console
-              {rconEnabled && (
-                <span className="text-sm text-green-500 font-normal">
-                  ● Aktiv
-                </span>
-              )}
+              {rconEnabled && <span className="text-sm text-green-500 font-normal">● Aktiv</span>}
               {rconEnabled === false && (
-                <span className="text-sm text-yellow-500 font-normal">
-                  ○ Inaktiv
-                </span>
+                <span className="text-sm text-yellow-500 font-normal">○ Inaktiv</span>
               )}
             </CardTitle>
           </CardHeader>
@@ -335,16 +313,13 @@ export function RconManagement({ projectPath, onBack }: RconManagementProps) {
             {!isServerRunning && (
               <div className="bg-yellow-950/30 border border-yellow-700 rounded-lg p-4">
                 <p className="text-yellow-200 text-sm">
-                  ⚠️ Der Server läuft nicht. Starte den Server, um Befehle zu
-                  senden.
+                  ⚠️ Der Server läuft nicht. Starte den Server, um Befehle zu senden.
                 </p>
               </div>
             )}
 
             {isCheckingStatus ? (
-              <div className="text-center py-8 text-muted-foreground">
-                Prüfe RCON-Status...
-              </div>
+              <div className="text-center py-8 text-muted-foreground">Prüfe RCON-Status...</div>
             ) : rconEnabled === false ? (
               <div className="space-y-4">
                 <div className="bg-yellow-950/30 border border-yellow-700 rounded-lg p-6">
@@ -352,8 +327,8 @@ export function RconManagement({ projectPath, onBack }: RconManagementProps) {
                     RCON ist nicht aktiviert
                   </h3>
                   <p className="text-sm text-yellow-100 mb-4">
-                    RCON (Remote Console) ermöglicht die erweiterte Verwaltung
-                    deines Minecraft-Servers mit Features wie:
+                    RCON (Remote Console) ermöglicht die erweiterte Verwaltung deines
+                    Minecraft-Servers mit Features wie:
                   </p>
                   <ul className="text-sm text-yellow-100 space-y-2 mb-4 ml-4">
                     <li>• Befehle direkt an den Server senden</li>
@@ -363,39 +338,29 @@ export function RconManagement({ projectPath, onBack }: RconManagementProps) {
                   </ul>
                   <div className="bg-yellow-900/50 border border-yellow-600 rounded p-3 mb-4">
                     <p className="text-xs text-yellow-200 mb-2">
-                      ⚠️{" "}
-                      <strong>
-                        Wichtiger Hinweis zu Forge/Fabric-Servern:
-                      </strong>
+                      ⚠️ <strong>Wichtiger Hinweis zu Forge/Fabric-Servern:</strong>
                     </p>
                     <p className="text-xs text-yellow-200">
-                      Viele Forge- und Fabric-Modpacks unterstützen RCON nicht
-                      oder nur eingeschränkt. Falls RCON nicht funktioniert,
-                      werden Befehle automatisch über stdin gesendet. Du kannst
-                      die Seite auch ohne RCON-Aktivierung nutzen!
+                      Viele Forge- und Fabric-Modpacks unterstützen RCON nicht oder nur
+                      eingeschränkt. Falls RCON nicht funktioniert, werden Befehle automatisch über
+                      stdin gesendet. Du kannst die Seite auch ohne RCON-Aktivierung nutzen!
                     </p>
                   </div>
 
                   {showPasswordField ? (
                     <div className="space-y-3">
                       <div>
-                        <label className="text-sm text-yellow-200 mb-1 block">
-                          RCON Port
-                        </label>
+                        <label className="text-sm text-yellow-200 mb-1 block">RCON Port</label>
                         <Input
                           type="number"
                           value={rconPort}
-                          onChange={(e) =>
-                            setRconPort(parseInt(e.target.value) || 25575)
-                          }
+                          onChange={(e) => setRconPort(parseInt(e.target.value) || 25575)}
                           className="bg-yellow-950/50 border-yellow-700 text-yellow-100"
                           placeholder="25575"
                         />
                       </div>
                       <div>
-                        <label className="text-sm text-yellow-200 mb-1 block">
-                          RCON Passwort
-                        </label>
+                        <label className="text-sm text-yellow-200 mb-1 block">RCON Passwort</label>
                         <Input
                           type="text"
                           value={rconPassword}
@@ -493,9 +458,7 @@ export function RconManagement({ projectPath, onBack }: RconManagementProps) {
                 {responses.length > 0 && (
                   <Card>
                     <CardHeader>
-                      <CardTitle className="text-lg">
-                        Server-Antworten
-                      </CardTitle>
+                      <CardTitle className="text-lg">Server-Antworten</CardTitle>
                     </CardHeader>
                     <CardContent>
                       <div
@@ -553,23 +516,17 @@ export function RconManagement({ projectPath, onBack }: RconManagementProps) {
                             </div>
                           )}
                         </div>
-                        <Button
-                          onClick={handleSendClick}
-                          disabled={!command.trim() || isSending}
-                        >
+                        <Button onClick={handleSendClick} disabled={!command.trim() || isSending}>
                           {isSending ? "Sende..." : "Senden"}
                         </Button>
                       </div>
                       <div className="text-xs text-muted-foreground mt-2">
-                        💡 Tipp: Nutze Tab oder ↑↓ für Autocomplete, Enter zum
-                        Senden
+                        💡 Tipp: Nutze Tab oder ↑↓ für Autocomplete, Enter zum Senden
                       </div>
                     </div>
 
                     <div className="bg-muted/50 rounded-lg p-3">
-                      <p className="text-sm font-semibold mb-2">
-                        Häufige Befehle:
-                      </p>
+                      <p className="text-sm font-semibold mb-2">Häufige Befehle:</p>
                       <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
                         {[
                           "list",
@@ -602,8 +559,7 @@ export function RconManagement({ projectPath, onBack }: RconManagementProps) {
                     <div>
                       <p className="font-semibold">RCON nicht aktiviert</p>
                       <p className="text-sm text-blue-300">
-                        Befehle werden über stdin gesendet (keine
-                        Server-Antworten)
+                        Befehle werden über stdin gesendet (keine Server-Antworten)
                       </p>
                     </div>
                   </div>
@@ -612,9 +568,7 @@ export function RconManagement({ projectPath, onBack }: RconManagementProps) {
                 {responses.length > 0 && (
                   <Card>
                     <CardHeader>
-                      <CardTitle className="text-lg">
-                        Gesendete Befehle
-                      </CardTitle>
+                      <CardTitle className="text-lg">Gesendete Befehle</CardTitle>
                     </CardHeader>
                     <CardContent>
                       <div
@@ -672,23 +626,17 @@ export function RconManagement({ projectPath, onBack }: RconManagementProps) {
                             </div>
                           )}
                         </div>
-                        <Button
-                          onClick={handleSendClick}
-                          disabled={!command.trim() || isSending}
-                        >
+                        <Button onClick={handleSendClick} disabled={!command.trim() || isSending}>
                           {isSending ? "Sende..." : "Senden"}
                         </Button>
                       </div>
                       <div className="text-xs text-muted-foreground mt-2">
-                        💡 Tipp: Nutze Tab oder ↑↓ für Autocomplete, Enter zum
-                        Senden
+                        💡 Tipp: Nutze Tab oder ↑↓ für Autocomplete, Enter zum Senden
                       </div>
                     </div>
 
                     <div className="bg-muted/50 rounded-lg p-3">
-                      <p className="text-sm font-semibold mb-2">
-                        Häufige Befehle:
-                      </p>
+                      <p className="text-sm font-semibold mb-2">Häufige Befehle:</p>
                       <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
                         {[
                           "list",
@@ -716,8 +664,8 @@ export function RconManagement({ projectPath, onBack }: RconManagementProps) {
             ) : (
               <div className="bg-muted/50 border border-border rounded-lg p-4">
                 <p className="text-sm text-muted-foreground">
-                  RCON ist aktiviert, aber der Server läuft nicht. Starte den
-                  Server, um Befehle zu senden.
+                  RCON ist aktiviert, aber der Server läuft nicht. Starte den Server, um Befehle zu
+                  senden.
                 </p>
               </div>
             )}

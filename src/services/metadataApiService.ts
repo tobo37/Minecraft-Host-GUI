@@ -34,11 +34,7 @@ function validateProject(project: string): ValidationResult {
     };
   }
 
-  if (
-    project.includes("..") ||
-    project.includes("/") ||
-    project.includes("\\")
-  ) {
+  if (project.includes("..") || project.includes("/") || project.includes("\\")) {
     return {
       valid: false,
       error: "Invalid project path",
@@ -192,7 +188,8 @@ async function saveMetadata(project: string, updates: Record<string, string>) {
 export async function updateServerMetadata(req: Request): Promise<Response> {
   try {
     const body = await req.json();
-    const { project, customName, description, projectPath, startFile, javaVersion } = body as MetadataUpdateRequest;
+    const { project, customName, description, projectPath, startFile, javaVersion } =
+      body as MetadataUpdateRequest;
 
     // Validate metadata
     const validation = await validateMetadata(project, customName, description);
@@ -242,11 +239,7 @@ async function validateDeletion(project: string | null): Promise<ValidationResul
   }
 
   // Validate project path to prevent traversal attacks
-  if (
-    project.includes("..") ||
-    project.includes("/") ||
-    project.includes("\\")
-  ) {
+  if (project.includes("..") || project.includes("/") || project.includes("\\")) {
     return {
       valid: false,
       error: "Invalid project path",

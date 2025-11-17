@@ -25,11 +25,7 @@ export function ConfigurationManagement({ projectPath, onBack }: ConfigurationMa
     <div className="min-h-screen bg-gradient-to-br from-background to-muted/20 p-4">
       <div className="container mx-auto max-w-6xl">
         <div className="mb-4">
-          <Button 
-            variant="outline" 
-            onClick={onBack}
-            className="mb-4"
-          >
+          <Button variant="outline" onClick={onBack} className="mb-4">
             ← Zurück zur Serververwaltung
           </Button>
         </div>
@@ -46,7 +42,7 @@ export function ConfigurationManagement({ projectPath, onBack }: ConfigurationMa
               Projekt: {projectPath}
             </CardDescription>
           </CardHeader>
-          
+
           <CardContent className="space-y-6">
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
               <div className="lg:col-span-1">

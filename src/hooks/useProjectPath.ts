@@ -43,9 +43,7 @@ export function useProjectPath({
         setValidationError(response.error || "Failed to update project path");
       }
     } catch (error) {
-      setValidationError(
-        error instanceof Error ? error.message : "Unknown error"
-      );
+      setValidationError(error instanceof Error ? error.message : "Unknown error");
     }
   };
 

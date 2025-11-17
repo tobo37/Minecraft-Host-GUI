@@ -25,9 +25,7 @@ export function ServerFileUpload({
 
   return (
     <div className="space-y-4">
-      <h3 className="font-semibold text-foreground">
-        Server-Dateien verwalten
-      </h3>
+      <h3 className="font-semibold text-foreground">Server-Dateien verwalten</h3>
 
       <div
         className={`border-2 border-dashed rounded-lg p-6 text-center transition-colors cursor-pointer ${
@@ -51,9 +49,7 @@ export function ServerFileUpload({
         {isUploading ? (
           <div className="flex flex-col items-center gap-2">
             <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
-            <p className="text-sm text-muted-foreground">
-              Datei wird hochgeladen...
-            </p>
+            <p className="text-sm text-muted-foreground">Datei wird hochgeladen...</p>
             <p className="text-xs text-muted-foreground">
               Bei großen Dateien kann dies mehrere Minuten dauern
             </p>
@@ -63,9 +59,7 @@ export function ServerFileUpload({
             <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center">
               📦
             </div>
-            <p className="font-medium">
-              ZIP-Datei hier ablegen oder klicken
-            </p>
+            <p className="font-medium">ZIP-Datei hier ablegen oder klicken</p>
             <p className="text-sm text-muted-foreground">
               Lade deine Minecraft-Server ZIP-Dateien hoch (max. 2GB)
             </p>

@@ -21,9 +21,7 @@ interface BrowseDirectoryResponse {
 /**
  * Browse server directory structure
  */
-export async function browseServerDirectory(
-  project: string
-): Promise<BrowseDirectoryResponse> {
+export async function browseServerDirectory(project: string): Promise<BrowseDirectoryResponse> {
   const response = await fetch(
     `/api/server/browse-directory?project=${encodeURIComponent(project)}`
   );

@@ -14,9 +14,7 @@ export function useServerDelete({ projectPath, onSuccess }: UseServerDeleteProps
 
   const handleDeleteServer = async (serverName: string) => {
     if (deleteConfirmName.trim() !== serverName) {
-      setDeleteValidationError(
-        translations.serverManagement.deleteDialog.validationError
-      );
+      setDeleteValidationError(translations.serverManagement.deleteDialog.validationError);
       return;
     }
 

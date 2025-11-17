@@ -58,9 +58,7 @@ export function validateDescription(description: string): {
 /**
  * Read metadata from a server directory
  */
-export async function readMetadata(
-  projectPath: string
-): Promise<ServerMetadata | null> {
+export async function readMetadata(projectPath: string): Promise<ServerMetadata | null> {
   try {
     const metadataPath = join(SERVER_BASE_PATH, projectPath, METADATA_FILENAME);
     const file = Bun.file(metadataPath);
@@ -82,10 +80,7 @@ export async function readMetadata(
 /**
  * Write metadata to a server directory
  */
-export async function writeMetadata(
-  projectPath: string,
-  metadata: ServerMetadata
-): Promise<void> {
+export async function writeMetadata(projectPath: string, metadata: ServerMetadata): Promise<void> {
   try {
     const metadataPath = join(SERVER_BASE_PATH, projectPath, METADATA_FILENAME);
     const content = JSON.stringify(metadata, null, 2);
@@ -127,20 +122,14 @@ export async function updateMetadata(
 /**
  * Migrate a server directory without metadata to create default metadata
  */
-export async function migrateMetadata(
-  projectPath: string
-): Promise<ServerMetadata> {
+export async function migrateMetadata(projectPath: string): Promise<ServerMetadata> {
   try {
     logger.info(`Migrating metadata for ${projectPath}`);
 
     // Try to read creation timestamp from .created file
     let createdAt = new Date().toISOString();
     try {
-      const createdFilePath = join(
-        SERVER_BASE_PATH,
-        projectPath,
-        CREATED_FILENAME
-      );
+      const createdFilePath = join(SERVER_BASE_PATH, projectPath, CREATED_FILENAME);
       const createdFile = Bun.file(createdFilePath);
 
       if (await createdFile.exists()) {

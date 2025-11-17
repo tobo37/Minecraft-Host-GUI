@@ -15,9 +15,7 @@ export function useServerMetadata({ projectPath, onSuccess }: UseServerMetadataP
   const handleRename = async () => {
     const nameRegex = /^[a-zA-Z0-9\s\-_]+$/;
     if (!newName.trim() || !nameRegex.test(newName)) {
-      setValidationError(
-        translations.serverManagement.renameDialog.validationError
-      );
+      setValidationError(translations.serverManagement.renameDialog.validationError);
       return;
     }
 

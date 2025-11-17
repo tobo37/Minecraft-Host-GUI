@@ -1,75 +1,75 @@
-import { logger } from '@/lib/logger';
+import { logger } from "@/lib/logger";
 
 /**
  * Save a file using streaming to avoid memory issues with large files
  */
 async function saveFileStream(file: File, filePath: string): Promise<void> {
-  const fs = require('fs');
+  const fs = require("fs");
   const stream = fs.createWriteStream(filePath);
-  
+
   return new Promise((resolve, reject) => {
     const reader = file.stream().getReader();
     let bytesWritten = 0;
-    
+
     const pump = async () => {
       try {
         while (true) {
           const { done, value } = await reader.read();
-          
+
           if (done) {
             stream.end();
             logger.info(`Streaming complete: ${bytesWritten} bytes written`);
             resolve();
             break;
           }
-          
+
           bytesWritten += value.length;
-          
+
           if (!stream.write(Buffer.from(value))) {
-            await new Promise(resolve => stream.once('drain', resolve));
+            await new Promise((resolve) => stream.once("drain", resolve));
           }
-          
+
           if (bytesWritten % (100 * 1024 * 1024) === 0) {
             logger.info(`Streaming progress: ${Math.round(bytesWritten / 1024 / 1024)} MB written`);
           }
         }
       } catch (error) {
-        logger.error('Streaming error:', error);
+        logger.error("Streaming error:", error);
         stream.destroy();
         reject(error);
       }
     };
-    
-    stream.on('error', (error: Error) => {
-      logger.error('Write stream error:', error);
+
+    stream.on("error", (error: Error) => {
+      logger.error("Write stream error:", error);
       reject(error);
     });
-    
+
     pump();
   });
 }
 
 async function validateUploadRequest(formData: FormData): Promise<{ file: File; error?: string }> {
-  const file = formData.get('serverfile') as File;
-  
+  const file = formData.get("serverfile") as File;
+
   if (!file) {
     return { file: null as unknown as File, error: "No file provided" };
   }
-  
-  if (!file.name.toLowerCase().endsWith('.zip')) {
+
+  if (!file.name.toLowerCase().endsWith(".zip")) {
     return { file, error: "Only ZIP files are allowed" };
   }
-  
+
   const maxSize = 2 * 1024 * 1024 * 1024; // 2GB
   if (file.size > maxSize) {
     return { file, error: "File too large. Maximum size is 2GB" };
   }
-  
+
   return { file };
 }
 
 async function ensureDirectoryExists(dirPath: string): Promise<void> {
-  const fs = require('fs').promises;
+  const fs = require("fs").promises;
   try {
     await fs.access(dirPath);
   } catch (_error) {
@@ -78,7 +78,7 @@ async function ensureDirectoryExists(dirPath: string): Promise<void> {
 }
 
 async function checkFileExists(filePath: string): Promise<boolean> {
-  const fs = require('fs').promises;
+  const fs = require("fs").promises;
   try {
     await fs.access(filePath);
     return true;
@@ -89,7 +89,7 @@ async function checkFileExists(filePath: string): Promise<boolean> {
 
 async function saveFile(file: File, filePath: string): Promise<void> {
   if (file.size > 100 * 1024 * 1024) {
-    logger.info('Using streaming upload for large file...');
+    logger.info("Using streaming upload for large file...");
     await saveFileStream(file, filePath);
   } else {
     const arrayBuffer = await file.arrayBuffer();
@@ -102,66 +102,80 @@ async function saveFile(file: File, filePath: string): Promise<void> {
  */
 export async function uploadServerFile(req: Request): Promise<Response> {
   try {
-    logger.info('Upload request received');
-    
+    logger.info("Upload request received");
+
     let formData: FormData;
     try {
       formData = await req.formData();
-      logger.info('FormData parsed successfully');
+      logger.info("FormData parsed successfully");
     } catch (_parseError) {
-      logger.error('Error parsing FormData:', _parseError);
-      return Response.json({
-        success: false,
-        error: "Failed to parse form data"
-      }, { status: 400 });
+      logger.error("Error parsing FormData:", _parseError);
+      return Response.json(
+        {
+          success: false,
+          error: "Failed to parse form data",
+        },
+        { status: 400 }
+      );
     }
-    
+
     const { file, error: validationError } = await validateUploadRequest(formData);
     if (validationError) {
-      return Response.json({
-        success: false,
-        error: validationError
-      }, { status: 400 });
+      return Response.json(
+        {
+          success: false,
+          error: validationError,
+        },
+        { status: 400 }
+      );
     }
-    
+
     logger.info(`File received: ${file.name}, size: ${file.size} bytes`);
-    
-    const serverFilesDir = './serverfiles';
+
+    const serverFilesDir = "./serverfiles";
     const filePath = `${serverFilesDir}/${file.name}`;
-    
+
     await ensureDirectoryExists(serverFilesDir);
-    
+
     if (await checkFileExists(filePath)) {
-      return Response.json({
-        success: false,
-        error: "File with this name already exists"
-      }, { status: 409 });
+      return Response.json(
+        {
+          success: false,
+          error: "File with this name already exists",
+        },
+        { status: 409 }
+      );
     }
-    
+
     logger.info(`Saving file to: ${filePath}`);
     try {
       await saveFile(file, filePath);
       logger.info(`File saved successfully: ${file.name}`);
     } catch (_saveError) {
-      logger.error('Error saving file:', _saveError);
-      return Response.json({
-        success: false,
-        error: "Failed to save file"
-      }, { status: 500 });
+      logger.error("Error saving file:", _saveError);
+      return Response.json(
+        {
+          success: false,
+          error: "Failed to save file",
+        },
+        { status: 500 }
+      );
     }
-    
+
     return Response.json({
       success: true,
       message: "File uploaded successfully",
       filename: file.name,
-      size: file.size
+      size: file.size,
     });
-    
   } catch (error) {
-    logger.error('Error uploading server file:', error);
-    return Response.json({
-      success: false,
-      error: error instanceof Error ? error.message : 'Unknown error'
-    }, { status: 500 });
+    logger.error("Error uploading server file:", error);
+    return Response.json(
+      {
+        success: false,
+        error: error instanceof Error ? error.message : "Unknown error",
+      },
+      { status: 500 }
+    );
   }
 }

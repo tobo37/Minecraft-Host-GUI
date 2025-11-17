@@ -18,11 +18,7 @@ interface ServerManagementProps {
 
 type ServerView = "overview" | "configuration" | "java" | "rcon";
 
-export function ServerManagement({
-  projectPath,
-  onBack,
-}: ServerManagementProps) {
-
+export function ServerManagement({ projectPath, onBack }: ServerManagementProps) {
   const [currentView, setCurrentView] = useState<ServerView>("overview");
 
   // Server data and status
@@ -73,18 +69,11 @@ export function ServerManagement({
   }
 
   if (currentView === "java") {
-    return (
-      <JavaManagement onBack={() => setCurrentView("overview")} />
-    );
+    return <JavaManagement onBack={() => setCurrentView("overview")} />;
   }
 
   if (currentView === "rcon") {
-    return (
-      <RconManagement
-        projectPath={projectPath}
-        onBack={() => setCurrentView("overview")}
-      />
-    );
+    return <RconManagement projectPath={projectPath} onBack={() => setCurrentView("overview")} />;
   }
 
   return (

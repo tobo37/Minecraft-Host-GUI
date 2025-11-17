@@ -15,9 +15,7 @@ function JabbaInstructions({ translations }: { translations: Translations }) {
   return (
     <div className="space-y-4">
       <Alert>
-        <AlertDescription>
-          ℹ️ {translations.javaManagement.jabbaNotAvailable}
-        </AlertDescription>
+        <AlertDescription>ℹ️ {translations.javaManagement.jabbaNotAvailable}</AlertDescription>
       </Alert>
       <div className="space-y-3">
         <p className="text-muted-foreground">
@@ -32,23 +30,16 @@ function JabbaInstructions({ translations }: { translations: Translations }) {
           🔗 {translations.javaManagement.jabbaInstallLink}
         </a>
         <Alert variant="default" className="mt-4">
-          <AlertDescription>
-            ✓ {translations.javaManagement.systemJavaFallback}
-          </AlertDescription>
+          <AlertDescription>✓ {translations.javaManagement.systemJavaFallback}</AlertDescription>
         </Alert>
       </div>
     </div>
   );
 }
 
-export function JabbaInstall({
-  installing,
-  onInstall,
-  jabbaInfo,
-}: JabbaInstallProps) {
+export function JabbaInstall({ installing, onInstall, jabbaInfo }: JabbaInstallProps) {
   const { translations } = useLanguage();
-  const showInstructions =
-    jabbaInfo?.isDockerEnvironment === false && !jabbaInfo?.installed;
+  const showInstructions = jabbaInfo?.isDockerEnvironment === false && !jabbaInfo?.installed;
 
   if (showInstructions) {
     return <JabbaInstructions translations={translations} />;
@@ -56,20 +47,11 @@ export function JabbaInstall({
 
   return (
     <div className="space-y-4">
-      <p className="text-muted-foreground">
-        {translations.javaManagement.jabbaDescription}
-      </p>
+      <p className="text-muted-foreground">{translations.javaManagement.jabbaDescription}</p>
       <Alert>
-        <AlertDescription>
-          💡 {translations.javaManagement.installNote}
-        </AlertDescription>
+        <AlertDescription>💡 {translations.javaManagement.installNote}</AlertDescription>
       </Alert>
-      <Button
-        onClick={onInstall}
-        disabled={installing}
-        className="w-full"
-        size="lg"
-      >
+      <Button onClick={onInstall} disabled={installing} className="w-full" size="lg">
         {installing
           ? translations.javaManagement.installing
           : translations.javaManagement.installJabba}

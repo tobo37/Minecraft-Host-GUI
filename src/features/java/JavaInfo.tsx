@@ -19,17 +19,11 @@ export function JavaInfo({ javaInfo }: JavaInfoProps) {
         {javaInfo?.installed ? (
           <>
             <div className="flex justify-between items-center">
-              <span className="text-muted-foreground">
-                {translations.javaManagement.version}:
-              </span>
-              <span className="font-mono font-semibold">
-                {javaInfo.version}
-              </span>
+              <span className="text-muted-foreground">{translations.javaManagement.version}:</span>
+              <span className="font-mono font-semibold">{javaInfo.version}</span>
             </div>
             <div className="flex justify-between items-center">
-              <span className="text-muted-foreground">
-                {translations.javaManagement.path}:
-              </span>
+              <span className="text-muted-foreground">{translations.javaManagement.path}:</span>
               <span className="font-mono text-sm text-muted-foreground truncate max-w-md">
                 {javaInfo.path}
               </span>
@@ -37,9 +31,7 @@ export function JavaInfo({ javaInfo }: JavaInfoProps) {
           </>
         ) : (
           <Alert>
-            <AlertDescription>
-              {translations.javaManagement.noJava}
-            </AlertDescription>
+            <AlertDescription>{translations.javaManagement.noJava}</AlertDescription>
           </Alert>
         )}
       </CardContent>

@@ -11,9 +11,7 @@ export function useServerPolling({ projectPath, onStatusChange }: UseServerPolli
 
   const checkServerStatus = useCallback(async () => {
     try {
-      const response = await fetch(
-        `/api/server/status?project=${encodeURIComponent(projectPath)}`
-      );
+      const response = await fetch(`/api/server/status?project=${encodeURIComponent(projectPath)}`);
       const data = await response.json();
       if (data.success) {
         const newStatus = data.status;

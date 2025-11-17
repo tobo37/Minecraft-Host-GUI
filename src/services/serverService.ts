@@ -53,8 +53,8 @@ export async function createServer(req: Request): Promise<Response> {
       const status = result.message.includes("already exists")
         ? 200
         : result.message.includes("not found")
-        ? 404
-        : 400;
+          ? 404
+          : 400;
       return Response.json(
         {
           message: result.message,
@@ -380,8 +380,7 @@ export async function getRconStatus(req: Request): Promise<Response> {
     const { readMetadata } = await import("./metadataService");
     const metadata = await readMetadata(project);
 
-    const enabled =
-      metadata && "rcon" in metadata && metadata.rcon ? true : false;
+    const enabled = metadata && "rcon" in metadata && metadata.rcon ? true : false;
 
     return Response.json({
       success: true,

@@ -1,23 +1,26 @@
-import type { ConfigFile } from './types';
-import { logger } from '@/lib/logger';
+import type { ConfigFile } from "./types";
+import { logger } from "@/lib/logger";
 
 /**
  * Validate the config path request parameters
  */
 function validateConfigPath(req: Request): { project: string | null; error: Response | null } {
   const url = new URL(req.url);
-  const project = url.searchParams.get('project');
-  
+  const project = url.searchParams.get("project");
+
   if (!project) {
     return {
       project: null,
-      error: Response.json({
-        success: false,
-        error: "Project parameter is required"
-      }, { status: 400 })
+      error: Response.json(
+        {
+          success: false,
+          error: "Project parameter is required",
+        },
+        { status: 400 }
+      ),
     };
   }
-  
+
   return { project, error: null };
 }
 
@@ -25,65 +28,68 @@ function validateConfigPath(req: Request): { project: string | null; error: Resp
  * Scan the config directory and verify it exists
  */
 async function scanConfigDirectory(serverPath: string): Promise<Response | null> {
-  const fs = require('fs').promises;
+  const fs = require("fs").promises;
   try {
     await fs.access(serverPath);
     return null; // No error
   } catch {
-    return Response.json({
-      success: false,
-      error: "Server directory not found"
-    }, { status: 404 });
+    return Response.json(
+      {
+        success: false,
+        error: "Server directory not found",
+      },
+      { status: 404 }
+    );
   }
 }
 
 /**
  * Get the list of config file definitions
  */
-function getConfigFileDefinitions(serverPath: string): Omit<ConfigFile, 'exists' | 'enabled'>[] {
+function getConfigFileDefinitions(serverPath: string): Omit<ConfigFile, "exists" | "enabled">[] {
   return [
     {
-      name: 'user_jvm_args.txt',
+      name: "user_jvm_args.txt",
       path: `${serverPath}/user_jvm_args.txt`,
-      description: 'JVM-Argumente für den Minecraft-Server (RAM, Garbage Collection, etc.)',
-      category: 'Server-Setup'
+      description: "JVM-Argumente für den Minecraft-Server (RAM, Garbage Collection, etc.)",
+      category: "Server-Setup",
     },
     {
-      name: 'eula.txt',
+      name: "eula.txt",
       path: `${serverPath}/eula.txt`,
       description: 'Minecraft End User License Agreement - muss auf "true" gesetzt werden',
-      category: 'Lizenz'
+      category: "Lizenz",
     },
     {
-      name: 'server.properties',
+      name: "server.properties",
       path: `${serverPath}/server.properties`,
-      description: 'Haupt-Konfigurationsdatei des Minecraft-Servers (Port, Gamemode, etc.)',
-      category: 'Server-Einstellungen'
+      description: "Haupt-Konfigurationsdatei des Minecraft-Servers (Port, Gamemode, etc.)",
+      category: "Server-Einstellungen",
     },
     {
-      name: 'whitelist.json',
+      name: "whitelist.json",
       path: `${serverPath}/whitelist.json`,
-      description: 'Liste der erlaubten Spieler (wenn Whitelist aktiviert ist)',
-      category: 'Spieler-Verwaltung'
+      description: "Liste der erlaubten Spieler (wenn Whitelist aktiviert ist)",
+      category: "Spieler-Verwaltung",
     },
     {
-      name: 'ops.json',
+      name: "ops.json",
       path: `${serverPath}/ops.json`,
-      description: 'Liste der Operator-Spieler mit Admin-Rechten',
-      category: 'Spieler-Verwaltung'
+      description: "Liste der Operator-Spieler mit Admin-Rechten",
+      category: "Spieler-Verwaltung",
     },
     {
-      name: 'banned-players.json',
+      name: "banned-players.json",
       path: `${serverPath}/banned-players.json`,
-      description: 'Liste der gesperrten Spieler',
-      category: 'Spieler-Verwaltung'
+      description: "Liste der gesperrten Spieler",
+      category: "Spieler-Verwaltung",
     },
     {
-      name: 'banned-ips.json',
+      name: "banned-ips.json",
       path: `${serverPath}/banned-ips.json`,
-      description: 'Liste der gesperrten IP-Adressen',
-      category: 'Spieler-Verwaltung'
-    }
+      description: "Liste der gesperrten IP-Adressen",
+      category: "Spieler-Verwaltung",
+    },
   ];
 }
 
@@ -91,10 +97,10 @@ function getConfigFileDefinitions(serverPath: string): Omit<ConfigFile, 'exists'
  * Check file existence and add status
  */
 async function checkFileExistence(
-  file: Omit<ConfigFile, 'exists' | 'enabled'>
+  file: Omit<ConfigFile, "exists" | "enabled">
 ): Promise<ConfigFile> {
-  const fs = require('fs').promises;
-  
+  const fs = require("fs").promises;
+
   try {
     await fs.access(file.path);
     return { ...file, exists: true, enabled: true };
@@ -109,12 +115,12 @@ async function checkFileExistence(
 async function parseConfigFiles(serverPath: string): Promise<ConfigFile[]> {
   const configFiles = getConfigFileDefinitions(serverPath);
   const filesWithStatus: ConfigFile[] = [];
-  
+
   for (const file of configFiles) {
     const fileWithStatus = await checkFileExistence(file);
     filesWithStatus.push(fileWithStatus);
   }
-  
+
   return filesWithStatus;
 }
 
@@ -124,7 +130,7 @@ async function parseConfigFiles(serverPath: string): Promise<ConfigFile[]> {
 function formatConfigList(files: ConfigFile[]): Response {
   return Response.json({
     success: true,
-    files
+    files,
   });
 }
 
@@ -135,27 +141,30 @@ export async function listConfigFiles(req: Request): Promise<Response> {
   try {
     const { project, error } = validateConfigPath(req);
     if (error) return error;
-    if (!project) return Response.json({ success: false, error: "Project is required" }, { status: 400 });
-    
-    const { readMetadata } = await import('./metadataService');
-    const { getActualServerPath } = await import('./server/serverRepository');
-    
+    if (!project)
+      return Response.json({ success: false, error: "Project is required" }, { status: 400 });
+
+    const { readMetadata } = await import("./metadataService");
+    const { getActualServerPath } = await import("./server/serverRepository");
+
     const metadata = await readMetadata(project);
     const serverPath = getActualServerPath(project, metadata?.projectPath);
-    
+
     const dirError = await scanConfigDirectory(serverPath);
     if (dirError) return dirError;
-    
+
     const files = await parseConfigFiles(serverPath);
-    
+
     return formatConfigList(files);
-    
   } catch (error) {
-    logger.error('Error listing config files:', error);
-    return Response.json({
-      success: false,
-      error: error instanceof Error ? error.message : 'Unknown error'
-    }, { status: 500 });
+    logger.error("Error listing config files:", error);
+    return Response.json(
+      {
+        success: false,
+        error: error instanceof Error ? error.message : "Unknown error",
+      },
+      { status: 500 }
+    );
   }
 }
 
@@ -165,54 +174,65 @@ export async function listConfigFiles(req: Request): Promise<Response> {
 export async function readConfigFile(req: Request): Promise<Response> {
   try {
     const url = new URL(req.url);
-    const project = url.searchParams.get('project');
-    const file = url.searchParams.get('file');
-    
+    const project = url.searchParams.get("project");
+    const file = url.searchParams.get("file");
+
     if (!project || !file) {
-      return Response.json({
-        success: false,
-        error: "Project and file parameters are required"
-      }, { status: 400 });
+      return Response.json(
+        {
+          success: false,
+          error: "Project and file parameters are required",
+        },
+        { status: 400 }
+      );
     }
-    
-    const { readMetadata } = await import('./metadataService');
-    const { getActualServerPath } = await import('./server/serverRepository');
-    const path = require('path');
-    
+
+    const { readMetadata } = await import("./metadataService");
+    const { getActualServerPath } = await import("./server/serverRepository");
+    const path = require("path");
+
     const metadata = await readMetadata(project);
     const serverPath = getActualServerPath(project, metadata?.projectPath);
     const filePath = path.join(serverPath, file);
-    
+
     // Security check: ensure file is within server directory
     const resolvedPath = path.resolve(filePath);
     const serverDir = path.resolve(serverPath);
-    
+
     if (!resolvedPath.startsWith(serverDir)) {
-      return Response.json({
-        success: false,
-        error: "Access denied"
-      }, { status: 403 });
+      return Response.json(
+        {
+          success: false,
+          error: "Access denied",
+        },
+        { status: 403 }
+      );
     }
-    
+
     try {
       const content = await Bun.file(filePath).text();
       return Response.json({
         success: true,
-        content: content
+        content: content,
       });
     } catch {
-      return Response.json({
-        success: false,
-        error: "File not found or cannot be read"
-      }, { status: 404 });
+      return Response.json(
+        {
+          success: false,
+          error: "File not found or cannot be read",
+        },
+        { status: 404 }
+      );
     }
-    
   } catch (error) {
-    logger.error('Error reading config file:', error);
-    return Response.json({
-      success: false,
-      error: error instanceof Error ? error.message : 'Unknown error'
-    }, { status: 500 });
+    logger.error("Error reading config file:", error);
+    return Response.json(
+      {
+        success: false,
+        error: error instanceof Error ? error.message : "Unknown error",
+      },
+      { status: 500 }
+    );
   }
 }
 
@@ -223,51 +243,62 @@ export async function saveConfigFile(req: Request): Promise<Response> {
   try {
     const body = await req.json();
     const { project, file, content } = body;
-    
+
     if (!project || !file || content === undefined) {
-      return Response.json({
-        success: false,
-        error: "Project, file, and content parameters are required"
-      }, { status: 400 });
+      return Response.json(
+        {
+          success: false,
+          error: "Project, file, and content parameters are required",
+        },
+        { status: 400 }
+      );
     }
-    
-    const { readMetadata } = await import('./metadataService');
-    const { getActualServerPath } = await import('./server/serverRepository');
-    const path = require('path');
-    
+
+    const { readMetadata } = await import("./metadataService");
+    const { getActualServerPath } = await import("./server/serverRepository");
+    const path = require("path");
+
     const metadata = await readMetadata(project);
     const serverPath = getActualServerPath(project, metadata?.projectPath);
     const filePath = path.join(serverPath, file);
-    
+
     // Security check: ensure file is within server directory
     const resolvedPath = path.resolve(filePath);
     const serverDir = path.resolve(serverPath);
-    
+
     if (!resolvedPath.startsWith(serverDir)) {
-      return Response.json({
-        success: false,
-        error: "Access denied"
-      }, { status: 403 });
+      return Response.json(
+        {
+          success: false,
+          error: "Access denied",
+        },
+        { status: 403 }
+      );
     }
-    
+
     try {
       await Bun.write(filePath, content);
       return Response.json({
         success: true,
-        message: "Configuration saved successfully"
+        message: "Configuration saved successfully",
       });
     } catch {
-      return Response.json({
-        success: false,
-        error: "Failed to save configuration"
-      }, { status: 500 });
+      return Response.json(
+        {
+          success: false,
+          error: "Failed to save configuration",
+        },
+        { status: 500 }
+      );
     }
-    
   } catch (error) {
-    logger.error('Error saving config file:', error);
-    return Response.json({
-      success: false,
-      error: error instanceof Error ? error.message : 'Unknown error'
-    }, { status: 500 });
+    logger.error("Error saving config file:", error);
+    return Response.json(
+      {
+        success: false,
+        error: error instanceof Error ? error.message : "Unknown error",
+      },
+      { status: 500 }
+    );
   }
 }

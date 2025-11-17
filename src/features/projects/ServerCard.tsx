@@ -49,38 +49,28 @@ export function ServerCard({ server, onSelect }: ServerCardProps) {
         </div>
 
         {/* Custom Name as Primary Heading */}
-        <h4 className="font-bold text-xl mb-2 pr-24">
-          {server.customName || server.name}
-        </h4>
+        <h4 className="font-bold text-xl mb-2 pr-24">{server.customName || server.name}</h4>
 
         {/* Description (truncated if long) */}
         {server.description && (
-          <p className="text-sm text-muted-foreground mb-3 line-clamp-2">
-            {server.description}
-          </p>
+          <p className="text-sm text-muted-foreground mb-3 line-clamp-2">{server.description}</p>
         )}
 
         {/* Metadata Information */}
         <div className="space-y-1 text-sm text-muted-foreground">
           <p>
-            <span className="font-medium">
-              {translations.projectSelection.createdLabel}:
-            </span>{" "}
+            <span className="font-medium">{translations.projectSelection.createdLabel}:</span>{" "}
             {formatDate(server.createdAt)}
           </p>
           {server.sourceZipFile && (
             <p>
-              <span className="font-medium">
-                {translations.projectSelection.sourceLabel}:
-              </span>{" "}
+              <span className="font-medium">{translations.projectSelection.sourceLabel}:</span>{" "}
               {server.sourceZipFile}
             </p>
           )}
           <p>
-            <span className="font-medium">
-              {translations.projectSelection.pathLabel}:
-            </span>{" "}
-            server/{server.path}
+            <span className="font-medium">{translations.projectSelection.pathLabel}:</span> server/
+            {server.path}
           </p>
         </div>
       </CardContent>

@@ -1,10 +1,4 @@
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useLanguage } from "@/hooks/useLanguage";
 import { useServerList } from "./useServerList";
@@ -15,10 +9,7 @@ interface ProjectSelectionProps {
   onCreateNew: () => void;
 }
 
-export function ProjectSelection({
-  onSelectProject,
-  onCreateNew,
-}: ProjectSelectionProps) {
+export function ProjectSelection({ onSelectProject, onCreateNew }: ProjectSelectionProps) {
   const { translations } = useLanguage();
   const { servers, loading } = useServerList();
 
@@ -63,11 +54,7 @@ export function ProjectSelection({
                   {translations.projectSelection.selectProject}
                 </h3>
                 {servers.map((server) => (
-                  <ServerCard
-                    key={server.path}
-                    server={server}
-                    onSelect={onSelectProject}
-                  />
+                  <ServerCard key={server.path} server={server} onSelect={onSelectProject} />
                 ))}
               </div>
             )}

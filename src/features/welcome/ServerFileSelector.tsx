@@ -54,8 +54,7 @@ export function ServerFileSelector({
               <div className="flex flex-col">
                 <span>{file.name}</span>
                 <span className="text-xs text-muted-foreground">
-                  {formatFileSize(file.size)} •{" "}
-                  {new Date(file.uploadedAt).toLocaleDateString()}
+                  {formatFileSize(file.size)} • {new Date(file.uploadedAt).toLocaleDateString()}
                 </span>
               </div>
             </SelectItem>
@@ -76,9 +75,7 @@ export function ServerFileSelector({
           maxLength={100}
           className="w-full"
         />
-        <p className="text-xs text-muted-foreground">
-          Leave empty to use ZIP filename
-        </p>
+        <p className="text-xs text-muted-foreground">Leave empty to use ZIP filename</p>
       </div>
 
       <div className="space-y-2">

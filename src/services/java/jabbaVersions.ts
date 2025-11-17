@@ -104,9 +104,7 @@ export async function installJabbaVersion(version: string): Promise<{
     // Check if version is already installed
     const installed = await isVersionInstalled(version);
     if (installed) {
-      logger.info(
-        `Java version ${version} is already installed, skipping installation`
-      );
+      logger.info(`Java version ${version} is already installed, skipping installation`);
       return {
         success: true,
         alreadyInstalled: true,
@@ -133,9 +131,7 @@ export async function installJabbaVersion(version: string): Promise<{
       return { success: true, alreadyInstalled: false };
     }
 
-    const errorMessage = `Failed to install version ${version}. ${
-      result.stderr || result.stdout
-    }`;
+    const errorMessage = `Failed to install version ${version}. ${result.stderr || result.stdout}`;
     logger.error(errorMessage);
     logger.error(`Exit code: ${result.exitCode}`);
     return {
@@ -143,8 +139,7 @@ export async function installJabbaVersion(version: string): Promise<{
       error: errorMessage,
     };
   } catch (error) {
-    const errorMessage =
-      error instanceof Error ? error.message : "Unknown error";
+    const errorMessage = error instanceof Error ? error.message : "Unknown error";
     logger.error(`Error installing Java version ${version}:`, error);
     return {
       success: false,
@@ -204,8 +199,7 @@ export async function setJabbaVersion(
       error: errorMessage,
     };
   } catch (error) {
-    const errorMessage =
-      error instanceof Error ? error.message : "Unknown error";
+    const errorMessage = error instanceof Error ? error.message : "Unknown error";
     logger.error(`Error switching Java version ${version}:`, error);
     return {
       success: false,

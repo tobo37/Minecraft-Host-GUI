@@ -23,7 +23,7 @@ export function ConfigEditor({
   const renderHelpText = () => {
     if (!selectedConfig) return null;
 
-    if (selectedConfig.name === 'user_jvm_args.txt') {
+    if (selectedConfig.name === "user_jvm_args.txt") {
       return (
         <div className="text-sm text-muted-foreground bg-muted/50 p-3 rounded">
           <strong>JVM-Argumente:</strong>
@@ -34,7 +34,7 @@ export function ConfigEditor({
       );
     }
 
-    if (selectedConfig.name === 'eula.txt') {
+    if (selectedConfig.name === "eula.txt") {
       return (
         <div className="text-sm text-muted-foreground bg-blue-50 p-3 rounded">
           <strong>EULA (End User License Agreement):</strong>
@@ -45,7 +45,7 @@ export function ConfigEditor({
       );
     }
 
-    if (selectedConfig.name === 'server.properties') {
+    if (selectedConfig.name === "server.properties") {
       return (
         <div className="text-sm text-muted-foreground bg-muted/50 p-3 rounded">
           <strong>Server-Eigenschaften:</strong>
@@ -58,7 +58,7 @@ export function ConfigEditor({
       );
     }
 
-    if (selectedConfig.name.endsWith('.json')) {
+    if (selectedConfig.name.endsWith(".json")) {
       return (
         <div className="text-sm text-muted-foreground bg-yellow-50 p-3 rounded">
           <strong>JSON-Datei:</strong>
@@ -78,23 +78,15 @@ export function ConfigEditor({
       <CardHeader>
         <div className="flex justify-between items-center">
           <CardTitle className="text-lg">
-            {selectedConfig ? selectedConfig.name : 'Datei auswählen'}
+            {selectedConfig ? selectedConfig.name : "Datei auswählen"}
           </CardTitle>
           {selectedConfig && (
-            <Button 
-              onClick={onSave}
-              disabled={isSaving}
-              size="sm"
-            >
-              {isSaving ? 'Speichern...' : 'Speichern'}
+            <Button onClick={onSave} disabled={isSaving} size="sm">
+              {isSaving ? "Speichern..." : "Speichern"}
             </Button>
           )}
         </div>
-        {selectedConfig && (
-          <CardDescription>
-            {selectedConfig.description}
-          </CardDescription>
-        )}
+        {selectedConfig && <CardDescription>{selectedConfig.description}</CardDescription>}
       </CardHeader>
       <CardContent>
         {selectedConfig ? (

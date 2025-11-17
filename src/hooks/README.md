@@ -4,14 +4,14 @@ Diese Custom Hooks kapseln die gesamte Business-Logik für das Server-Management
 
 ## Übersicht
 
-| Hook | Zweck | Hauptfunktionen |
-|------|-------|-----------------|
-| `useServerInfo` | Server-Metadaten laden | `serverInfo`, `refetch()` |
-| `useServerStatus` | Status & Logs verwalten | `serverStatus`, `logs`, `startServer()`, `stopServer()` |
-| `useServerMetadata` | Server umbenennen | `handleRename()`, Dialog-State |
-| `useServerDescription` | Beschreibung bearbeiten | `handleUpdateDescription()`, Edit-State |
-| `useServerDelete` | Server löschen | `handleDeleteServer()`, Dialog-State |
-| `useStartFile` | Startdatei verwalten | `handleFindStartFiles()`, `handleSetStartFile()` |
+| Hook                   | Zweck                   | Hauptfunktionen                                         |
+| ---------------------- | ----------------------- | ------------------------------------------------------- |
+| `useServerInfo`        | Server-Metadaten laden  | `serverInfo`, `refetch()`                               |
+| `useServerStatus`      | Status & Logs verwalten | `serverStatus`, `logs`, `startServer()`, `stopServer()` |
+| `useServerMetadata`    | Server umbenennen       | `handleRename()`, Dialog-State                          |
+| `useServerDescription` | Beschreibung bearbeiten | `handleUpdateDescription()`, Edit-State                 |
+| `useServerDelete`      | Server löschen          | `handleDeleteServer()`, Dialog-State                    |
+| `useStartFile`         | Startdatei verwalten    | `handleFindStartFiles()`, `handleSetStartFile()`        |
 
 ## Detaillierte Dokumentation
 
@@ -24,14 +24,17 @@ const { serverInfo, isLoading, refetch } = useServerInfo(projectPath);
 ```
 
 **Parameter:**
+
 - `projectPath: string` - Pfad zum Server-Verzeichnis
 
 **Rückgabewerte:**
+
 - `serverInfo: Server | null` - Server-Metadaten
 - `isLoading: boolean` - Lade-Status
 - `refetch: () => Promise<void>` - Daten neu laden
 
 **Verwendung:**
+
 ```typescript
 // Automatisches Laden beim Mount
 const { serverInfo, refetch } = useServerInfo("/server/my-server");
@@ -47,19 +50,15 @@ await refetch();
 Überwacht Server-Status und verwaltet Logs mit automatischem Polling.
 
 ```typescript
-const { 
-  serverStatus, 
-  logs, 
-  isPollingLogs, 
-  startServer, 
-  stopServer 
-} = useServerStatus(projectPath);
+const { serverStatus, logs, isPollingLogs, startServer, stopServer } = useServerStatus(projectPath);
 ```
 
 **Parameter:**
+
 - `projectPath: string` - Pfad zum Server-Verzeichnis
 
 **Rückgabewerte:**
+
 - `serverStatus: ServerStatus` - Aktueller Status (stopped, starting, running, stopping)
 - `logs: string[]` - Server-Logs
 - `isPollingLogs: boolean` - Ob Logs aktiv gepollt werden
@@ -67,6 +66,7 @@ const {
 - `stopServer: () => Promise<void>` - Server stoppen
 
 **Features:**
+
 - Automatisches Log-Polling wenn Server läuft (1s Intervall)
 - Status-Überwachung
 - Cleanup beim Unmount
@@ -85,15 +85,17 @@ const {
   setNewName,
   handleRename,
   openRenameDialog,
-  closeRenameDialog
+  closeRenameDialog,
 } = useServerMetadata({ projectPath, onSuccess });
 ```
 
 **Parameter:**
+
 - `projectPath: string` - Pfad zum Server-Verzeichnis
 - `onSuccess?: () => void` - Callback nach erfolgreichem Umbenennen
 
 **Validierung:**
+
 - Nur alphanumerische Zeichen, Leerzeichen, Bindestriche und Unterstriche
 - Regex: `/^[a-zA-Z0-9\s\-_]+$/`
 
@@ -110,15 +112,17 @@ const {
   setNewDescription,
   handleUpdateDescription,
   startEditing,
-  cancelEditing
+  cancelEditing,
 } = useServerDescription({ projectPath, onSuccess });
 ```
 
 **Parameter:**
+
 - `projectPath: string` - Pfad zum Server-Verzeichnis
 - `onSuccess?: () => void` - Callback nach erfolgreichem Update
 
 **Workflow:**
+
 1. `startEditing(currentDescription)` - Edit-Mode aktivieren
 2. `setNewDescription(text)` - Text ändern
 3. `handleUpdateDescription()` - Speichern
@@ -138,15 +142,17 @@ const {
   setDeleteConfirmName,
   handleDeleteServer,
   openDeleteDialog,
-  closeDeleteDialog
+  closeDeleteDialog,
 } = useServerDelete({ projectPath, onSuccess });
 ```
 
 **Parameter:**
+
 - `projectPath: string` - Pfad zum Server-Verzeichnis
 - `onSuccess?: () => void` - Callback nach erfolgreichem Löschen
 
 **Sicherheit:**
+
 - Benutzer muss Server-Namen exakt eingeben
 - Validierung vor Löschvorgang
 
@@ -165,21 +171,24 @@ const {
   setSelectedStartFile,
   handleFindStartFiles,
   handleSetStartFile,
-  closeStartFileDialog
+  closeStartFileDialog,
 } = useStartFile({ projectPath, currentStartFile, onSuccess });
 ```
 
 **Parameter:**
+
 - `projectPath: string` - Pfad zum Server-Verzeichnis
 - `currentStartFile?: string` - Aktuell gesetzte Startdatei
 - `onSuccess?: () => void` - Callback nach erfolgreichem Setzen
 
 **Features:**
+
 - Automatische Suche nach Startdateien
 - Confidence-Level für Kandidaten (high, medium, low)
 - Vorauswahl der besten Kandidaten
 
 **Workflow:**
+
 1. `handleFindStartFiles()` - Suche starten
 2. Kandidaten werden in `startFileCandidates` geladen
 3. `setSelectedStartFile(path)` - Datei auswählen
@@ -193,9 +202,9 @@ Hooks können kombiniert werden für komplexe Workflows:
 
 ```typescript
 const { serverInfo, refetch } = useServerInfo(projectPath);
-const metadata = useServerMetadata({ 
-  projectPath, 
-  onSuccess: refetch // Daten nach Änderung neu laden
+const metadata = useServerMetadata({
+  projectPath,
+  onSuccess: refetch, // Daten nach Änderung neu laden
 });
 ```
 
@@ -234,16 +243,14 @@ useEffect(() => {
 Hooks können isoliert getestet werden mit `@testing-library/react-hooks`:
 
 ```typescript
-import { renderHook, act } from '@testing-library/react-hooks';
-import { useServerInfo } from './useServerInfo';
+import { renderHook, act } from "@testing-library/react-hooks";
+import { useServerInfo } from "./useServerInfo";
 
-test('loads server info on mount', async () => {
-  const { result, waitForNextUpdate } = renderHook(() => 
-    useServerInfo('/test/path')
-  );
-  
+test("loads server info on mount", async () => {
+  const { result, waitForNextUpdate } = renderHook(() => useServerInfo("/test/path"));
+
   await waitForNextUpdate();
-  
+
   expect(result.current.serverInfo).toBeDefined();
   expect(result.current.isLoading).toBe(false);
 });

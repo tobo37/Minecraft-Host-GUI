@@ -9,17 +9,20 @@ interface ConfigFileListProps {
   onSelectConfig: (_file: ConfigFile) => void;
 }
 
-export function ConfigFileList({ 
-  configFiles, 
-  selectedConfig, 
-  onSelectConfig 
+export function ConfigFileList({
+  configFiles,
+  selectedConfig,
+  onSelectConfig,
 }: ConfigFileListProps) {
-  const groupedFiles = configFiles.reduce((groups, file) => {
-    const category = file.category || 'Andere';
-    if (!groups[category]) groups[category] = [];
-    groups[category].push(file);
-    return groups;
-  }, {} as Record<string, ConfigFile[]>);
+  const groupedFiles = configFiles.reduce(
+    (groups, file) => {
+      const category = file.category || "Andere";
+      if (!groups[category]) groups[category] = [];
+      groups[category].push(file);
+      return groups;
+    },
+    {} as Record<string, ConfigFile[]>
+  );
 
   return (
     <TooltipProvider>
@@ -30,18 +33,16 @@ export function ConfigFileList({
         <CardContent className="space-y-3">
           {Object.entries(groupedFiles).map(([category, files]) => (
             <div key={category} className="space-y-2">
-              <div className="text-sm font-semibold text-muted-foreground px-2">
-                {category}
-              </div>
+              <div className="text-sm font-semibold text-muted-foreground px-2">{category}</div>
               {files.map((file) => (
                 <Tooltip key={file.name}>
                   <TooltipTrigger asChild>
                     <Button
                       variant={selectedConfig?.name === file.name ? "default" : "outline"}
                       className={`w-full justify-start text-left h-auto p-3 ${
-                        !file.enabled 
-                          ? 'opacity-50 cursor-not-allowed bg-gray-100 hover:bg-gray-100' 
-                          : ''
+                        !file.enabled
+                          ? "opacity-50 cursor-not-allowed bg-gray-100 hover:bg-gray-100"
+                          : ""
                       }`}
                       onClick={() => onSelectConfig(file)}
                       disabled={!file.enabled}
@@ -68,17 +69,17 @@ export function ConfigFileList({
               ))}
             </div>
           ))}
-          
+
           {configFiles.length === 0 && (
             <div className="text-center text-muted-foreground py-4">
               Keine Konfigurationsdateien gefunden
             </div>
           )}
-          
-          {configFiles.some(f => !f.exists) && (
+
+          {configFiles.some((f) => !f.exists) && (
             <div className="text-xs text-muted-foreground bg-blue-50 p-3 rounded mt-4">
-              💡 <strong>Hinweis:</strong> Einige Dateien werden erst nach dem ersten Serverstart erstellt.
-              Starte den Server einmal, um alle Konfigurationsdateien zu generieren.
+              💡 <strong>Hinweis:</strong> Einige Dateien werden erst nach dem ersten Serverstart
+              erstellt. Starte den Server einmal, um alle Konfigurationsdateien zu generieren.
             </div>
           )}
         </CardContent>

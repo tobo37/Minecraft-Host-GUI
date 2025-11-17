@@ -1,10 +1,5 @@
 import { logger } from "@/lib/logger";
-import {
-  getJabbaPath,
-  execJabba,
-  parseJabbaVersions,
-  isDockerEnvironment,
-} from "./jabbaUtils";
+import { getJabbaPath, execJabba, parseJabbaVersions, isDockerEnvironment } from "./jabbaUtils";
 
 export interface JabbaInfo {
   installed: boolean;
@@ -40,9 +35,7 @@ export async function getJabbaInfo(): Promise<JabbaInfo> {
     const fileExists = await Bun.file(jabbaPath).exists();
 
     if (!fileExists) {
-      logger.info(
-        `Jabba not found at ${jabbaPath}. Docker environment: ${inDocker}`
-      );
+      logger.info(`Jabba not found at ${jabbaPath}. Docker environment: ${inDocker}`);
       return {
         installed: false,
         isDockerEnvironment: inDocker,
@@ -64,9 +57,7 @@ export async function getJabbaInfo(): Promise<JabbaInfo> {
     const { versions, current } = await getInstalledVersions();
 
     logger.info(
-      `Jabba is installed with ${versions.length} version(s). Current: ${
-        current || "none"
-      }`
+      `Jabba is installed with ${versions.length} version(s). Current: ${current || "none"}`
     );
     return {
       installed: true,

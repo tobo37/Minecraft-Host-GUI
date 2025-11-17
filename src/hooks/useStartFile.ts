@@ -1,9 +1,5 @@
 import { useState } from "react";
-import {
-  findStartFiles,
-  setStartFile,
-  type StartFileCandidate,
-} from "@/services/startFileClient";
+import { findStartFiles, setStartFile, type StartFileCandidate } from "@/services/startFileClient";
 import {
   validateStartFileSelection,
   getDefaultStartFile,
@@ -16,15 +12,9 @@ interface UseStartFileProps {
   onSuccess?: () => void;
 }
 
-export function useStartFile({
-  projectPath,
-  currentStartFile,
-  onSuccess,
-}: UseStartFileProps) {
+export function useStartFile({ projectPath, currentStartFile, onSuccess }: UseStartFileProps) {
   const [isStartFileDialogOpen, setIsStartFileDialogOpen] = useState(false);
-  const [startFileCandidates, setStartFileCandidates] = useState<
-    StartFileCandidate[]
-  >([]);
+  const [startFileCandidates, setStartFileCandidates] = useState<StartFileCandidate[]>([]);
   const [selectedStartFile, setSelectedStartFile] = useState<string>("");
   const [isSearchingStartFiles, setIsSearchingStartFiles] = useState(false);
 
@@ -38,7 +28,7 @@ export function useStartFile({
       if (validateCandidatesResponse(data)) {
         const candidates = data.candidates || [];
         setStartFileCandidates(candidates);
-        
+
         const defaultFile = getDefaultStartFile(candidates, currentStartFile);
         setSelectedStartFile(defaultFile);
       } else {
@@ -56,16 +46,13 @@ export function useStartFile({
 
     try {
       const data = await setStartFile(projectPath, selectedStartFile);
-      
+
       if (data.success) {
         onSuccess?.();
         closeStartFileDialog();
       } else {
         console.error("Failed to set start file:", data.error);
-        alert(
-          "Fehler beim Speichern der Startdatei: " +
-            (data.error || "Unbekannter Fehler")
-        );
+        alert("Fehler beim Speichern der Startdatei: " + (data.error || "Unbekannter Fehler"));
       }
     } catch (error) {
       console.error("Error setting start file:", error);

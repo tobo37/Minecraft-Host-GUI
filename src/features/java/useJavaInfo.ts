@@ -23,7 +23,7 @@ export function useJavaInfo() {
     try {
       const response = await fetch("/api/java/jabba/ls-remote");
       const data = await response.json();
-      
+
       if (data.success && data.versions) {
         setAvailableVersions(data.versions);
       }

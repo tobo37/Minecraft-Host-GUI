@@ -10,7 +10,7 @@ interface UploadResult {
 export function useServerFileUpload() {
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
-  
+
   const { uploadRegular } = useRegularUpload();
   const { uploadStream } = useStreamUpload();
 
@@ -20,9 +20,7 @@ export function useServerFileUpload() {
 
     try {
       const isLargeFile = file.size > 500 * 1024 * 1024;
-      const result = isLargeFile
-        ? await uploadStream(file)
-        : await uploadRegular(file);
+      const result = isLargeFile ? await uploadStream(file) : await uploadRegular(file);
 
       return result;
     } finally {

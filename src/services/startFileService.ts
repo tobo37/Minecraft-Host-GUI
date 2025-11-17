@@ -37,9 +37,7 @@ async function validateServerPath(project: string | null): Promise<string> {
 /**
  * Scan server directory recursively for start file candidates
  */
-async function scanServerDirectory(
-  serverPath: string
-): Promise<StartFileCandidate[]> {
+async function scanServerDirectory(serverPath: string): Promise<StartFileCandidate[]> {
   const candidates: StartFileCandidate[] = [];
   await searchDirectory(serverPath, serverPath, candidates, 0);
   return candidates;
@@ -48,14 +46,11 @@ async function scanServerDirectory(
 /**
  * Filter and sort start file candidates
  */
-function filterStartFiles(
-  candidates: StartFileCandidate[]
-): StartFileCandidate[] {
+function filterStartFiles(candidates: StartFileCandidate[]): StartFileCandidate[] {
   // Sort by confidence and then by name
   return candidates.sort((a, b) => {
     const confidenceOrder = { high: 0, medium: 1, low: 2 };
-    const confDiff =
-      confidenceOrder[a.confidence] - confidenceOrder[b.confidence];
+    const confDiff = confidenceOrder[a.confidence] - confidenceOrder[b.confidence];
     if (confDiff !== 0) return confDiff;
     return a.name.localeCompare(b.name);
   });
@@ -81,13 +76,12 @@ export async function findStartFiles(req: Request): Promise<Response> {
   } catch (error) {
     console.error("Error finding start files:", error);
 
-    const errorMessage =
-      error instanceof Error ? error.message : "Unknown error";
+    const errorMessage = error instanceof Error ? error.message : "Unknown error";
     const status = errorMessage.includes("required")
       ? 400
       : errorMessage.includes("not found")
-      ? 404
-      : 500;
+        ? 404
+        : 500;
 
     return Response.json(
       {
@@ -103,11 +97,7 @@ export async function findStartFiles(req: Request): Promise<Response> {
  * Determine confidence level based on filename
  */
 function determineConfidence(fileName: string): "high" | "medium" | "low" {
-  if (
-    fileName.includes("start") ||
-    fileName.includes("run") ||
-    fileName.includes("launch")
-  ) {
+  if (fileName.includes("start") || fileName.includes("run") || fileName.includes("launch")) {
     return "high";
   }
 
@@ -125,10 +115,7 @@ function determineConfidence(fileName: string): "high" | "medium" | "low" {
 /**
  * Check if file is executable
  */
-async function checkExecutable(
-  fullPath: string,
-  isBatchFile: boolean
-): Promise<boolean> {
+async function checkExecutable(fullPath: string, isBatchFile: boolean): Promise<boolean> {
   const fs = require("fs").promises;
 
   try {
@@ -272,10 +259,7 @@ async function validateStartFile(
 /**
  * Make start file executable if it's a shell script (Unix/Linux only)
  */
-async function makeStartFileExecutable(
-  serverPath: string,
-  startFile: string
-): Promise<void> {
+async function makeStartFileExecutable(serverPath: string, startFile: string): Promise<void> {
   const { logger } = await import("@/lib/logger");
 
   // Only on Unix/Linux systems
@@ -306,9 +290,7 @@ async function makeStartFileExecutable(
     const beforeExitCode = await beforeCheck.exited;
 
     if (beforeExitCode === 0) {
-      logger.info(
-        `[setStartFile] Permissions BEFORE chmod: ${beforeOutput.trim()}`
-      );
+      logger.info(`[setStartFile] Permissions BEFORE chmod: ${beforeOutput.trim()}`);
     }
 
     // Execute chmod
@@ -328,22 +310,16 @@ async function makeStartFileExecutable(
       const afterExitCode = await afterCheck.exited;
 
       if (afterExitCode === 0) {
-        logger.info(
-          `[setStartFile] Permissions AFTER chmod: ${afterOutput.trim()}`
-        );
+        logger.info(`[setStartFile] Permissions AFTER chmod: ${afterOutput.trim()}`);
 
         if (afterOutput.includes("x")) {
           logger.info(`[setStartFile] ✓✓ Verified: File is now executable`);
         } else {
-          logger.error(
-            `[setStartFile] ✗ ERROR: chmod succeeded but file is still not executable!`
-          );
+          logger.error(`[setStartFile] ✗ ERROR: chmod succeeded but file is still not executable!`);
         }
       }
     } else {
-      logger.error(
-        `[setStartFile] ✗ chmod command failed (exit code: ${result})`
-      );
+      logger.error(`[setStartFile] ✗ chmod command failed (exit code: ${result})`);
     }
   } catch (error) {
     logger.error(`[setStartFile] ✗ Exception during chmod: ${error}`);
@@ -399,13 +375,12 @@ export async function setStartFile(req: Request): Promise<Response> {
   } catch (error) {
     console.error("Error setting start file:", error);
 
-    const errorMessage =
-      error instanceof Error ? error.message : "Unknown error";
+    const errorMessage = error instanceof Error ? error.message : "Unknown error";
     const status = errorMessage.includes("required")
       ? 400
       : errorMessage.includes("not found")
-      ? 404
-      : 500;
+        ? 404
+        : 500;
 
     return Response.json(
       {

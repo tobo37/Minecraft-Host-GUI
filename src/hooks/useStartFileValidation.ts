@@ -29,8 +29,9 @@ export function getDefaultStartFile(
 /**
  * Validate start file candidates response
  */
-export function validateCandidatesResponse(
-  data: { success: boolean; candidates?: StartFileCandidate[] }
-): boolean {
+export function validateCandidatesResponse(data: {
+  success: boolean;
+  candidates?: StartFileCandidate[];
+}): boolean {
   return data.success && Array.isArray(data.candidates);
 }

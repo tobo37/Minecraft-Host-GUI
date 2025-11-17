@@ -144,13 +144,11 @@ export const translations: Record<Language, Translations> = {
         newNameLabel: "Neuer Name",
         cancel: "Abbrechen",
         save: "Speichern",
-        validationError:
-          "Der Name darf nicht leer sein und muss gültige Zeichen enthalten",
+        validationError: "Der Name darf nicht leer sein und muss gültige Zeichen enthalten",
       },
       deleteDialog: {
         title: "Server löschen",
-        warning:
-          "⚠️ Warnung: Diese Aktion kann nicht rückgängig gemacht werden!",
+        warning: "⚠️ Warnung: Diese Aktion kann nicht rückgängig gemacht werden!",
         confirmLabel: "Geben Sie den Servernamen ein, um zu bestätigen:",
         confirmPlaceholder: "Servernamen eingeben",
         serverInfo: "Sie sind dabei zu löschen:",
@@ -206,8 +204,7 @@ export const translations: Record<Language, Translations> = {
       jabbaInstallInstructions:
         "Um Jabba zu installieren und mehrere Java-Versionen zu verwalten, folgen Sie der Installationsanleitung:",
       jabbaInstallLink: "Jabba Installationsanleitung",
-      systemJavaFallback:
-        "Die Anwendung funktioniert weiterhin mit der System-Java-Installation.",
+      systemJavaFallback: "Die Anwendung funktioniert weiterhin mit der System-Java-Installation.",
     },
   },
   en: {
@@ -225,8 +222,7 @@ export const translations: Record<Language, Translations> = {
     startButton: "Get Started",
     projectSelection: {
       title: "Choose Your Project",
-      description:
-        "You already have server projects. Choose one or create a new one.",
+      description: "You already have server projects. Choose one or create a new one.",
       createNew: "Create New Server",
       selectProject: "Select Project",
       noProjects: "No projects found",
@@ -256,8 +252,7 @@ export const translations: Record<Language, Translations> = {
         newNameLabel: "New Name",
         cancel: "Cancel",
         save: "Save",
-        validationError:
-          "Name cannot be empty and must contain valid characters",
+        validationError: "Name cannot be empty and must contain valid characters",
       },
       deleteDialog: {
         title: "Delete Server",
@@ -305,8 +300,7 @@ export const translations: Record<Language, Translations> = {
       availableVersions: "Installed Versions",
       active: "Active",
       use: "Use",
-      noVersionsInstalled:
-        "No Java versions installed. Install a version to get started.",
+      noVersionsInstalled: "No Java versions installed. Install a version to get started.",
       recommendedVersions: "Recommended versions:",
       install: "Install",
       refresh: "Refresh",

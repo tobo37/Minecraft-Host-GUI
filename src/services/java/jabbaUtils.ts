@@ -79,9 +79,7 @@ async function isVersionDirectoryPresent(version: string): Promise<boolean> {
 /**
  * Get Jabba environment variables for a specific version
  */
-export async function getJabbaEnv(
-  version: string
-): Promise<Record<string, string>> {
+export async function getJabbaEnv(version: string): Promise<Record<string, string>> {
   logger.info(`Loading Jabba environment for version: ${version}`);
 
   // Debug: List all installed versions

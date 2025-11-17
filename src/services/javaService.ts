@@ -15,12 +15,14 @@ export type { JabbaInfo } from "./java/jabbaInfo";
 export async function loadJabbaEnvironment(): Promise<void> {
   try {
     const jabbaInfo = await getJabbaInfo();
-    
+
     if (jabbaInfo.installed && jabbaInfo.current) {
       const jabbaEnv = await getJabbaEnv(jabbaInfo.current);
       process.env.JAVA_HOME = jabbaEnv.JAVA_HOME;
       process.env.PATH = jabbaEnv.PATH;
-      logger.info(`Loaded Jabba environment: ${jabbaInfo.current} (JAVA_HOME=${jabbaEnv.JAVA_HOME})`);
+      logger.info(
+        `Loaded Jabba environment: ${jabbaInfo.current} (JAVA_HOME=${jabbaEnv.JAVA_HOME})`
+      );
     }
   } catch (error) {
     logger.error("Error loading Jabba environment:", error);

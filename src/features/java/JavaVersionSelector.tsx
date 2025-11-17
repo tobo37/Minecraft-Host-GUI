@@ -42,11 +42,7 @@ function VersionItem({
   return (
     <div className="flex justify-between items-center p-3 border rounded-lg hover:bg-muted/50 transition-colors">
       <div className="flex items-center gap-2">
-        <span
-          className={`text-lg ${
-            isInstalled ? "text-green-600" : "text-muted-foreground"
-          }`}
-        >
+        <span className={`text-lg ${isInstalled ? "text-green-600" : "text-muted-foreground"}`}>
           {isInstalled ? "✓" : "○"}
         </span>
         <span className="font-mono text-sm">{version}</span>
@@ -56,21 +52,11 @@ function VersionItem({
           {translations.javaManagement.active}
         </span>
       ) : isInstalled ? (
-        <Button
-          size="sm"
-          variant="outline"
-          onClick={onSwitch}
-          disabled={switching}
-        >
+        <Button size="sm" variant="outline" onClick={onSwitch} disabled={switching}>
           {translations.javaManagement.use}
         </Button>
       ) : (
-        <Button
-          size="sm"
-          variant="outline"
-          onClick={onInstall}
-          disabled={installing}
-        >
+        <Button size="sm" variant="outline" onClick={onInstall} disabled={installing}>
           {translations.javaManagement.install}
         </Button>
       )}
@@ -95,9 +81,7 @@ function InstalledVersionsList({
 }: InstalledVersionsListProps) {
   return (
     <div className="space-y-2">
-      <h4 className="font-semibold">
-        {translations.javaManagement.availableVersions}
-      </h4>
+      <h4 className="font-semibold">{translations.javaManagement.availableVersions}</h4>
       <div className="grid gap-2 max-h-96 overflow-y-auto">
         {versions.map((version) => (
           <div
@@ -145,9 +129,7 @@ function RecommendedVersions({
 }: RecommendedVersionsProps) {
   return (
     <div className="space-y-3">
-      <h4 className="font-semibold">
-        {translations.javaManagement.recommendedVersions}
-      </h4>
+      <h4 className="font-semibold">{translations.javaManagement.recommendedVersions}</h4>
       <div className="grid gap-2">
         {RECOMMENDED_VERSIONS.map((version) => (
           <VersionItem
@@ -183,9 +165,7 @@ export function JavaVersionSelector({
   return (
     <div className="space-y-4">
       <div className="flex justify-between items-center p-3 bg-muted rounded-lg">
-        <span className="text-muted-foreground">
-          {translations.javaManagement.jabbaInstalled}
-        </span>
+        <span className="text-muted-foreground">{translations.javaManagement.jabbaInstalled}</span>
         <span className="text-green-600 font-semibold">✓</span>
       </div>
 
