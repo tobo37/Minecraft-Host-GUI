@@ -1,5 +1,49 @@
 import type { ServerFile } from './serverFile.types';
 import { logger } from '@/lib/logger';
+import type { promises as fsPromises } from 'fs';
+
+/**
+ * Process a single file entry
+ */
+async function processFileEntry(
+  entry: string,
+  serverFilesDir: string,
+  fs: typeof fsPromises
+): Promise<ServerFile | null> {
+  if (entry === '.gitkeep') return null;
+  if (!entry.toLowerCase().endsWith('.zip')) return null;
+  
+  const filePath = `${serverFilesDir}/${entry}`;
+  const stat = await fs.stat(filePath);
+  
+  if (!stat.isFile()) return null;
+  
+  return {
+    name: entry,
+    size: stat.size,
+    uploadedAt: stat.mtime.toISOString()
+  };
+}
+
+/**
+ * Read and process all files in directory
+ */
+async function readServerFilesDirectory(serverFilesDir: string, fs: typeof fsPromises): Promise<ServerFile[]> {
+  const entries = await fs.readdir(serverFilesDir);
+  const files: ServerFile[] = [];
+  
+  for (const entry of entries) {
+    const file = await processFileEntry(entry, serverFilesDir, fs);
+    if (file) {
+      files.push(file);
+    }
+  }
+  
+  // Sort by upload date (newest first)
+  files.sort((a, b) => new Date(b.uploadedAt).getTime() - new Date(a.uploadedAt).getTime());
+  
+  return files;
+}
 
 /**
  * List all server files in the serverfiles directory
@@ -10,28 +54,7 @@ export async function listServerFiles(): Promise<Response> {
     const fs = require('fs').promises;
     
     try {
-      const entries = await fs.readdir(serverFilesDir);
-      const files: ServerFile[] = [];
-      
-      for (const entry of entries) {
-        if (entry === '.gitkeep') continue;
-        if (!entry.toLowerCase().endsWith('.zip')) continue;
-        
-        const filePath = `${serverFilesDir}/${entry}`;
-        const stat = await fs.stat(filePath);
-        
-        if (stat.isFile()) {
-          files.push({
-            name: entry,
-            size: stat.size,
-            uploadedAt: stat.mtime.toISOString()
-          });
-        }
-      }
-      
-      // Sort by upload date (newest first)
-      files.sort((a, b) => new Date(b.uploadedAt).getTime() - new Date(a.uploadedAt).getTime());
-      
+      const files = await readServerFilesDirectory(serverFilesDir, fs);
       return Response.json({
         success: true,
         files

@@ -130,6 +130,44 @@ export async function getJavaInfo(): Promise<JavaInfo> {
 }
 
 /**
+ * Parse Jabba version list output
+ */
+function parseJabbaVersions(output: string): { versions: string[]; current?: string } {
+  const versions: string[] = [];
+  let current: string | undefined;
+  
+  const lines = output.split('\n').filter(line => line.trim());
+  
+  for (const line of lines) {
+    const trimmed = line.trim();
+    
+    if (trimmed.startsWith('*')) {
+      // Current version
+      const version = trimmed.substring(1).trim();
+      versions.push(version);
+      current = version;
+    } else if (trimmed) {
+      versions.push(trimmed);
+    }
+  }
+  
+  return { versions, current };
+}
+
+/**
+ * Get installed Jabba versions
+ */
+async function getInstalledVersions(): Promise<{ versions: string[]; current?: string }> {
+  const listResult = await execJabba(['ls']);
+  
+  if (listResult.exitCode !== 0) {
+    return { versions: [] };
+  }
+  
+  return parseJabbaVersions(listResult.stdout);
+}
+
+/**
  * Get Jabba installation information
  */
 export async function getJabbaInfo(): Promise<JabbaInfo> {
@@ -150,27 +188,7 @@ export async function getJabbaInfo(): Promise<JabbaInfo> {
     }
 
     // Get list of installed versions
-    const listResult = await execJabba(['ls']);
-    
-    const versions: string[] = [];
-    let current: string | undefined;
-
-    if (listResult.exitCode === 0) {
-      const output = listResult.stdout;
-      const lines = output.split('\n').filter(line => line.trim());
-      
-      for (const line of lines) {
-        const trimmed = line.trim();
-        if (trimmed.startsWith('*')) {
-          // Current version
-          const version = trimmed.substring(1).trim();
-          versions.push(version);
-          current = version;
-        } else if (trimmed) {
-          versions.push(trimmed);
-        }
-      }
-    }
+    const { versions, current } = await getInstalledVersions();
 
     return {
       installed: true,
@@ -184,6 +202,60 @@ export async function getJabbaInfo(): Promise<JabbaInfo> {
 }
 
 /**
+ * Download and execute Windows installer
+ */
+async function installJabbaWindows(home: string): Promise<{ success: boolean; error?: string }> {
+  const installerUrl = 'https://github.com/shyiko/jabba/raw/master/install.ps1';
+  
+  const response = await fetch(installerUrl);
+  if (!response.ok) {
+    return {
+      success: false,
+      error: `Failed to download installer: ${response.statusText}`,
+    };
+  }
+  
+  const scriptContent = await response.text();
+  const tempScript = join(home, 'jabba-install.ps1');
+  
+  await Bun.write(tempScript, scriptContent);
+  
+  const result = await $`powershell -ExecutionPolicy Bypass -File ${tempScript}`.nothrow();
+  
+  // Clean up temp file
+  try {
+    await $`del ${tempScript}`.quiet().nothrow();
+  } catch (_error) {
+    // Ignore cleanup errors
+  }
+
+  if (result.exitCode === 0) {
+    return { success: true };
+  }
+
+  return {
+    success: false,
+    error: `Installation failed: ${result.stderr.toString()}`,
+  };
+}
+
+/**
+ * Install Jabba on Unix systems
+ */
+async function installJabbaUnix(): Promise<{ success: boolean; error?: string }> {
+  const result = await $`curl -sL https://github.com/shyiko/jabba/raw/master/install.sh | bash`.nothrow();
+
+  if (result.exitCode === 0) {
+    return { success: true };
+  }
+
+  return {
+    success: false,
+    error: `Installation failed with exit code ${result.exitCode}`,
+  };
+}
+
+/**
  * Install Jabba
  */
 export async function installJabba(): Promise<{ success: boolean; error?: string }> {
@@ -192,62 +264,17 @@ export async function installJabba(): Promise<{ success: boolean; error?: string
     const home = homedir();
     
     if (isWindows) {
-      // Download Jabba installer for Windows
-      const installerUrl = 'https://github.com/shyiko/jabba/raw/master/install.ps1';
-      
       try {
-        // Download the installer script
-        const response = await fetch(installerUrl);
-        if (!response.ok) {
-          return {
-            success: false,
-            error: `Failed to download installer: ${response.statusText}`,
-          };
-        }
-        
-        const scriptContent = await response.text();
-        const tempScript = join(home, 'jabba-install.ps1');
-        
-        // Write script to temp file
-        await Bun.write(tempScript, scriptContent);
-        
-        // Execute with bypass policy
-        const result = await $`powershell -ExecutionPolicy Bypass -File ${tempScript}`.nothrow();
-        
-        // Clean up temp file
-        try {
-          await $`del ${tempScript}`.quiet().nothrow();
-        } catch (_error) {
-          // Ignore cleanup errors - file may not exist
-        }
-
-        if (result.exitCode === 0) {
-          return { success: true };
-        }
-
-        return {
-          success: false,
-          error: `Installation failed: ${result.stderr.toString()}`,
-        };
+        return await installJabbaWindows(home);
       } catch (error) {
         return {
           success: false,
           error: error instanceof Error ? error.message : "Download failed",
         };
       }
-    } else {
-      // Unix-like systems (Linux, macOS)
-      const result = await $`curl -sL https://github.com/shyiko/jabba/raw/master/install.sh | bash`.nothrow();
-
-      if (result.exitCode === 0) {
-        return { success: true };
-      }
-
-      return {
-        success: false,
-        error: `Installation failed with exit code ${result.exitCode}`,
-      };
     }
+    
+    return await installJabbaUnix();
   } catch (error) {
     logger.error("Error installing Jabba:", error);
     return {

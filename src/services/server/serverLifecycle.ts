@@ -152,6 +152,63 @@ function launchServerProcess(
 }
 
 /**
+ * Process log lines and add to server logs
+ */
+function processLogLines(project: string, lines: string[]): void {
+  const logs = serverLogs.get(project) || [];
+  
+  for (const line of lines) {
+    if (!line.trim()) continue;
+    
+    logs.push(line);
+    if (logs.length > 300) {
+      logs.shift();
+    }
+  }
+  
+  serverLogs.set(project, logs);
+}
+
+/**
+ * Add remaining buffer content to logs
+ */
+function addBufferToLogs(project: string, buffer: string): void {
+  if (!buffer.trim()) return;
+  
+  const logs = serverLogs.get(project) || [];
+  logs.push(buffer);
+  serverLogs.set(project, logs);
+}
+
+/**
+ * Read stream and process output
+ */
+async function readStreamOutput(
+  reader: globalThis.ReadableStreamDefaultReader<Uint8Array>,
+  decoder: TextDecoder,
+  project: string
+): Promise<void> {
+  try {
+    let buffer = '';
+    
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split('\n');
+      buffer = lines.pop() || '';
+
+      processLogLines(project, lines);
+    }
+
+    addBufferToLogs(project, buffer);
+  } catch {
+    // Ignore read errors
+  }
+}
+
+/**
  * Setup process output handlers
  */
 function setupProcessHandlers(
@@ -162,78 +219,14 @@ function setupProcessHandlers(
   if (serverProcess.stdout) {
     const reader = serverProcess.stdout.getReader();
     const decoder = new TextDecoder();
-
-    const readStdout = async () => {
-      try {
-        let buffer = '';
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
-
-          buffer += decoder.decode(value, { stream: true });
-          const lines = buffer.split('\n');
-          buffer = lines.pop() || '';
-
-          const logs = serverLogs.get(project) || [];
-          for (const line of lines) {
-            if (line.trim()) {
-              logs.push(line);
-              if (logs.length > 300) logs.shift();
-            }
-          }
-          serverLogs.set(project, logs);
-        }
-
-        if (buffer.trim()) {
-          const logs = serverLogs.get(project) || [];
-          logs.push(buffer);
-          serverLogs.set(project, logs);
-        }
-      } catch {
-        // Ignore read errors
-      }
-    };
-
-    readStdout();
+    readStreamOutput(reader, decoder, project);
   }
 
   // Handle stderr
   if (serverProcess.stderr) {
     const reader = serverProcess.stderr.getReader();
     const decoder = new TextDecoder();
-
-    const readStderr = async () => {
-      try {
-        let buffer = '';
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
-
-          buffer += decoder.decode(value, { stream: true });
-          const lines = buffer.split('\n');
-          buffer = lines.pop() || '';
-
-          const logs = serverLogs.get(project) || [];
-          for (const line of lines) {
-            if (line.trim()) {
-              logs.push(line);
-              if (logs.length > 300) logs.shift();
-            }
-          }
-          serverLogs.set(project, logs);
-        }
-
-        if (buffer.trim()) {
-          const logs = serverLogs.get(project) || [];
-          logs.push(buffer);
-          serverLogs.set(project, logs);
-        }
-      } catch {
-        // Ignore read errors
-      }
-    };
-
-    readStderr();
+    readStreamOutput(reader, decoder, project);
   }
 
   // Handle process exit

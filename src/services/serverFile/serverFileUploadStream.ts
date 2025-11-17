@@ -85,6 +85,18 @@ async function cleanupPartialFile(writeStream: NodeJS.WritableStream, filePath: 
   }
 }
 
+async function verifyUploadedFile(filePath: string, expectedSize: number, fileName: string): Promise<{ size: number }> {
+  const fs = require('fs').promises;
+  const stat = await fs.stat(filePath);
+  
+  if (expectedSize > 0 && stat.size !== expectedSize) {
+    logger.warn(`File size mismatch: expected ${expectedSize}, got ${stat.size}`);
+  }
+  
+  logger.info(`Stream upload completed: ${fileName}, ${stat.size} bytes written`);
+  return stat;
+}
+
 /**
  * Upload large files via raw stream (bypasses formData memory issues)
  */
@@ -126,7 +138,7 @@ export async function uploadServerFileStream(req: Request): Promise<Response> {
         throw new Error('No request body stream available');
       }
       
-      const bytesWritten = await streamToFile(reader, writeStream);
+      await streamToFile(reader, writeStream);
       
       writeStream.end();
       
@@ -135,13 +147,7 @@ export async function uploadServerFileStream(req: Request): Promise<Response> {
         writeStream.on('error', reject);
       });
       
-      logger.info(`Stream upload completed: ${params.fileName}, ${bytesWritten} bytes written`);
-      
-      const fs = require('fs').promises;
-      const stat = await fs.stat(filePath);
-      if (params.fileSize > 0 && stat.size !== params.fileSize) {
-        logger.warn(`File size mismatch: expected ${params.fileSize}, got ${stat.size}`);
-      }
+      const stat = await verifyUploadedFile(filePath, params.fileSize, params.fileName);
       
       return Response.json({
         success: true,

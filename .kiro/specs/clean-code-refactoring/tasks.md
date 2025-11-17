@@ -396,29 +396,50 @@
   - Verify no no-unused-vars warnings remain
   - _Requirements: 11.1, 11.2, 11.3, 11.4, 11.5_
 
-- [ ] 16. Reduce code nesting depth
-- [ ] 16.1 Apply guard clauses to serverService.ts
+- [x] 16. Reduce code nesting depth
+
+
+
+
+
+
+- [x] 16.1 Apply guard clauses to serverService.ts
+
   - Identify functions with nesting >3
   - Refactor using early returns
   - _Requirements: 4.1, 4.2_
 
-- [ ] 16.2 Apply guard clauses to serverFileService.ts
+
+- [x] 16.2 Apply guard clauses to serverFileService.ts
+
   - Identify functions with nesting >3
   - Refactor using early returns
   - _Requirements: 4.1, 4.2_
 
-- [ ] 16.3 Apply guard clauses to remaining services
+
+- [x] 16.3 Apply guard clauses to remaining services
+
   - Fix nesting in javaService.ts
   - Fix nesting in startFileService.ts searchDirectory function
   - Verify no max-depth warnings remain
   - _Requirements: 4.1, 4.2_
 
-- [ ] 17. Final verification and testing
-- [ ] 17.1 Run complete linting check
+- [x] 17. Final verification and testing
+
+
+
+
+
+
+- [x] 17.1 Run complete linting check
+
   - Execute `bun lint` and verify 0 errors, <20 warnings
   - _Requirements: 1.1, 1.3_
 
-- [ ] 17.2 Verify all functionality
+
+
+- [x] 17.2 Verify all functionality
+
   - Test server creation from ZIP file
   - Test server start and stop
   - Test server log viewing
@@ -427,7 +448,9 @@
   - Test all three file upload methods
   - _Requirements: 12.1, 12.2, 12.3, 12.4, 12.5_
 
-- [ ] 17.3 Verify metrics targets
+
+- [x] 17.3 Verify metrics targets
+
   - Confirm no files exceed 300 lines
   - Confirm no functions exceed 50 lines
   - Confirm all complexity ≤10
