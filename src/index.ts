@@ -15,7 +15,7 @@ import {
   uploadServerFile,
   uploadServerFileStream,
   deleteServerFile,
-} from "./services/serverFileService";
+} from "./services/serverFile";
 import {
   listConfigFiles,
   readConfigFile,
