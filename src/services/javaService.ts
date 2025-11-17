@@ -216,7 +216,9 @@ export async function installJabba(): Promise<{ success: boolean; error?: string
         // Clean up temp file
         try {
           await $`del ${tempScript}`.quiet().nothrow();
-        } catch {}
+        } catch (_error) {
+          // Ignore cleanup errors - file may not exist
+        }
 
         if (result.exitCode === 0) {
           return { success: true };
@@ -310,7 +312,7 @@ export async function installJabbaVersion(version: string): Promise<{ success: b
 /**
  * Switch Java version using Jabba and update process environment
  */
-export async function useJabbaVersion(version: string): Promise<{ success: boolean; error?: string }> {
+export async function setJabbaVersion(version: string): Promise<{ success: boolean; error?: string }> {
   try {
     const result = await execJabba(['use', version]);
 
@@ -410,7 +412,7 @@ export async function handleJabbaUse(req: Request): Promise<Response> {
       });
     }
 
-    const result = await useJabbaVersion(version);
+    const result = await setJabbaVersion(version);
     return Response.json(result);
   } catch (error) {
     return Response.json({

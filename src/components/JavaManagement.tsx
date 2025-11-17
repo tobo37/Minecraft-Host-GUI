@@ -24,8 +24,8 @@ export function JavaManagement({ onBack }: JavaManagementProps) {
   const { translations } = useLanguage();
   const [javaInfo, setJavaInfo] = useState<JavaInfo | null>(null);
   const [jabbaInfo, setJabbaInfo] = useState<JabbaInfo | null>(null);
-  const [availableVersions, setAvailableVersions] = useState<string[]>([]);
-  const [showAllVersions, setShowAllVersions] = useState(false);
+  const [_availableVersions, setAvailableVersions] = useState<string[]>([]); // TODO: Implement version listing
+  const [_showAllVersions, _setShowAllVersions] = useState(false); // TODO: Implement version filtering
   const [loading, setLoading] = useState(true);
   const [installing, setInstalling] = useState(false);
   const [switching, setSwitching] = useState(false);

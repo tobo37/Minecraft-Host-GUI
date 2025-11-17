@@ -5,10 +5,10 @@ interface ServerFileUploadProps {
   isDragOver: boolean;
   uploadStatus: string | null;
   uploadProgress: number;
-  onDragOver: (e: React.DragEvent) => void;
-  onDragLeave: (e: React.DragEvent) => void;
-  onDrop: (e: React.DragEvent) => void;
-  onFileSelect: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  onDragOver: React.DragEventHandler;
+  onDragLeave: React.DragEventHandler;
+  onDrop: React.DragEventHandler;
+  onFileSelect: React.ChangeEventHandler<HTMLInputElement>;
 }
 
 export function ServerFileUpload({

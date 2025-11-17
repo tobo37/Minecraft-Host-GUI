@@ -19,7 +19,7 @@ interface ConfigFile {
 }
 
 export function ConfigurationManagement({ projectPath, onBack }: ConfigurationManagementProps) {
-  const { translations } = useLanguage();
+  // const { translations } = useLanguage(); // TODO: Use for i18n
   const [configFiles, setConfigFiles] = useState<ConfigFile[]>([]);
   const [selectedConfig, setSelectedConfig] = useState<ConfigFile | null>(null);
   const [configContent, setConfigContent] = useState<string>('');

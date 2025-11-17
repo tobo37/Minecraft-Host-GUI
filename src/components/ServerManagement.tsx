@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { useLanguage } from "@/hooks/useLanguage";
 import { useServerStatus } from "@/hooks/useServerStatus";
 import { useServerInfo } from "@/hooks/useServerInfo";
 import { useServerMetadata } from "@/hooks/useServerMetadata";

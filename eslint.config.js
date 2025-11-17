@@ -66,7 +66,22 @@ export default [
     },
     rules: {
       // TypeScript
-      "@typescript-eslint/no-unused-vars": ["warn", { argsIgnorePattern: "^_" }],
+      "@typescript-eslint/no-unused-vars": [
+        "warn",
+        {
+          argsIgnorePattern: "^_",
+          varsIgnorePattern: "^_",
+          destructuredArrayIgnorePattern: "^_",
+        },
+      ],
+      "no-unused-vars": [
+        "warn",
+        {
+          argsIgnorePattern: "^_",
+          varsIgnorePattern: "^_",
+          destructuredArrayIgnorePattern: "^_",
+        },
+      ],
       "@typescript-eslint/explicit-function-return-type": "off",
       "@typescript-eslint/no-explicit-any": "warn",
       
@@ -97,6 +112,15 @@ export default [
     },
   },
   {
-    ignores: ["node_modules/**", "dist/**", "build/**", "server/**", "serverfiles/**"],
+    ignores: [
+      "node_modules/**",
+      "dist/**",
+      "build/**",
+      "server/**",
+      "serverfiles/**",
+      "*.config.js",
+      "build.ts",
+      "scripts/**",
+    ],
   },
 ];
