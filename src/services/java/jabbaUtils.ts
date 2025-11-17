@@ -38,25 +38,38 @@ export function isDockerEnvironment(): boolean {
  * Get Jabba executable path based on platform
  */
 export function getJabbaPath(): string {
-  const home = homedir();
+  const homeDir = homedir();
   const isWindows = process.platform === "win32";
 
   if (isWindows) {
-    return join(home, ".jabba", "bin", "jabba.exe");
+    return join(homeDir, ".jabba", "bin", "jabba.exe");
   } else {
-    return join(home, ".jabba", "bin", "jabba");
+    return join(homeDir, ".jabba", "bin", "jabba");
   }
 }
 
 /**
  * Check if a Java version directory exists
+ * Jabba stores versions in ~/.jabba/jdk/<version>
  */
 async function isVersionDirectoryPresent(version: string): Promise<boolean> {
   try {
-    const home = homedir();
-    const jabbaDir = join(home, ".jabba", "jdk", version);
-    const file = Bun.file(jabbaDir);
-    return await file.exists();
+    const homeDir = homedir();
+    const jabbaDir = join(homeDir, ".jabba", "jdk", version);
+
+    logger.info(`Checking if version directory exists: ${jabbaDir}`);
+
+    // Use fs.stat to check if directory exists
+    const fs = require("fs").promises;
+    try {
+      const stats = await fs.stat(jabbaDir);
+      const exists = stats.isDirectory();
+      logger.info(`Version directory ${version} exists: ${exists}`);
+      return exists;
+    } catch (_statError) {
+      logger.info(`Version directory ${version} does not exist`);
+      return false;
+    }
   } catch (error) {
     logger.error(`Error checking version directory for ${version}:`, error);
     return false;
@@ -71,6 +84,18 @@ export async function getJabbaEnv(
 ): Promise<Record<string, string>> {
   logger.info(`Loading Jabba environment for version: ${version}`);
 
+  // Debug: List all installed versions
+  const homeDir = homedir();
+  const jdkDir = join(homeDir, ".jabba", "jdk");
+  try {
+    const fs = require("fs").promises;
+    const entries = await fs.readdir(jdkDir);
+    logger.info(`Available JDK directories in ${jdkDir}:`);
+    entries.forEach((entry: string) => logger.info(`  - ${entry}`));
+  } catch (error) {
+    logger.warn(`Could not list JDK directory: ${error}`);
+  }
+
   // Validate that the version is installed
   const versionExists = await isVersionDirectoryPresent(version);
   if (!versionExists) {
@@ -79,10 +104,8 @@ export async function getJabbaEnv(
     throw new Error(errorMessage);
   }
 
-  const home = homedir();
   const isWindows = process.platform === "win32";
-
-  const jabbaDir = join(home, ".jabba", "jdk", version);
+  const jabbaDir = join(homeDir, ".jabba", "jdk", version);
   const binPath = join(jabbaDir, "bin");
 
   let env: Record<string, string>;
@@ -107,17 +130,31 @@ export async function getJabbaEnv(
 }
 
 /**
- * Execute Jabba command directly
+ * Execute Jabba command with proper shell environment
  */
 export async function execJabba(args: string[]): Promise<{
   exitCode: number;
   stdout: string;
   stderr: string;
 }> {
-  const jabbaPath = getJabbaPath();
+  const homeDir = homedir();
+  const isWindows = process.platform === "win32";
 
   try {
-    const result = await $`${jabbaPath} ${args}`.quiet().nothrow();
+    let result;
+
+    if (isWindows) {
+      // Windows: Use PowerShell to source Jabba and run command
+      const jabbaPath = getJabbaPath();
+      const command = `${jabbaPath} ${args.join(" ")}`;
+      result = await $`powershell -Command ${command}`.quiet().nothrow();
+    } else {
+      // Unix: Source jabba.sh and run command in bash
+      const jabbaScript = join(homeDir, ".jabba", "jabba.sh");
+      const command = `source ${jabbaScript} && jabba ${args.join(" ")}`;
+      result = await $`bash -c ${command}`.quiet().nothrow();
+    }
+
     return {
       exitCode: result.exitCode,
       stdout: result.stdout.toString(),
