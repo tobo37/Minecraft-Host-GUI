@@ -8,6 +8,7 @@ export interface ServerMetadata {
   sourceZipFile: string;
   startFile?: string; // Custom start file path (e.g., "startserver.sh" or "start.bat")
   projectPath?: string; // Relative path to actual server folder (e.g., "BM_Revelations_II-2.2.2_server")
+  javaVersion?: string; // Jabba Java version to use (e.g., "zulu@1.17.0")
   modpackInfo?: {
     name: string;
     version: string;
@@ -28,6 +29,7 @@ export interface Server {
   sourceZipFile?: string;
   startFile?: string;
   projectPath?: string;
+  javaVersion?: string;
   status?: "running" | "stopped";
   lastModified?: string;
 }

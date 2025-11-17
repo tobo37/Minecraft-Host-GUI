@@ -4,7 +4,7 @@
 
 import type { ServerProcess } from './server.types';
 import { readMetadata } from '../metadataService';
-import { fileExists, getServerPath } from './serverRepository';
+import { fileExists } from './serverRepository';
 import { logger } from '@/lib/logger';
 
 // Import from main service for now (will be refactored)
@@ -116,17 +116,47 @@ async function makeScriptExecutable(
 /**
  * Launch server process
  */
-function launchServerProcess(
+async function launchServerProcess(
+  project: string,
   serverPath: string,
   startFileName: string
-): ServerProcess {
-  const env = {
-    ...process.env,
-    PATH: process.env.PATH + ':/usr/bin:/bin:/usr/local/bin',
+): Promise<ServerProcess> {
+  // Load metadata to get Java version
+  const metadata = await readMetadata(project);
+  
+  // Base environment - use Record<string, string> for proper typing
+  const env: Record<string, string> = {
+    ...process.env as Record<string, string>,
+    PATH: (process.env.PATH || '') + ':/usr/bin:/bin:/usr/local/bin',
     TERM: 'xterm-256color',
     PWD: serverPath,
     JAVA_TOOL_OPTIONS: '-Djline.terminal=jline.UnsupportedTerminal',
   };
+
+  // If a specific Java version is configured, set Jabba environment
+  if (metadata?.javaVersion) {
+    try {
+      const { getJabbaEnv } = await import('../java/jabbaUtils');
+      const jabbaEnv = await getJabbaEnv(metadata.javaVersion);
+      
+      // Override environment with Jabba-specific Java
+      if (jabbaEnv.JAVA_HOME) {
+        env.JAVA_HOME = jabbaEnv.JAVA_HOME;
+      }
+      if (jabbaEnv.PATH) {
+        env.PATH = jabbaEnv.PATH;
+      }
+      
+      const logs = serverLogs.get(project) || [];
+      logs.push(`[${new Date().toLocaleTimeString()}] Using Java version: ${metadata.javaVersion}`);
+      logs.push(`[${new Date().toLocaleTimeString()}] JAVA_HOME: ${jabbaEnv.JAVA_HOME || 'not set'}`);
+      serverLogs.set(project, logs);
+    } catch (error) {
+      const logs = serverLogs.get(project) || [];
+      logs.push(`[${new Date().toLocaleTimeString()}] WARNING: Could not load Java version ${metadata.javaVersion}: ${error}`);
+      serverLogs.set(project, logs);
+    }
+  }
 
   const isWindowsScript = startFileName.endsWith('.bat') || startFileName.endsWith('.cmd');
 
@@ -283,7 +313,7 @@ export async function startServer(project: string): Promise<{ success: boolean; 
 
   await ensureJavaAvailable(project, serverPath);
 
-  const serverProcess = launchServerProcess(serverPath, startFileName);
+  const serverProcess = await launchServerProcess(project, serverPath, startFileName);
   runningServers.set(project, serverProcess);
 
   const logs = serverLogs.get(project) || [];
@@ -353,17 +383,13 @@ export async function sendCommand(
   }
 
   try {
-    const writer = serverProcess.stdin.getWriter();
-    const encoder = new TextEncoder();
-    
     // Add command to logs for visibility
     const logs = serverLogs.get(project) || [];
     logs.push(`> ${command}`);
     serverLogs.set(project, logs);
 
-    // Send command with newline
-    await writer.write(encoder.encode(command + '\n'));
-    writer.releaseLock();
+    // Write to stdin using Bun's FileSink API
+    serverProcess.stdin.write(command + '\n');
 
     return { success: true, message: 'Command sent successfully' };
   } catch (error) {

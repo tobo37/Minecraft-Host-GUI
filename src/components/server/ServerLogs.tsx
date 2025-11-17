@@ -9,10 +9,12 @@ interface ServerLogsProps {
 
 export function ServerLogs({ logs, isPolling }: ServerLogsProps) {
   const logsEndRef = useRef<HTMLDivElement>(null);
+  const logsContainerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (logsEndRef.current) {
-      logsEndRef.current.scrollIntoView({ behavior: "smooth" });
+    // Scroll only within the logs container, not the whole page
+    if (logsContainerRef.current) {
+      logsContainerRef.current.scrollTop = logsContainerRef.current.scrollHeight;
     }
   }, [logs]);
 
@@ -27,7 +29,10 @@ export function ServerLogs({ logs, isPolling }: ServerLogsProps) {
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="bg-black text-green-400 p-4 rounded-lg font-mono text-sm max-h-96 overflow-y-auto">
+        <div 
+          ref={logsContainerRef}
+          className="bg-black text-green-400 p-4 rounded-lg font-mono text-sm max-h-96 overflow-y-auto"
+        >
           {logs.length === 0 ? (
             <div className="text-gray-500">Warte auf Server-Logs...</div>
           ) : (

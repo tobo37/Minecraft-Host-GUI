@@ -13,6 +13,7 @@ interface MetadataUpdateRequest {
   description?: string;
   projectPath?: string;
   startFile?: string;
+  javaVersion?: string;
 }
 
 interface ValidationResult {
@@ -152,7 +153,8 @@ function mergeMetadata(
   customName?: string,
   description?: string,
   projectPath?: string,
-  startFile?: string
+  startFile?: string,
+  javaVersion?: string
 ): Record<string, string> {
   const updates: Record<string, string> = {};
 
@@ -167,6 +169,9 @@ function mergeMetadata(
   }
   if (startFile !== undefined) {
     updates.startFile = startFile;
+  }
+  if (javaVersion !== undefined) {
+    updates.javaVersion = javaVersion;
   }
 
   return updates;
@@ -187,7 +192,7 @@ async function saveMetadata(project: string, updates: Record<string, string>) {
 export async function updateServerMetadata(req: Request): Promise<Response> {
   try {
     const body = await req.json();
-    const { project, customName, description, projectPath, startFile } = body as MetadataUpdateRequest;
+    const { project, customName, description, projectPath, startFile, javaVersion } = body as MetadataUpdateRequest;
 
     // Validate metadata
     const validation = await validateMetadata(project, customName, description);
@@ -202,7 +207,7 @@ export async function updateServerMetadata(req: Request): Promise<Response> {
     }
 
     // Merge updates
-    const updates = mergeMetadata(customName, description, projectPath, startFile);
+    const updates = mergeMetadata(customName, description, projectPath, startFile, javaVersion);
 
     // Save metadata and get updated version
     const updatedMetadata = await saveMetadata(project, updates);

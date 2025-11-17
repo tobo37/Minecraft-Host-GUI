@@ -27,7 +27,7 @@ function getServerStatus(serverName: string): 'running' | 'stopped' {
  */
 async function buildServerInfo(
   entry: string,
-  metadata: { customName?: string; createdAt: string; lastModified?: string; description?: string; sourceZipFile?: string; startFile?: string; projectPath?: string } | null
+  metadata: { customName?: string; createdAt: string; lastModified?: string; description?: string; sourceZipFile?: string; startFile?: string; projectPath?: string; javaVersion?: string } | null
 ): Promise<ServerInfo> {
   if (!metadata) {
     return {
@@ -47,6 +47,7 @@ async function buildServerInfo(
     sourceZipFile: metadata.sourceZipFile,
     startFile: metadata.startFile,
     projectPath: metadata.projectPath,
+    javaVersion: metadata.javaVersion,
     status: getServerStatus(entry),
     lastModified: metadata.lastModified,
   };

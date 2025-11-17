@@ -9,7 +9,11 @@ export interface ServerProcess {
   exited: Promise<number>;
   stdout: globalThis.ReadableStream<Uint8Array> | null;
   stderr: globalThis.ReadableStream<Uint8Array> | null;
-  stdin: unknown;
+  stdin: {
+    write: (data: Uint8Array | string) => number;
+    flush?: () => void;
+    end?: () => void;
+  } | null;
 }
 
 export interface ServerMetadata {
@@ -32,6 +36,7 @@ export interface ServerInfo {
   sourceZipFile?: string;
   startFile?: string;
   projectPath?: string;
+  javaVersion?: string;
   status?: 'running' | 'stopped' | 'unknown';
   lastModified?: string;
 }

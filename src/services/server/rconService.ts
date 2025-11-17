@@ -141,23 +141,15 @@ export async function connectRcon(
     }
     
     // Get config
-    let config = await getRconConfig(project);
+    const config = await getRconConfig(project);
     
-    // If no config, try to enable RCON with defaults
+    // If no config, RCON is not enabled
     if (!config) {
-      const enableResult = await enableRconInProperties(project);
-      if (!enableResult.success) {
-        failedConnections.set(project, failCount + 1);
-        return { 
-          success: false, 
-          error: 'RCON not configured. ' + (enableResult.error || '') 
-        };
-      }
-      config = await getRconConfig(project);
-      if (!config) {
-        failedConnections.set(project, failCount + 1);
-        return { success: false, error: 'Failed to configure RCON' };
-      }
+      failedConnections.set(project, failCount + 1);
+      return { 
+        success: false, 
+        error: 'RCON not configured. Enable it first in the RCON management page.' 
+      };
     }
     
     // Create connection with shorter timeout
@@ -219,7 +211,7 @@ export async function sendRconCommand(
       if (!connectResult.success) {
         return { 
           success: false, 
-          error: connectResult.error || 'Not connected to RCON' 
+          error: 'RCON not available - server may not support it or needs restart' 
         };
       }
       rcon = rconConnections.get(project);
@@ -236,14 +228,14 @@ export async function sendRconCommand(
       response: response || 'Command executed' 
     };
   } catch (error) {
-    logger.error('RCON command failed:', error);
+    logger.warn('RCON command failed:', error);
     
     // Try to reconnect on error
     rconConnections.delete(project);
     
     return { 
       success: false, 
-      error: error instanceof Error ? error.message : 'Command failed' 
+      error: 'RCON connection failed - using stdin fallback' 
     };
   }
 }
