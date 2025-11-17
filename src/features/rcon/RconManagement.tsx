@@ -468,7 +468,7 @@ export function RconManagement({ projectPath, onBack }: RconManagementProps) {
                             autoComplete="off"
                           />
                           {suggestions.length > 0 && (
-                            <div className="absolute z-10 w-full mt-1 bg-popover border border-border rounded-md shadow-lg max-h-48 overflow-y-auto">
+                            <div className="absolute z-10 w-full mt-1 bg-card border border-border rounded-md shadow-lg max-h-48 overflow-y-auto">
                               {suggestions.map((suggestion, index) => (
                                 <div
                                   key={suggestion}
@@ -574,7 +574,7 @@ export function RconManagement({ projectPath, onBack }: RconManagementProps) {
                             autoComplete="off"
                           />
                           {suggestions.length > 0 && (
-                            <div className="absolute z-10 w-full mt-1 bg-popover border border-border rounded-md shadow-lg max-h-48 overflow-y-auto">
+                            <div className="absolute z-10 w-full mt-1 bg-card border border-border rounded-md shadow-lg max-h-48 overflow-y-auto">
                               {suggestions.map((suggestion, index) => (
                                 <div
                                   key={suggestion}
