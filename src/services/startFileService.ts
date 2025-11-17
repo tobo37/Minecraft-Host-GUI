@@ -276,28 +276,77 @@ async function makeStartFileExecutable(
   serverPath: string,
   startFile: string
 ): Promise<void> {
+  const { logger } = await import("@/lib/logger");
+
   // Only on Unix/Linux systems
-  if (process.platform === "win32") return;
+  if (process.platform === "win32") {
+    logger.info(`Skipping chmod for ${startFile} (Windows platform)`);
+    return;
+  }
 
   // Only for shell scripts
-  if (!startFile.endsWith(".sh")) return;
+  if (!startFile.endsWith(".sh")) {
+    logger.info(`Skipping chmod for ${startFile} (not a .sh file)`);
+    return;
+  }
 
-  const { logger } = await import("@/lib/logger");
   const startFilePath = `${serverPath}/${startFile}`;
 
+  logger.info(`[setStartFile] Making start file executable: ${startFile}`);
+  logger.info(`[setStartFile] Full path: ${startFilePath}`);
+
   try {
-    logger.info(`Making start file executable: ${startFile}`);
+    // Check permissions before chmod
+    const beforeCheck = Bun.spawn(["ls", "-l", startFilePath], {
+      stdout: "pipe",
+      stderr: "pipe",
+    });
+
+    const beforeOutput = await new Response(beforeCheck.stdout).text();
+    const beforeExitCode = await beforeCheck.exited;
+
+    if (beforeExitCode === 0) {
+      logger.info(
+        `[setStartFile] Permissions BEFORE chmod: ${beforeOutput.trim()}`
+      );
+    }
+
+    // Execute chmod
+    logger.info(`[setStartFile] Executing: chmod +x ${startFilePath}`);
     const result = await Bun.spawn(["chmod", "+x", startFilePath]).exited;
 
     if (result === 0) {
-      logger.info(`✓ Successfully made ${startFile} executable`);
+      logger.info(`[setStartFile] ✓ chmod command succeeded (exit code: 0)`);
+
+      // Check permissions after chmod
+      const afterCheck = Bun.spawn(["ls", "-l", startFilePath], {
+        stdout: "pipe",
+        stderr: "pipe",
+      });
+
+      const afterOutput = await new Response(afterCheck.stdout).text();
+      const afterExitCode = await afterCheck.exited;
+
+      if (afterExitCode === 0) {
+        logger.info(
+          `[setStartFile] Permissions AFTER chmod: ${afterOutput.trim()}`
+        );
+
+        if (afterOutput.includes("x")) {
+          logger.info(`[setStartFile] ✓✓ Verified: File is now executable`);
+        } else {
+          logger.error(
+            `[setStartFile] ✗ ERROR: chmod succeeded but file is still not executable!`
+          );
+        }
+      }
     } else {
-      logger.warn(
-        `Failed to make ${startFile} executable (exit code: ${result})`
+      logger.error(
+        `[setStartFile] ✗ chmod command failed (exit code: ${result})`
       );
     }
   } catch (error) {
-    logger.warn(`Failed to chmod ${startFile}: ${error}`);
+    logger.error(`[setStartFile] ✗ Exception during chmod: ${error}`);
   }
 }
 

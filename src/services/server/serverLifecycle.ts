@@ -401,6 +401,57 @@ export async function startServer(
     };
   }
 
+  // On Linux/Unix, log directory contents and file permissions before starting
+  if (process.platform !== "win32") {
+    logger.info(`[${project}] Checking directory contents and permissions...`);
+
+    try {
+      // List directory contents
+      const lsProcess = Bun.spawn(["ls", "-la", serverPath], {
+        stdout: "pipe",
+        stderr: "pipe",
+      });
+
+      const lsOutput = await new Response(lsProcess.stdout).text();
+      const lsExitCode = await lsProcess.exited;
+
+      if (lsExitCode === 0) {
+        logger.info(`[${project}] Directory listing (ls -la):`);
+        const lines = lsOutput.split("\n").slice(0, 20); // First 20 lines
+        lines.forEach((line) => {
+          if (line.trim()) logger.info(`  ${line}`);
+        });
+      }
+
+      // Check start file permissions specifically
+      const statProcess = Bun.spawn(["ls", "-l", startScript], {
+        stdout: "pipe",
+        stderr: "pipe",
+      });
+
+      const statOutput = await new Response(statProcess.stdout).text();
+      const statExitCode = await statProcess.exited;
+
+      if (statExitCode === 0) {
+        logger.info(
+          `[${project}] Start file permissions (ls -l ${startFileName}):`
+        );
+        logger.info(`  ${statOutput.trim()}`);
+
+        // Check if executable bit is set
+        if (statOutput.includes("x")) {
+          logger.info(`[${project}] ✓ Start file has executable permission`);
+        } else {
+          logger.warn(
+            `[${project}] ⚠ Start file is NOT executable - will attempt chmod`
+          );
+        }
+      }
+    } catch (error) {
+      logger.warn(`[${project}] Could not check permissions: ${error}`);
+    }
+  }
+
   await makeScriptExecutable(serverPath, startScript);
 
   const debugInfo = [
