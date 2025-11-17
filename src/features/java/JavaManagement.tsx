@@ -77,6 +77,7 @@ export function JavaManagement({ onBack }: JavaManagementProps) {
                   <JabbaInstall
                     installing={installing}
                     onInstall={installJabba}
+                    jabbaInfo={jabbaInfo}
                   />
                 ) : (
                   <JavaVersionSelector

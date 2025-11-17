@@ -2,6 +2,37 @@ import { join } from "path";
 import { homedir } from "os";
 import { $ } from "bun";
 import { logger } from "@/lib/logger";
+import { existsSync, readFileSync } from "fs";
+
+/**
+ * Detect if running in a Docker container
+ */
+export function isDockerEnvironment(): boolean {
+  try {
+    // Check for .dockerenv file (common indicator)
+    if (existsSync("/.dockerenv")) {
+      return true;
+    }
+
+    // Check cgroup for docker/containerd
+    if (existsSync("/proc/self/cgroup")) {
+      const cgroup = readFileSync("/proc/self/cgroup", "utf8");
+      if (cgroup.includes("docker") || cgroup.includes("containerd")) {
+        return true;
+      }
+    }
+
+    // Check for DOCKER environment variable
+    if (process.env.DOCKER === "true") {
+      return true;
+    }
+
+    return false;
+  } catch (_error) {
+    // If we can't determine, assume not in Docker
+    return false;
+  }
+}
 
 /**
  * Get Jabba executable path based on platform

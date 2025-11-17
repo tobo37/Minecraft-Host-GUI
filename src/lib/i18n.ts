@@ -90,6 +90,10 @@ export interface Translations {
     install: string;
     refresh: string;
     installNote: string;
+    jabbaNotAvailable: string;
+    jabbaInstallInstructions: string;
+    jabbaInstallLink: string;
+    systemJavaFallback: string;
   };
 }
 
@@ -197,6 +201,13 @@ export const translations: Record<Language, Translations> = {
       refresh: "Aktualisieren",
       installNote:
         "Nach der Installation wird Jabba direkt verwendet. Klicken Sie auf 'Aktualisieren', wenn die Versionen nicht angezeigt werden.",
+      jabbaNotAvailable:
+        "Jabba ist auf diesem System nicht verfügbar. Die Anwendung verwendet die System-Java-Installation als Fallback.",
+      jabbaInstallInstructions:
+        "Um Jabba zu installieren und mehrere Java-Versionen zu verwalten, folgen Sie der Installationsanleitung:",
+      jabbaInstallLink: "Jabba Installationsanleitung",
+      systemJavaFallback:
+        "Die Anwendung funktioniert weiterhin mit der System-Java-Installation.",
     },
   },
   en: {
@@ -301,6 +312,13 @@ export const translations: Record<Language, Translations> = {
       refresh: "Refresh",
       installNote:
         "After installation, Jabba will be used directly. Click 'Refresh' if versions don't appear.",
+      jabbaNotAvailable:
+        "Jabba is not available on this system. The application will use the system Java installation as a fallback.",
+      jabbaInstallInstructions:
+        "To install Jabba and manage multiple Java versions, follow the installation guide:",
+      jabbaInstallLink: "Jabba Installation Guide",
+      systemJavaFallback:
+        "The application will continue to work with the system Java installation.",
     },
   },
 };

@@ -7,6 +7,11 @@
     "dev": "bun --hot src/index.ts",
     "start": "NODE_ENV=production bun src/index.ts",
     "build": "bun run build.ts",
+    "test": "bun test tests/integration/",
+    "test:docker": "bun test tests/integration/docker-jabba.test.ts",
+    "test:api": "bun test tests/integration/jabba-api.test.ts",
+    "test:server": "bun test tests/integration/server-java.test.ts",
+    "test:integration": "bun scripts/run-integration-tests.ts",
     "test:environment": "bun scripts/test-environment.ts",
     "lint": "eslint . --ext .ts,.tsx",
     "lint:fix": "eslint . --ext .ts,.tsx --fix"

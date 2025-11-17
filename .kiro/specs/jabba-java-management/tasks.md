@@ -86,22 +86,23 @@
     - Maintain server context for easy navigation back
     - _Requirements: 2.3_
 
-- [ ] 6. Ensure non-Docker environment compatibility
+- [x] 6. Ensure non-Docker environment compatibility
 
-  - [ ] 6.1 Add Jabba detection for local development
+  - [x] 6.1 Add Jabba detection for local development
 
     - Check if Jabba is installed on host system at startup
     - Display appropriate message in UI if Jabba is not available
     - Allow application to function with system Java as fallback
     - _Requirements: 5.1, 5.2, 5.3, 5.4_
 
-  - [ ] 6.2 Update JavaManagement component for non-Docker scenarios
+  - [x] 6.2 Update JavaManagement component for non-Docker scenarios
+
     - Show installation instructions if Jabba is not detected
     - Provide link to Jabba installation guide
     - Gracefully handle missing Jabba without breaking UI
     - _Requirements: 5.2_
 
-- [ ] 7. Update translations for new UI elements
+- [x] 7. Update translations for new UI elements
 
   - Add German and English translations for "Java Version" label
   - Add translations for "System Default" fallback text
@@ -109,23 +110,24 @@
   - Add translations for Jabba installation instructions
   - _Requirements: 2.4, 4.2, 5.2_
 
-- [ ] 8. Add integration tests for Jabba functionality
+- [x] 8. Add integration tests for Jabba functionality
 
-  - [ ] 8.1 Test Docker container build and Jabba installation
+  - [x] 8.1 Test Docker container build and Jabba installation
 
     - Verify Jabba is installed in container
     - Verify OpenJDK 17 is installed and set as default
     - Verify Bun is available and functional
     - _Requirements: 1.1, 1.2, 1.3_
 
-  - [ ] 8.2 Test Java version installation and switching
+  - [x] 8.2 Test Java version installation and switching
 
     - Test installing a new Java version via API
     - Test switching between installed versions
     - Test error handling for invalid versions
     - _Requirements: 3.1, 3.2, 3.3, 3.4_
 
-  - [ ] 8.3 Test server startup with different Java versions
+  - [x] 8.3 Test server startup with different Java versions
+
     - Test server starts with default Java
     - Test server starts with specific Jabba version
     - Test error handling when Java version is missing
