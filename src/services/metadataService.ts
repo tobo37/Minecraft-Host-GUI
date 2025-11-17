@@ -1,5 +1,6 @@
 import { join } from "path";
 import type { ServerMetadata } from "./types";
+import { logger } from "@/lib/logger";
 
 const METADATA_FILENAME = ".metadata.json";
 const CREATED_FILENAME = ".created";
@@ -73,7 +74,7 @@ export async function readMetadata(
 
     return metadata;
   } catch (error) {
-    console.error(`Error reading metadata for ${projectPath}:`, error);
+    logger.error(`Error reading metadata for ${projectPath}:`, error);
     return null;
   }
 }
@@ -91,7 +92,7 @@ export async function writeMetadata(
 
     await Bun.write(metadataPath, content);
   } catch (error) {
-    console.error(`Error writing metadata for ${projectPath}:`, error);
+    logger.error(`Error writing metadata for ${projectPath}:`, error);
     throw new Error(`Failed to write metadata: ${error}`);
   }
 }
@@ -118,7 +119,7 @@ export async function updateMetadata(
 
     await writeMetadata(projectPath, updatedMetadata);
   } catch (error) {
-    console.error(`Error updating metadata for ${projectPath}:`, error);
+    logger.error(`Error updating metadata for ${projectPath}:`, error);
     throw new Error(`Failed to update metadata: ${error}`);
   }
 }
@@ -130,7 +131,7 @@ export async function migrateMetadata(
   projectPath: string
 ): Promise<ServerMetadata> {
   try {
-    console.log(`Migrating metadata for ${projectPath}`);
+    logger.info(`Migrating metadata for ${projectPath}`);
 
     // Try to read creation timestamp from .created file
     let createdAt = new Date().toISOString();
@@ -147,7 +148,7 @@ export async function migrateMetadata(
         createdAt = createdContent.trim();
       }
     } catch (error) {
-      console.warn(`Could not read .created file for ${projectPath}:`, error);
+      logger.warn(`Could not read .created file for ${projectPath}:`, error);
     }
 
     // Create default metadata
@@ -162,10 +163,10 @@ export async function migrateMetadata(
     // Write the metadata file
     await writeMetadata(projectPath, metadata);
 
-    console.log(`Successfully migrated metadata for ${projectPath}`);
+    logger.info(`Successfully migrated metadata for ${projectPath}`);
     return metadata;
   } catch (error) {
-    console.error(`Error migrating metadata for ${projectPath}:`, error);
+    logger.error(`Error migrating metadata for ${projectPath}:`, error);
     throw new Error(`Failed to migrate metadata: ${error}`);
   }
 }

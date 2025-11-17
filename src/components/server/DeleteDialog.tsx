@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useLanguage } from "@/hooks/useLanguage";
+import { useDeleteValidation } from "./useDeleteValidation";
 import type { Server } from "@/services/types";
 
 interface DeleteDialogProps {
@@ -36,6 +37,20 @@ export function DeleteDialog({
   onCancel,
 }: DeleteDialogProps) {
   const { translations } = useLanguage();
+  
+  const serverName = serverInfo?.customName || serverInfo?.name || projectPath;
+  const { error: localError, clearError } = useDeleteValidation({
+    serverName,
+    confirmName,
+    validationErrorMessage: translations.serverManagement.deleteDialog.validationError,
+  });
+
+  const displayError = validationError || localError;
+
+  const handleConfirmNameChange = (value: string) => {
+    clearError();
+    onConfirmNameChange(value);
+  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -67,13 +82,13 @@ export function DeleteDialog({
             <Input
               id="deleteConfirm"
               value={confirmName}
-              onChange={(e) => onConfirmNameChange(e.target.value)}
+              onChange={(e) => handleConfirmNameChange(e.target.value)}
               placeholder={
                 translations.serverManagement.deleteDialog.confirmPlaceholder
               }
             />
-            {validationError && (
-              <p className="text-sm text-red-500">{validationError}</p>
+            {displayError && (
+              <p className="text-sm text-red-500">{displayError}</p>
             )}
           </div>
         </div>

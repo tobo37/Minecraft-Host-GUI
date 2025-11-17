@@ -1,11 +1,11 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import type { Server } from "@/services/types";
 
 export function useServerInfo(projectPath: string) {
   const [serverInfo, setServerInfo] = useState<Server | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  const fetchServerInfo = async () => {
+  const fetchServerInfo = useCallback(async () => {
     try {
       setIsLoading(true);
       const response = await fetch("/api/servers");
@@ -21,11 +21,11 @@ export function useServerInfo(projectPath: string) {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [projectPath]);
 
   useEffect(() => {
     fetchServerInfo();
-  }, [projectPath]);
+  }, [fetchServerInfo]);
 
   return { serverInfo, isLoading, refetch: fetchServerInfo };
 }

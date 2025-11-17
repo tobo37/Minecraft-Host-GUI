@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { useLanguage } from "@/hooks/useLanguage";
 import { WelcomePage } from "@/components/WelcomePage";
-import { ProjectSelection } from "@/components/ProjectSelection";
+import { ProjectSelection } from "@/features/projects";
 import { ServerManagement } from "@/components/ServerManagement";
 import { useState, useEffect } from "react";
 import "./index.css";

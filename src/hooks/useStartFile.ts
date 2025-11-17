@@ -1,4 +1,14 @@
 import { useState } from "react";
+import {
+  findStartFiles,
+  setStartFile,
+  type StartFileCandidate,
+} from "@/services/startFileClient";
+import {
+  validateStartFileSelection,
+  getDefaultStartFile,
+  validateCandidatesResponse,
+} from "./useStartFileValidation";
 
 interface UseStartFileProps {
   projectPath: string;
@@ -6,9 +16,15 @@ interface UseStartFileProps {
   onSuccess?: () => void;
 }
 
-export function useStartFile({ projectPath, currentStartFile, onSuccess }: UseStartFileProps) {
+export function useStartFile({
+  projectPath,
+  currentStartFile,
+  onSuccess,
+}: UseStartFileProps) {
   const [isStartFileDialogOpen, setIsStartFileDialogOpen] = useState(false);
-  const [startFileCandidates, setStartFileCandidates] = useState<any[]>([]);
+  const [startFileCandidates, setStartFileCandidates] = useState<
+    StartFileCandidate[]
+  >([]);
   const [selectedStartFile, setSelectedStartFile] = useState<string>("");
   const [isSearchingStartFiles, setIsSearchingStartFiles] = useState(false);
 
@@ -17,23 +33,14 @@ export function useStartFile({ projectPath, currentStartFile, onSuccess }: UseSt
     setIsStartFileDialogOpen(true);
 
     try {
-      const response = await fetch(
-        `/api/server/find-start-files?project=${encodeURIComponent(projectPath)}`
-      );
-      const data = await response.json();
+      const data = await findStartFiles(projectPath);
 
-      if (data.success) {
-        setStartFileCandidates(data.candidates || []);
-        if (currentStartFile) {
-          setSelectedStartFile(currentStartFile);
-        } else if (data.candidates && data.candidates.length > 0) {
-          const highConfidence = data.candidates.find(
-            (c: any) => c.confidence === "high"
-          );
-          setSelectedStartFile(
-            highConfidence?.path || data.candidates[0].path
-          );
-        }
+      if (validateCandidatesResponse(data)) {
+        const candidates = data.candidates || [];
+        setStartFileCandidates(candidates);
+        
+        const defaultFile = getDefaultStartFile(candidates, currentStartFile);
+        setSelectedStartFile(defaultFile);
       } else {
         console.error("Failed to find start files:", data.error);
       }
@@ -45,27 +52,20 @@ export function useStartFile({ projectPath, currentStartFile, onSuccess }: UseSt
   };
 
   const handleSetStartFile = async () => {
-    if (!selectedStartFile) return;
+    if (!validateStartFileSelection(selectedStartFile)) return;
 
     try {
-      const response = await fetch("/api/server/set-start-file", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          project: projectPath,
-          startFile: selectedStartFile,
-        }),
-      });
-
-      const data = await response.json();
+      const data = await setStartFile(projectPath, selectedStartFile);
+      
       if (data.success) {
         onSuccess?.();
         closeStartFileDialog();
       } else {
         console.error("Failed to set start file:", data.error);
-        alert("Fehler beim Speichern der Startdatei: " + (data.error || "Unbekannter Fehler"));
+        alert(
+          "Fehler beim Speichern der Startdatei: " +
+            (data.error || "Unbekannter Fehler")
+        );
       }
     } catch (error) {
       console.error("Error setting start file:", error);

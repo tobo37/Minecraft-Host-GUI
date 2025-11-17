@@ -1,6 +1,7 @@
 import { $ } from "bun";
 import { join } from "path";
 import { homedir } from "os";
+import { logger } from "@/lib/logger";
 
 interface JavaInfo {
   installed: boolean;
@@ -65,7 +66,7 @@ async function execJabba(args: string[]): Promise<{ exitCode: number; stdout: st
       stderr: result.stderr.toString(),
     };
   } catch (error) {
-    console.error("Error executing Jabba:", error);
+    logger.error("Error executing Jabba:", error);
     return {
       exitCode: 1,
       stdout: "",
@@ -85,10 +86,10 @@ export async function loadJabbaEnvironment(): Promise<void> {
       const jabbaEnv = await getJabbaEnv(jabbaInfo.current);
       process.env.JAVA_HOME = jabbaEnv.JAVA_HOME;
       process.env.PATH = jabbaEnv.PATH;
-      console.log(`Loaded Jabba environment: ${jabbaInfo.current} (JAVA_HOME=${jabbaEnv.JAVA_HOME})`);
+      logger.info(`Loaded Jabba environment: ${jabbaInfo.current} (JAVA_HOME=${jabbaEnv.JAVA_HOME})`);
     }
   } catch (error) {
-    console.error("Error loading Jabba environment:", error);
+    logger.error("Error loading Jabba environment:", error);
   }
 }
 
@@ -123,7 +124,7 @@ export async function getJavaInfo(): Promise<JavaInfo> {
 
     return { installed: false };
   } catch (error) {
-    console.error("Error checking Java:", error);
+    logger.error("Error checking Java:", error);
     return { installed: false };
   }
 }
@@ -177,7 +178,7 @@ export async function getJabbaInfo(): Promise<JabbaInfo> {
       current,
     };
   } catch (error) {
-    console.error("Error checking Jabba:", error);
+    logger.error("Error checking Jabba:", error);
     return { installed: false };
   }
 }
@@ -248,7 +249,7 @@ export async function installJabba(): Promise<{ success: boolean; error?: string
       };
     }
   } catch (error) {
-    console.error("Error installing Jabba:", error);
+    logger.error("Error installing Jabba:", error);
     return {
       success: false,
       error: error instanceof Error ? error.message : "Unknown error",
@@ -277,7 +278,7 @@ export async function getAvailableVersions(): Promise<{ success: boolean; versio
       error: `Failed to get available versions. ${result.stderr}`,
     };
   } catch (error) {
-    console.error("Error getting available versions:", error);
+    logger.error("Error getting available versions:", error);
     return {
       success: false,
       error: error instanceof Error ? error.message : "Unknown error",
@@ -301,7 +302,7 @@ export async function installJabbaVersion(version: string): Promise<{ success: b
       error: `Failed to install version ${version}. ${result.stderr}`,
     };
   } catch (error) {
-    console.error("Error installing Java version:", error);
+    logger.error("Error installing Java version:", error);
     return {
       success: false,
       error: error instanceof Error ? error.message : "Unknown error",
@@ -322,7 +323,7 @@ export async function setJabbaVersion(version: string): Promise<{ success: boole
       process.env.JAVA_HOME = jabbaEnv.JAVA_HOME;
       process.env.PATH = jabbaEnv.PATH;
       
-      console.log(`Updated environment: JAVA_HOME=${jabbaEnv.JAVA_HOME}`);
+      logger.info(`Updated environment: JAVA_HOME=${jabbaEnv.JAVA_HOME}`);
       
       return { success: true };
     }
@@ -332,7 +333,7 @@ export async function setJabbaVersion(version: string): Promise<{ success: boole
       error: `Failed to switch to version ${version}. ${result.stderr}`,
     };
   } catch (error) {
-    console.error("Error switching Java version:", error);
+    logger.error("Error switching Java version:", error);
     return {
       success: false,
       error: error instanceof Error ? error.message : "Unknown error",

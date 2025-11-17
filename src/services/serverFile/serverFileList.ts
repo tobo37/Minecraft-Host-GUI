@@ -1,4 +1,5 @@
 import type { ServerFile } from './serverFile.types';
+import { logger } from '@/lib/logger';
 
 /**
  * List all server files in the serverfiles directory
@@ -42,7 +43,7 @@ export async function listServerFiles(): Promise<Response> {
       });
     }
   } catch (error) {
-    console.error('Error listing server files:', error);
+    logger.error('Error listing server files:', error);
     return Response.json({
       success: false,
       error: error instanceof Error ? error.message : 'Unknown error'
@@ -90,7 +91,7 @@ export async function deleteServerFile(req: Request): Promise<Response> {
     }
     
   } catch (error) {
-    console.error('Error deleting server file:', error);
+    logger.error('Error deleting server file:', error);
     return Response.json({
       success: false,
       error: error instanceof Error ? error.message : 'Unknown error'

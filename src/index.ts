@@ -1,5 +1,6 @@
 import { serve } from "bun";
 import index from "./index.html";
+import { logger } from "@/lib/logger";
 
 // Import services
 import {
@@ -200,4 +201,4 @@ const server = serve({
   },
 });
 
-console.log(`🚀 Server running at ${server.url}`);
+logger.info(`🚀 Server running at ${server.url}`);

@@ -1,3 +1,5 @@
+import { logger } from '@/lib/logger';
+
 interface StreamParams {
   fileName: string;
   fileSize: number;
@@ -65,7 +67,7 @@ async function streamToFile(
     }
     
     if (bytesWritten % (100 * 1024 * 1024) === 0) {
-      console.log(`Stream progress: ${Math.round(bytesWritten / 1024 / 1024)} MB written`);
+      logger.info(`Stream progress: ${Math.round(bytesWritten / 1024 / 1024)} MB written`);
     }
   }
   
@@ -80,7 +82,7 @@ async function cleanupPartialFile(writeStream: NodeJS.WritableStream, filePath: 
     }
     await fs.unlink(filePath);
   } catch (_error) {
-    console.warn('Failed to cleanup partial file:', _error);
+    logger.warn('Failed to cleanup partial file:', _error);
   }
 }
 
@@ -100,7 +102,7 @@ export async function uploadServerFileStream(req: Request): Promise<Response> {
       }, { status: 400 });
     }
     
-    console.log(`Stream upload request: ${params.fileName}, size: ${params.fileSize} bytes`);
+    logger.info(`Stream upload request: ${params.fileName}, size: ${params.fileSize} bytes`);
     
     const serverFilesDir = './serverfiles';
     const filePath = `${serverFilesDir}/${params.fileName}`;
@@ -114,7 +116,7 @@ export async function uploadServerFileStream(req: Request): Promise<Response> {
       }, { status: 409 });
     }
     
-    console.log(`Starting stream upload to: ${filePath}`);
+    logger.info(`Starting stream upload to: ${filePath}`);
     
     const writeStream = require('fs').createWriteStream(filePath);
     
@@ -134,12 +136,12 @@ export async function uploadServerFileStream(req: Request): Promise<Response> {
         writeStream.on('error', reject);
       });
       
-      console.log(`Stream upload completed: ${params.fileName}, ${bytesWritten} bytes written`);
+      logger.info(`Stream upload completed: ${params.fileName}, ${bytesWritten} bytes written`);
       
       const fs = require('fs').promises;
       const stat = await fs.stat(filePath);
       if (params.fileSize > 0 && stat.size !== params.fileSize) {
-        console.warn(`File size mismatch: expected ${params.fileSize}, got ${stat.size}`);
+        logger.warn(`File size mismatch: expected ${params.fileSize}, got ${stat.size}`);
       }
       
       return Response.json({
@@ -150,7 +152,7 @@ export async function uploadServerFileStream(req: Request): Promise<Response> {
       });
       
     } catch (streamError) {
-      console.error('Stream upload error:', streamError);
+      logger.error('Stream upload error:', streamError);
       await cleanupPartialFile(writeStream, filePath);
       
       return Response.json({
@@ -160,7 +162,7 @@ export async function uploadServerFileStream(req: Request): Promise<Response> {
     }
     
   } catch (error) {
-    console.error('Error in stream upload:', error);
+    logger.error('Error in stream upload:', error);
     return Response.json({
       success: false,
       error: error instanceof Error ? error.message : 'Unknown error'

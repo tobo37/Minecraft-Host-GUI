@@ -1,3 +1,5 @@
+import { logger } from '@/lib/logger';
+
 interface ChunkParams {
   chunkIndex: number;
   totalChunks: number;
@@ -54,7 +56,7 @@ async function combineChunks(
     
     const chunkData = await Bun.file(chunkFile).arrayBuffer();
     writeStream.write(Buffer.from(chunkData));
-    console.log(`Combined chunk ${i + 1}/${totalChunks}`);
+    logger.info(`Combined chunk ${i + 1}/${totalChunks}`);
   }
   
   writeStream.end();
@@ -73,7 +75,7 @@ async function cleanupChunks(tempDir: string, fileName: string, totalChunks: num
     try {
       await fs.unlink(chunkFile);
     } catch (_error) {
-      console.warn(`Failed to cleanup chunk ${i}:`, _error);
+      logger.warn(`Failed to cleanup chunk ${i}:`, _error);
     }
   }
 }
@@ -93,7 +95,7 @@ export async function uploadServerFileChunked(req: Request): Promise<Response> {
       }, { status: 400 });
     }
     
-    console.log(`Receiving chunk ${chunkIndex + 1}/${totalChunks} for ${fileName} (${Math.round(((chunkIndex + 1) / totalChunks) * 100)}%)`);
+    logger.info(`Receiving chunk ${chunkIndex + 1}/${totalChunks} for ${fileName} (${Math.round(((chunkIndex + 1) / totalChunks) * 100)}%)`);
     
     const serverFilesDir = './serverfiles';
     const tempDir = `${serverFilesDir}/.temp`;
@@ -113,11 +115,11 @@ export async function uploadServerFileChunked(req: Request): Promise<Response> {
     // Save chunk
     try {
       const arrayBuffer = await req.arrayBuffer();
-      console.log(`Chunk ${chunkIndex} size: ${arrayBuffer.byteLength} bytes`);
+      logger.info(`Chunk ${chunkIndex} size: ${arrayBuffer.byteLength} bytes`);
       await saveChunk(chunkPath, arrayBuffer);
-      console.log(`Chunk ${chunkIndex + 1}/${totalChunks} saved successfully`);
+      logger.info(`Chunk ${chunkIndex + 1}/${totalChunks} saved successfully`);
     } catch (_error) {
-      console.error(`Error saving chunk ${chunkIndex}:`, _error);
+      logger.error(`Error saving chunk ${chunkIndex}:`, _error);
       return Response.json({
         success: false,
         error: `Failed to save chunk ${chunkIndex + 1}`
@@ -126,13 +128,13 @@ export async function uploadServerFileChunked(req: Request): Promise<Response> {
     
     // Check if this is the last chunk
     if (chunkIndex === totalChunks - 1) {
-      console.log(`Last chunk received for ${fileName}, combining all chunks...`);
+      logger.info(`Last chunk received for ${fileName}, combining all chunks...`);
       
       try {
         await combineChunks(tempDir, fileName, totalChunks, finalPath);
         await cleanupChunks(tempDir, fileName, totalChunks);
         
-        console.log(`File ${fileName} assembled successfully from ${totalChunks} chunks`);
+        logger.info(`File ${fileName} assembled successfully from ${totalChunks} chunks`);
         
         return Response.json({
           success: true,
@@ -143,7 +145,7 @@ export async function uploadServerFileChunked(req: Request): Promise<Response> {
         });
         
       } catch (combineError) {
-        console.error('Error combining chunks:', combineError);
+        logger.error('Error combining chunks:', combineError);
         return Response.json({
           success: false,
           error: `Failed to combine chunks: ${combineError instanceof Error ? combineError.message : 'Unknown error'}`
@@ -160,7 +162,7 @@ export async function uploadServerFileChunked(req: Request): Promise<Response> {
     });
     
   } catch (error) {
-    console.error('Error in chunked upload:', error);
+    logger.error('Error in chunked upload:', error);
     return Response.json({
       success: false,
       error: error instanceof Error ? error.message : 'Unknown error'

@@ -7,7 +7,7 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useLanguage } from "@/hooks/useLanguage";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { ServerFileUpload } from "./ServerFileUpload";
 import { ServerFileList } from "./ServerFileList";
 import { ServerFileSelector } from "./ServerFileSelector";
@@ -36,12 +36,7 @@ export function WelcomePage({ onServerCreated }: WelcomePageProps) {
   const [customName, setCustomName] = useState<string>("");
   const [description, setDescription] = useState<string>("");
 
-  useEffect(() => {
-    loadServerFiles();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  const loadServerFiles = async () => {
+  const loadServerFiles = useCallback(async () => {
     try {
       const response = await fetch("/api/serverfiles");
       const data = await response.json();
@@ -54,7 +49,11 @@ export function WelcomePage({ onServerCreated }: WelcomePageProps) {
     } catch (error) {
       console.warn("Error loading server files:", error);
     }
-  };
+  }, [selectedServerFile]);
+
+  useEffect(() => {
+    loadServerFiles();
+  }, [loadServerFiles]);
 
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();

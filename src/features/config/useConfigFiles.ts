@@ -91,7 +91,7 @@ export function useConfigFiles(projectPath: string): UseConfigFilesReturn {
       
       const data = await response.json();
       if (data.success) {
-        console.log('Config saved successfully');
+        // Config saved successfully
       }
     } catch (error) {
       console.error('Error saving config:', error);

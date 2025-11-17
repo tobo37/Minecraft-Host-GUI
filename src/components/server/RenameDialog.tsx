@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useLanguage } from "@/hooks/useLanguage";
+import { useRenameValidation } from "./useRenameValidation";
 import type { Server } from "@/services/types";
 
 interface RenameDialogProps {
@@ -36,6 +37,18 @@ export function RenameDialog({
   onCancel,
 }: RenameDialogProps) {
   const { translations } = useLanguage();
+  
+  const { error: localError, clearError } = useRenameValidation({
+    newName,
+    validationErrorMessage: translations.serverManagement.renameDialog.validationError,
+  });
+
+  const displayError = validationError || localError;
+
+  const handleNameChange = (value: string) => {
+    clearError();
+    onNameChange(value);
+  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -57,12 +70,12 @@ export function RenameDialog({
             <Input
               id="newName"
               value={newName}
-              onChange={(e) => onNameChange(e.target.value)}
+              onChange={(e) => handleNameChange(e.target.value)}
               placeholder="Enter new server name"
               maxLength={100}
             />
-            {validationError && (
-              <p className="text-sm text-red-500">{validationError}</p>
+            {displayError && (
+              <p className="text-sm text-red-500">{displayError}</p>
             )}
           </div>
         </div>

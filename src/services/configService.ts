@@ -1,4 +1,5 @@
 import type { ConfigFile } from './types';
+import { logger } from '@/lib/logger';
 
 /**
  * Validate the config path request parameters
@@ -145,7 +146,7 @@ export async function listConfigFiles(req: Request): Promise<Response> {
     return formatConfigList(files);
     
   } catch (error) {
-    console.error('Error listing config files:', error);
+    logger.error('Error listing config files:', error);
     return Response.json({
       success: false,
       error: error instanceof Error ? error.message : 'Unknown error'
@@ -197,7 +198,7 @@ export async function readConfigFile(req: Request): Promise<Response> {
     }
     
   } catch (error) {
-    console.error('Error reading config file:', error);
+    logger.error('Error reading config file:', error);
     return Response.json({
       success: false,
       error: error instanceof Error ? error.message : 'Unknown error'
@@ -248,7 +249,7 @@ export async function saveConfigFile(req: Request): Promise<Response> {
     }
     
   } catch (error) {
-    console.error('Error saving config file:', error);
+    logger.error('Error saving config file:', error);
     return Response.json({
       success: false,
       error: error instanceof Error ? error.message : 'Unknown error'

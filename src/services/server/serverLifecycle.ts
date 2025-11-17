@@ -5,6 +5,7 @@
 import type { ServerProcess } from './server.types';
 import { readMetadata } from '../metadataService';
 import { fileExists, getServerPath } from './serverRepository';
+import { logger } from '@/lib/logger';
 
 // Import from main service for now (will be refactored)
 import { runningServers, serverLogs } from '../serverService';
@@ -93,7 +94,7 @@ async function makeScriptExecutable(
 
   const chmodResult = await Bun.spawn(['chmod', '+x', startScript]).exited;
   if (chmodResult !== 0) {
-    console.warn(`chmod failed with exit code: ${chmodResult}`);
+    logger.warn(`chmod failed with exit code: ${chmodResult}`);
   }
 
   // Make all .sh files executable

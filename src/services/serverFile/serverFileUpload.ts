@@ -1,3 +1,5 @@
+import { logger } from '@/lib/logger';
+
 /**
  * Save a file using streaming to avoid memory issues with large files
  */
@@ -16,7 +18,7 @@ async function saveFileStream(file: File, filePath: string): Promise<void> {
           
           if (done) {
             stream.end();
-            console.log(`Streaming complete: ${bytesWritten} bytes written`);
+            logger.info(`Streaming complete: ${bytesWritten} bytes written`);
             resolve();
             break;
           }
@@ -28,18 +30,18 @@ async function saveFileStream(file: File, filePath: string): Promise<void> {
           }
           
           if (bytesWritten % (100 * 1024 * 1024) === 0) {
-            console.log(`Streaming progress: ${Math.round(bytesWritten / 1024 / 1024)} MB written`);
+            logger.info(`Streaming progress: ${Math.round(bytesWritten / 1024 / 1024)} MB written`);
           }
         }
       } catch (error) {
-        console.error('Streaming error:', error);
+        logger.error('Streaming error:', error);
         stream.destroy();
         reject(error);
       }
     };
     
     stream.on('error', (error: Error) => {
-      console.error('Write stream error:', error);
+      logger.error('Write stream error:', error);
       reject(error);
     });
     
@@ -87,7 +89,7 @@ async function checkFileExists(filePath: string): Promise<boolean> {
 
 async function saveFile(file: File, filePath: string): Promise<void> {
   if (file.size > 100 * 1024 * 1024) {
-    console.log('Using streaming upload for large file...');
+    logger.info('Using streaming upload for large file...');
     await saveFileStream(file, filePath);
   } else {
     const arrayBuffer = await file.arrayBuffer();
@@ -100,14 +102,14 @@ async function saveFile(file: File, filePath: string): Promise<void> {
  */
 export async function uploadServerFile(req: Request): Promise<Response> {
   try {
-    console.log('Upload request received');
+    logger.info('Upload request received');
     
     let formData: FormData;
     try {
       formData = await req.formData();
-      console.log('FormData parsed successfully');
+      logger.info('FormData parsed successfully');
     } catch (_parseError) {
-      console.error('Error parsing FormData:', _parseError);
+      logger.error('Error parsing FormData:', _parseError);
       return Response.json({
         success: false,
         error: "Failed to parse form data"
@@ -122,7 +124,7 @@ export async function uploadServerFile(req: Request): Promise<Response> {
       }, { status: 400 });
     }
     
-    console.log(`File received: ${file.name}, size: ${file.size} bytes`);
+    logger.info(`File received: ${file.name}, size: ${file.size} bytes`);
     
     const serverFilesDir = './serverfiles';
     const filePath = `${serverFilesDir}/${file.name}`;
@@ -136,12 +138,12 @@ export async function uploadServerFile(req: Request): Promise<Response> {
       }, { status: 409 });
     }
     
-    console.log(`Saving file to: ${filePath}`);
+    logger.info(`Saving file to: ${filePath}`);
     try {
       await saveFile(file, filePath);
-      console.log(`File saved successfully: ${file.name}`);
+      logger.info(`File saved successfully: ${file.name}`);
     } catch (_saveError) {
-      console.error('Error saving file:', _saveError);
+      logger.error('Error saving file:', _saveError);
       return Response.json({
         success: false,
         error: "Failed to save file"
@@ -156,7 +158,7 @@ export async function uploadServerFile(req: Request): Promise<Response> {
     });
     
   } catch (error) {
-    console.error('Error uploading server file:', error);
+    logger.error('Error uploading server file:', error);
     return Response.json({
       success: false,
       error: error instanceof Error ? error.message : 'Unknown error'
