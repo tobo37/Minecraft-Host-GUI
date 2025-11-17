@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -7,13 +7,13 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { useLanguage } from "@/hooks/useLanguage";
-import { DirectoryTree } from "./DirectoryTree";
-import { browseServerDirectory } from "@/services/directoryBrowserClient";
 import type { DirectoryNode } from "@/services/directoryBrowserClient";
+import { browseServerDirectory } from "@/services/directoryBrowserClient";
 import { Loader2 } from "lucide-react";
+import { useEffect, useState } from "react";
+import { DirectoryTree } from "./DirectoryTree";
 
 interface ProjectPathDialogProps {
   isOpen: boolean;
@@ -95,11 +95,7 @@ export function ProjectPathDialog({
                 {projectPath || "(Root directory)"}
               </div>
               {projectPath && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleClearPath}
-                >
+                <Button variant="outline" size="sm" onClick={handleClearPath}>
                   Clear
                 </Button>
               )}
@@ -133,7 +129,8 @@ export function ProjectPathDialog({
           </div>
 
           <div className="text-xs text-muted-foreground">
-            💡 Tip: Look for folders containing startserver.sh or server.properties
+            💡 Tip: Look for folders containing startserver.sh or
+            server.properties
           </div>
         </div>
 

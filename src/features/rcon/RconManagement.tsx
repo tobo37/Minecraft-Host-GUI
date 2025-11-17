@@ -11,18 +11,38 @@ interface RconManagementProps {
 }
 
 const MINECRAFT_COMMANDS = [
-  'help', 'stop', 'list', 'say', 'tell', 'give', 'tp', 'teleport',
-  'gamemode', 'difficulty', 'time', 'weather', 'seed', 'whitelist',
-  'ban', 'pardon', 'kick', 'op', 'deop', 'save-all', 'save-on', 'save-off',
+  "help",
+  "stop",
+  "list",
+  "say",
+  "tell",
+  "give",
+  "tp",
+  "teleport",
+  "gamemode",
+  "difficulty",
+  "time",
+  "weather",
+  "seed",
+  "whitelist",
+  "ban",
+  "pardon",
+  "kick",
+  "op",
+  "deop",
+  "save-all",
+  "save-on",
+  "save-off",
 ];
 
 export function RconManagement({ projectPath, onBack }: RconManagementProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const responseEndRef = useRef<HTMLDivElement>(null);
-  
+
   // Get server status and logs
-  const { serverStatus, logs, isPollingLogs, startServer, stopServer } = useServerStatus(projectPath);
-  
+  const { serverStatus, logs, isPollingLogs, startServer, stopServer } =
+    useServerStatus(projectPath);
+
   const [command, setCommand] = useState("");
   const [isSending, setIsSending] = useState(false);
   const [suggestions, setSuggestions] = useState<string[]>([]);
@@ -35,16 +55,16 @@ export function RconManagement({ projectPath, onBack }: RconManagementProps) {
   const [rconPort, setRconPort] = useState(25575);
   const [showPasswordField, setShowPasswordField] = useState(false);
   const [isRestarting, setIsRestarting] = useState(false);
-  
+
   const isServerRunning = serverStatus === "running";
 
   useEffect(() => {
     checkRconStatus();
-  }, [projectPath]);
+  }, [checkRconStatus, projectPath]);
 
   useEffect(() => {
     if (command.trim()) {
-      const filtered = MINECRAFT_COMMANDS.filter(cmd =>
+      const filtered = MINECRAFT_COMMANDS.filter((cmd) =>
         cmd.toLowerCase().startsWith(command.toLowerCase())
       );
       setSuggestions(filtered);
@@ -59,14 +79,17 @@ export function RconManagement({ projectPath, onBack }: RconManagementProps) {
   useEffect(() => {
     // Scroll only within the response container, not the whole page
     if (responseContainerRef.current) {
-      responseContainerRef.current.scrollTop = responseContainerRef.current.scrollHeight;
+      responseContainerRef.current.scrollTop =
+        responseContainerRef.current.scrollHeight;
     }
   }, [responses]);
 
   const checkRconStatus = async () => {
     setIsCheckingStatus(true);
     try {
-      const res = await fetch(`/api/server/rcon/status?project=${encodeURIComponent(projectPath)}`);
+      const res = await fetch(
+        `/api/server/rcon/status?project=${encodeURIComponent(projectPath)}`
+      );
       const result = await res.json();
       setRconEnabled(result.enabled || false);
     } catch {
@@ -79,27 +102,30 @@ export function RconManagement({ projectPath, onBack }: RconManagementProps) {
   const handleEnableRcon = async () => {
     setIsEnabling(true);
     try {
-      const res = await fetch(`/api/server/rcon/enable?project=${encodeURIComponent(projectPath)}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ port: rconPort, password: rconPassword }),
-      });
+      const res = await fetch(
+        `/api/server/rcon/enable?project=${encodeURIComponent(projectPath)}`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ port: rconPort, password: rconPassword }),
+        }
+      );
 
       const result = await res.json();
-      
+
       if (res.ok) {
         setRconEnabled(true);
         setShowPasswordField(false);
         setResponses([
-          '✅ RCON wurde erfolgreich aktiviert!',
-          '',
-          '⚠️  WICHTIG: Der Server muss neu gestartet werden, damit RCON funktioniert.',
-          '',
-          '📝 Konfiguration:',
+          "✅ RCON wurde erfolgreich aktiviert!",
+          "",
+          "⚠️  WICHTIG: Der Server muss neu gestartet werden, damit RCON funktioniert.",
+          "",
+          "📝 Konfiguration:",
           `   • Port: ${rconPort}`,
           `   • Passwort: ${rconPassword}`,
-          '',
-          'Die Einstellungen wurden in server.properties gespeichert.',
+          "",
+          "Die Einstellungen wurden in server.properties gespeichert.",
         ]);
       } else {
         setResponses([`❌ Fehler beim Aktivieren: ${result.error}`]);
@@ -113,108 +139,126 @@ export function RconManagement({ projectPath, onBack }: RconManagementProps) {
 
   const handleRestartServer = async () => {
     setIsRestarting(true);
-    setResponses(prev => [...prev, '', '🔄 Starte Server neu...']);
-    
+    setResponses((prev) => [...prev, "", "🔄 Starte Server neu..."]);
+
     try {
       // Stop server
       await stopServer();
-      setResponses(prev => [...prev, '⏹️ Server wird gestoppt...']);
-      
+      setResponses((prev) => [...prev, "⏹️ Server wird gestoppt..."]);
+
       // Wait a bit for server to stop
-      await new Promise(resolve => setTimeout(resolve, 3000));
-      
+      await new Promise((resolve) => setTimeout(resolve, 3000));
+
       // Start server
       await startServer();
-      setResponses(prev => [...prev, '▶️ Server wird gestartet...', '', '✅ Server wurde neu gestartet. RCON sollte jetzt funktionieren.']);
+      setResponses((prev) => [
+        ...prev,
+        "▶️ Server wird gestartet...",
+        "",
+        "✅ Server wurde neu gestartet. RCON sollte jetzt funktionieren.",
+      ]);
     } catch (error) {
-      setResponses(prev => [...prev, `❌ Fehler beim Neustart: ${error}`]);
+      setResponses((prev) => [...prev, `❌ Fehler beim Neustart: ${error}`]);
     } finally {
       setIsRestarting(false);
     }
   };
 
   const handleTestRcon = async () => {
-    setResponses(prev => [...prev, '', '🔍 Teste RCON-Verbindung...']);
-    
+    setResponses((prev) => [...prev, "", "🔍 Teste RCON-Verbindung..."]);
+
     try {
-      const res = await fetch(`/api/server/rcon?project=${encodeURIComponent(projectPath)}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ command: 'list' }),
-      });
+      const res = await fetch(
+        `/api/server/rcon?project=${encodeURIComponent(projectPath)}`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ command: "list" }),
+        }
+      );
 
       const result = await res.json();
-      
+
       if (res.ok) {
-        setResponses(prev => [...prev, '✅ RCON funktioniert!', result.response || '']);
+        setResponses((prev) => [
+          ...prev,
+          "✅ RCON funktioniert!",
+          result.response || "",
+        ]);
       } else {
-        setResponses(prev => [...prev, 
-          '❌ RCON-Verbindung fehlgeschlagen',
-          '',
-          '🔍 Mögliche Ursachen:',
-          '1. Server unterstützt kein RCON (manche Forge/Fabric-Versionen)',
-          '2. Port 25575 ist blockiert (Firewall)',
-          '3. Server wurde nicht korrekt neu gestartet',
-          '',
+        setResponses((prev) => [
+          ...prev,
+          "❌ RCON-Verbindung fehlgeschlagen",
+          "",
+          "🔍 Mögliche Ursachen:",
+          "1. Server unterstützt kein RCON (manche Forge/Fabric-Versionen)",
+          "2. Port 25575 ist blockiert (Firewall)",
+          "3. Server wurde nicht korrekt neu gestartet",
+          "",
           `Fehlerdetails: ${result.error}`,
         ]);
       }
     } catch (error) {
-      setResponses(prev => [...prev, `❌ Verbindungsfehler: ${error}`]);
+      setResponses((prev) => [...prev, `❌ Verbindungsfehler: ${error}`]);
     }
   };
 
-  const handleSendCommand = async (useStdin = false) => {
+  const handleSendCommand = async (useStdin = false, isRetry = false) => {
     if (!command.trim() || isSending) return;
 
     // Check if server is running
     if (!isServerRunning) {
-      setResponses(prev => [...prev, '❌ Server läuft nicht. Starte den Server zuerst.']);
+      setResponses((prev) => [
+        ...prev,
+        "❌ Server läuft nicht. Starte den Server zuerst.",
+      ]);
       return;
     }
 
     const currentCommand = command.trim();
     setIsSending(true);
-    
-    // Add command to responses immediately
-    setResponses(prev => [...prev, `> ${currentCommand}`]);
-    setCommand("");
-    setSuggestions([]);
+
+    // Add command to responses immediately (only on first attempt)
+    if (!isRetry) {
+      setResponses((prev) => [...prev, `> ${currentCommand}`]);
+      setCommand("");
+      setSuggestions([]);
+    }
 
     try {
       // Try RCON first if enabled, otherwise use stdin
-      const endpoint = (rconEnabled && !useStdin) 
-        ? `/api/server/rcon?project=${encodeURIComponent(projectPath)}`
-        : `/api/server/command?project=${encodeURIComponent(projectPath)}`;
-      
+      const endpoint =
+        rconEnabled && !useStdin
+          ? `/api/server/rcon?project=${encodeURIComponent(projectPath)}`
+          : `/api/server/command?project=${encodeURIComponent(projectPath)}`;
+
       const res = await fetch(endpoint, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ command: currentCommand }),
       });
 
       const result = await res.json();
-      
+
       if (res.ok) {
         if (result.response) {
-          setResponses(prev => [...prev, result.response]);
+          setResponses((prev) => [...prev, result.response]);
         } else {
-          setResponses(prev => [...prev, '✓ Befehl gesendet']);
+          setResponses((prev) => [...prev, "✓ Befehl gesendet"]);
         }
       } else {
         // If RCON fails and we haven't tried stdin yet, try stdin
         if (!useStdin && rconEnabled) {
-          setResponses(prev => [...prev, '⚠️ RCON nicht verfügbar, nutze stdin...']);
           setIsSending(false);
-          // Retry with stdin
-          await handleSendCommand(true);
+          // Retry with stdin silently - no warning needed as fallback is expected
+          await handleSendCommand(true, true);
           return;
         } else {
-          setResponses(prev => [...prev, `❌ Fehler: ${result.error}`]);
+          setResponses((prev) => [...prev, `❌ Fehler: ${result.error}`]);
         }
       }
     } catch (error) {
-      setResponses(prev => [...prev, `❌ Verbindungsfehler: ${error}`]);
+      setResponses((prev) => [...prev, `❌ Verbindungsfehler: ${error}`]);
     } finally {
       setIsSending(false);
     }
@@ -225,7 +269,7 @@ export function RconManagement({ projectPath, onBack }: RconManagementProps) {
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
+    if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       if (selectedSuggestion >= 0 && suggestions[selectedSuggestion]) {
         setCommand(suggestions[selectedSuggestion]);
@@ -234,20 +278,23 @@ export function RconManagement({ projectPath, onBack }: RconManagementProps) {
       } else {
         handleSendClick();
       }
-    } else if (e.key === 'Tab' && suggestions.length > 0) {
+    } else if (e.key === "Tab" && suggestions.length > 0) {
       e.preventDefault();
       const nextIndex = (selectedSuggestion + 1) % suggestions.length;
       setSelectedSuggestion(nextIndex);
-      setCommand(suggestions[nextIndex] || '');
-    } else if (e.key === 'ArrowDown' && suggestions.length > 0) {
+      setCommand(suggestions[nextIndex] || "");
+    } else if (e.key === "ArrowDown" && suggestions.length > 0) {
       e.preventDefault();
-      const nextIndex = Math.min(selectedSuggestion + 1, suggestions.length - 1);
+      const nextIndex = Math.min(
+        selectedSuggestion + 1,
+        suggestions.length - 1
+      );
       setSelectedSuggestion(nextIndex);
-    } else if (e.key === 'ArrowUp' && suggestions.length > 0) {
+    } else if (e.key === "ArrowUp" && suggestions.length > 0) {
       e.preventDefault();
       const nextIndex = Math.max(selectedSuggestion - 1, 0);
       setSelectedSuggestion(nextIndex);
-    } else if (e.key === 'Escape') {
+    } else if (e.key === "Escape") {
       setSuggestions([]);
       setSelectedSuggestion(-1);
     }
@@ -267,10 +314,14 @@ export function RconManagement({ projectPath, onBack }: RconManagementProps) {
             <CardTitle className="text-2xl flex items-center gap-3">
               🎮 RCON Console
               {rconEnabled && (
-                <span className="text-sm text-green-500 font-normal">● Aktiv</span>
+                <span className="text-sm text-green-500 font-normal">
+                  ● Aktiv
+                </span>
               )}
               {rconEnabled === false && (
-                <span className="text-sm text-yellow-500 font-normal">○ Inaktiv</span>
+                <span className="text-sm text-yellow-500 font-normal">
+                  ○ Inaktiv
+                </span>
               )}
             </CardTitle>
           </CardHeader>
@@ -284,7 +335,8 @@ export function RconManagement({ projectPath, onBack }: RconManagementProps) {
             {!isServerRunning && (
               <div className="bg-yellow-950/30 border border-yellow-700 rounded-lg p-4">
                 <p className="text-yellow-200 text-sm">
-                  ⚠️ Der Server läuft nicht. Starte den Server, um Befehle zu senden.
+                  ⚠️ Der Server läuft nicht. Starte den Server, um Befehle zu
+                  senden.
                 </p>
               </div>
             )}
@@ -300,8 +352,8 @@ export function RconManagement({ projectPath, onBack }: RconManagementProps) {
                     RCON ist nicht aktiviert
                   </h3>
                   <p className="text-sm text-yellow-100 mb-4">
-                    RCON (Remote Console) ermöglicht die erweiterte Verwaltung deines Minecraft-Servers
-                    mit Features wie:
+                    RCON (Remote Console) ermöglicht die erweiterte Verwaltung
+                    deines Minecraft-Servers mit Features wie:
                   </p>
                   <ul className="text-sm text-yellow-100 space-y-2 mb-4 ml-4">
                     <li>• Befehle direkt an den Server senden</li>
@@ -311,12 +363,16 @@ export function RconManagement({ projectPath, onBack }: RconManagementProps) {
                   </ul>
                   <div className="bg-yellow-900/50 border border-yellow-600 rounded p-3 mb-4">
                     <p className="text-xs text-yellow-200 mb-2">
-                      ⚠️ <strong>Wichtiger Hinweis zu Forge/Fabric-Servern:</strong>
+                      ⚠️{" "}
+                      <strong>
+                        Wichtiger Hinweis zu Forge/Fabric-Servern:
+                      </strong>
                     </p>
                     <p className="text-xs text-yellow-200">
-                      Viele Forge- und Fabric-Modpacks unterstützen RCON nicht oder nur eingeschränkt.
-                      Falls RCON nicht funktioniert, werden Befehle automatisch über stdin gesendet.
-                      Du kannst die Seite auch ohne RCON-Aktivierung nutzen!
+                      Viele Forge- und Fabric-Modpacks unterstützen RCON nicht
+                      oder nur eingeschränkt. Falls RCON nicht funktioniert,
+                      werden Befehle automatisch über stdin gesendet. Du kannst
+                      die Seite auch ohne RCON-Aktivierung nutzen!
                     </p>
                   </div>
 
@@ -329,7 +385,9 @@ export function RconManagement({ projectPath, onBack }: RconManagementProps) {
                         <Input
                           type="number"
                           value={rconPort}
-                          onChange={(e) => setRconPort(parseInt(e.target.value) || 25575)}
+                          onChange={(e) =>
+                            setRconPort(parseInt(e.target.value) || 25575)
+                          }
                           className="bg-yellow-950/50 border-yellow-700 text-yellow-100"
                           placeholder="25575"
                         />
@@ -356,7 +414,7 @@ export function RconManagement({ projectPath, onBack }: RconManagementProps) {
                           size="lg"
                           className="flex-1 bg-yellow-600 hover:bg-yellow-700 text-white"
                         >
-                          {isEnabling ? 'Aktiviere...' : '✓ RCON aktivieren'}
+                          {isEnabling ? "Aktiviere..." : "✓ RCON aktivieren"}
                         </Button>
                         <Button
                           onClick={() => setShowPasswordField(false)}
@@ -389,18 +447,22 @@ export function RconManagement({ projectPath, onBack }: RconManagementProps) {
                         </div>
                       ))}
                     </div>
-                    
+
                     {/* Show restart button if RCON was just enabled and server is running */}
-                    {rconEnabled && isServerRunning && responses.some(r => r.includes('WICHTIG')) && (
-                      <Button
-                        onClick={handleRestartServer}
-                        disabled={isRestarting}
-                        size="lg"
-                        className="w-full bg-blue-600 hover:bg-blue-700 text-white"
-                      >
-                        {isRestarting ? '🔄 Server wird neu gestartet...' : '🔄 Server jetzt neu starten'}
-                      </Button>
-                    )}
+                    {rconEnabled &&
+                      isServerRunning &&
+                      responses.some((r) => r.includes("WICHTIG")) && (
+                        <Button
+                          onClick={handleRestartServer}
+                          disabled={isRestarting}
+                          size="lg"
+                          className="w-full bg-blue-600 hover:bg-blue-700 text-white"
+                        >
+                          {isRestarting
+                            ? "🔄 Server wird neu gestartet..."
+                            : "🔄 Server jetzt neu starten"}
+                        </Button>
+                      )}
                   </div>
                 )}
               </div>
@@ -431,10 +493,12 @@ export function RconManagement({ projectPath, onBack }: RconManagementProps) {
                 {responses.length > 0 && (
                   <Card>
                     <CardHeader>
-                      <CardTitle className="text-lg">Server-Antworten</CardTitle>
+                      <CardTitle className="text-lg">
+                        Server-Antworten
+                      </CardTitle>
                     </CardHeader>
                     <CardContent>
-                      <div 
+                      <div
                         ref={responseContainerRef}
                         className="bg-black text-green-400 p-4 rounded-lg font-mono text-sm max-h-96 overflow-y-auto"
                       >
@@ -474,11 +538,11 @@ export function RconManagement({ projectPath, onBack }: RconManagementProps) {
                                   key={suggestion}
                                   className={`px-3 py-2 font-mono text-sm cursor-pointer ${
                                     index === selectedSuggestion
-                                      ? 'bg-accent text-accent-foreground'
-                                      : 'hover:bg-accent/50'
+                                      ? "bg-accent text-accent-foreground"
+                                      : "hover:bg-accent/50"
                                   }`}
                                   onClick={() => {
-                                    setCommand(suggestion || '');
+                                    setCommand(suggestion || "");
                                     setSuggestions([]);
                                     inputRef.current?.focus();
                                   }}
@@ -493,18 +557,28 @@ export function RconManagement({ projectPath, onBack }: RconManagementProps) {
                           onClick={handleSendClick}
                           disabled={!command.trim() || isSending}
                         >
-                          {isSending ? 'Sende...' : 'Senden'}
+                          {isSending ? "Sende..." : "Senden"}
                         </Button>
                       </div>
                       <div className="text-xs text-muted-foreground mt-2">
-                        💡 Tipp: Nutze Tab oder ↑↓ für Autocomplete, Enter zum Senden
+                        💡 Tipp: Nutze Tab oder ↑↓ für Autocomplete, Enter zum
+                        Senden
                       </div>
                     </div>
 
                     <div className="bg-muted/50 rounded-lg p-3">
-                      <p className="text-sm font-semibold mb-2">Häufige Befehle:</p>
+                      <p className="text-sm font-semibold mb-2">
+                        Häufige Befehle:
+                      </p>
                       <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-                        {['list', 'help', 'save-all', 'time set day', 'weather clear', 'gamemode survival'].map(cmd => (
+                        {[
+                          "list",
+                          "help",
+                          "save-all",
+                          "time set day",
+                          "weather clear",
+                          "gamemode survival",
+                        ].map((cmd) => (
                           <Button
                             key={cmd}
                             variant="outline"
@@ -528,7 +602,8 @@ export function RconManagement({ projectPath, onBack }: RconManagementProps) {
                     <div>
                       <p className="font-semibold">RCON nicht aktiviert</p>
                       <p className="text-sm text-blue-300">
-                        Befehle werden über stdin gesendet (keine Server-Antworten)
+                        Befehle werden über stdin gesendet (keine
+                        Server-Antworten)
                       </p>
                     </div>
                   </div>
@@ -537,10 +612,12 @@ export function RconManagement({ projectPath, onBack }: RconManagementProps) {
                 {responses.length > 0 && (
                   <Card>
                     <CardHeader>
-                      <CardTitle className="text-lg">Gesendete Befehle</CardTitle>
+                      <CardTitle className="text-lg">
+                        Gesendete Befehle
+                      </CardTitle>
                     </CardHeader>
                     <CardContent>
-                      <div 
+                      <div
                         ref={responseContainerRef}
                         className="bg-black text-green-400 p-4 rounded-lg font-mono text-sm max-h-96 overflow-y-auto"
                       >
@@ -580,11 +657,11 @@ export function RconManagement({ projectPath, onBack }: RconManagementProps) {
                                   key={suggestion}
                                   className={`px-3 py-2 font-mono text-sm cursor-pointer ${
                                     index === selectedSuggestion
-                                      ? 'bg-accent text-accent-foreground'
-                                      : 'hover:bg-accent/50'
+                                      ? "bg-accent text-accent-foreground"
+                                      : "hover:bg-accent/50"
                                   }`}
                                   onClick={() => {
-                                    setCommand(suggestion || '');
+                                    setCommand(suggestion || "");
                                     setSuggestions([]);
                                     inputRef.current?.focus();
                                   }}
@@ -599,18 +676,28 @@ export function RconManagement({ projectPath, onBack }: RconManagementProps) {
                           onClick={handleSendClick}
                           disabled={!command.trim() || isSending}
                         >
-                          {isSending ? 'Sende...' : 'Senden'}
+                          {isSending ? "Sende..." : "Senden"}
                         </Button>
                       </div>
                       <div className="text-xs text-muted-foreground mt-2">
-                        💡 Tipp: Nutze Tab oder ↑↓ für Autocomplete, Enter zum Senden
+                        💡 Tipp: Nutze Tab oder ↑↓ für Autocomplete, Enter zum
+                        Senden
                       </div>
                     </div>
 
                     <div className="bg-muted/50 rounded-lg p-3">
-                      <p className="text-sm font-semibold mb-2">Häufige Befehle:</p>
+                      <p className="text-sm font-semibold mb-2">
+                        Häufige Befehle:
+                      </p>
                       <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-                        {['list', 'help', 'save-all', 'time set day', 'weather clear', 'gamemode survival'].map(cmd => (
+                        {[
+                          "list",
+                          "help",
+                          "save-all",
+                          "time set day",
+                          "weather clear",
+                          "gamemode survival",
+                        ].map((cmd) => (
                           <Button
                             key={cmd}
                             variant="outline"
@@ -629,7 +716,8 @@ export function RconManagement({ projectPath, onBack }: RconManagementProps) {
             ) : (
               <div className="bg-muted/50 border border-border rounded-lg p-4">
                 <p className="text-sm text-muted-foreground">
-                  RCON ist aktiviert, aber der Server läuft nicht. Starte den Server, um Befehle zu senden.
+                  RCON ist aktiviert, aber der Server läuft nicht. Starte den
+                  Server, um Befehle zu senden.
                 </p>
               </div>
             )}
