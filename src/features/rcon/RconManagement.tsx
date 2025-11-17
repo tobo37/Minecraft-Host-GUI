@@ -58,9 +58,22 @@ export function RconManagement({ projectPath, onBack }: RconManagementProps) {
 
   const isServerRunning = serverStatus === "running";
 
+  const checkRconStatus = async () => {
+    setIsCheckingStatus(true);
+    try {
+      const res = await fetch(`/api/server/rcon/status?project=${encodeURIComponent(projectPath)}`);
+      const result = await res.json();
+      setRconEnabled(result.enabled || false);
+    } catch {
+      setRconEnabled(false);
+    } finally {
+      setIsCheckingStatus(false);
+    }
+  };
+
   useEffect(() => {
     checkRconStatus();
-  }, [checkRconStatus, projectPath]);
+  }, [projectPath]);
 
   useEffect(() => {
     if (command.trim()) {
@@ -82,19 +95,6 @@ export function RconManagement({ projectPath, onBack }: RconManagementProps) {
       responseContainerRef.current.scrollTop = responseContainerRef.current.scrollHeight;
     }
   }, [responses]);
-
-  const checkRconStatus = async () => {
-    setIsCheckingStatus(true);
-    try {
-      const res = await fetch(`/api/server/rcon/status?project=${encodeURIComponent(projectPath)}`);
-      const result = await res.json();
-      setRconEnabled(result.enabled || false);
-    } catch {
-      setRconEnabled(false);
-    } finally {
-      setIsCheckingStatus(false);
-    }
-  };
 
   const handleEnableRcon = async () => {
     setIsEnabling(true);
