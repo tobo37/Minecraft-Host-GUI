@@ -118,11 +118,26 @@ export async function installJabbaVersion(version: string): Promise<{
 
     if (result.exitCode === 0) {
       logger.info(`Successfully installed Java version ${version}`);
+
+      // Verify installation by checking if directory exists
+      const verifyInstalled = await isVersionInstalled(version);
+      if (!verifyInstalled) {
+        const errorMessage = `Installation command succeeded but version ${version} is not available. The version may not exist in Jabba repositories.`;
+        logger.error(errorMessage);
+        return {
+          success: false,
+          error: errorMessage,
+        };
+      }
+
       return { success: true, alreadyInstalled: false };
     }
 
-    const errorMessage = `Failed to install version ${version}. ${result.stderr}`;
+    const errorMessage = `Failed to install version ${version}. ${
+      result.stderr || result.stdout
+    }`;
     logger.error(errorMessage);
+    logger.error(`Exit code: ${result.exitCode}`);
     return {
       success: false,
       error: errorMessage,
