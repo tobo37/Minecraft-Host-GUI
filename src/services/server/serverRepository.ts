@@ -3,8 +3,8 @@
  * Isolates all file system access from business logic
  */
 
-import { promises as fs } from 'fs';
-import path from 'path';
+import { promises as fs } from "fs";
+import path from "path";
 
 /**
  * Read directory contents
@@ -13,7 +13,11 @@ export async function readServerDirectory(dirPath: string): Promise<string[]> {
   try {
     return await fs.readdir(dirPath);
   } catch (error) {
-    throw new Error(`Failed to read directory ${dirPath}: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    throw new Error(
+      `Failed to read directory ${dirPath}: ${
+        error instanceof Error ? error.message : "Unknown error"
+      }`
+    );
   }
 }
 
@@ -44,11 +48,18 @@ export async function fileExists(filePath: string): Promise<boolean> {
 /**
  * Write file content
  */
-export async function writeServerFile(filePath: string, content: string): Promise<void> {
+export async function writeServerFile(
+  filePath: string,
+  content: string
+): Promise<void> {
   try {
     await Bun.write(filePath, content);
   } catch (error) {
-    throw new Error(`Failed to write file ${filePath}: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    throw new Error(
+      `Failed to write file ${filePath}: ${
+        error instanceof Error ? error.message : "Unknown error"
+      }`
+    );
   }
 }
 
@@ -59,7 +70,11 @@ export async function deleteServerDirectory(dirPath: string): Promise<void> {
   try {
     await fs.rm(dirPath, { recursive: true, force: true });
   } catch (error) {
-    throw new Error(`Failed to delete directory ${dirPath}: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    throw new Error(
+      `Failed to delete directory ${dirPath}: ${
+        error instanceof Error ? error.message : "Unknown error"
+      }`
+    );
   }
 }
 
@@ -70,7 +85,11 @@ export async function createDirectory(dirPath: string): Promise<void> {
   try {
     await fs.mkdir(dirPath, { recursive: true });
   } catch (error) {
-    throw new Error(`Failed to create directory ${dirPath}: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    throw new Error(
+      `Failed to create directory ${dirPath}: ${
+        error instanceof Error ? error.message : "Unknown error"
+      }`
+    );
   }
 }
 
@@ -78,7 +97,7 @@ export async function createDirectory(dirPath: string): Promise<void> {
  * Get server base directory path
  */
 export function getServerBasePath(): string {
-  return './server';
+  return path.join(process.cwd(), "server");
 }
 
 /**
@@ -91,7 +110,10 @@ export function getServerPath(serverName: string): string {
 /**
  * Get actual project path (includes projectPath if set in metadata)
  */
-export function getActualServerPath(serverName: string, projectPath?: string): string {
+export function getActualServerPath(
+  serverName: string,
+  projectPath?: string
+): string {
   const basePath = getServerPath(serverName);
   return projectPath ? path.join(basePath, projectPath) : basePath;
 }
@@ -100,7 +122,7 @@ export function getActualServerPath(serverName: string, projectPath?: string): s
  * Get serverfiles base directory path
  */
 export function getServerFilesBasePath(): string {
-  return './serverfiles';
+  return path.join(process.cwd(), "serverfiles");
 }
 
 /**
