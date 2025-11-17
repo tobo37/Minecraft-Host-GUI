@@ -9,13 +9,14 @@ import { useProjectPath } from "@/hooks/useProjectPath";
 import { ServerOverview } from "@/components/server/ServerOverview";
 import { ConfigurationManagement } from "@/features/config";
 import { JavaManagement } from "@/features/java/JavaManagement";
+import { RconManagement } from "@/features/rcon";
 
 interface ServerManagementProps {
   projectPath: string;
   onBack: () => void;
 }
 
-type ServerView = "overview" | "configuration" | "java";
+type ServerView = "overview" | "configuration" | "java" | "rcon";
 
 export function ServerManagement({
   projectPath,
@@ -77,6 +78,15 @@ export function ServerManagement({
     );
   }
 
+  if (currentView === "rcon") {
+    return (
+      <RconManagement
+        projectPath={projectPath}
+        onBack={() => setCurrentView("overview")}
+      />
+    );
+  }
+
   return (
     <ServerOverview
       projectPath={projectPath}
@@ -89,6 +99,7 @@ export function ServerManagement({
       onStopServer={stopServer}
       onJavaClick={() => setCurrentView("java")}
       onConfigurationClick={() => setCurrentView("configuration")}
+      onRconClick={() => setCurrentView("rcon")}
       metadata={metadata}
       description={description}
       deleteServer={deleteServer}

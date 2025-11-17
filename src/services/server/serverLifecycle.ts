@@ -292,6 +292,14 @@ export async function startServer(project: string): Promise<{ success: boolean; 
 
   setupProcessHandlers(project, serverProcess);
 
+  // Reset RCON state on server start
+  try {
+    const { resetRconState } = await import('./rconService');
+    resetRconState(project);
+  } catch {
+    // Ignore if RCON service not available
+  }
+
   return { success: true, message: 'Server started successfully' };
 }
 
@@ -317,4 +325,51 @@ export async function stopServer(project: string): Promise<{ success: boolean; m
   runningServers.delete(project);
 
   return { success: true, message: 'Server stopped successfully' };
+}
+
+/**
+ * Send a command to a running server
+ */
+export async function sendCommand(
+  project: string,
+  command: string
+): Promise<{ success: boolean; message?: string; error?: string }> {
+  if (!project) {
+    return { success: false, error: 'Project parameter is required' };
+  }
+
+  if (!command || !command.trim()) {
+    return { success: false, error: 'Command is required' };
+  }
+
+  const serverProcess = runningServers.get(project);
+
+  if (!serverProcess || serverProcess.killed) {
+    return { success: false, error: 'Server is not running' };
+  }
+
+  if (!serverProcess.stdin) {
+    return { success: false, error: 'Server stdin is not available' };
+  }
+
+  try {
+    const writer = serverProcess.stdin.getWriter();
+    const encoder = new TextEncoder();
+    
+    // Add command to logs for visibility
+    const logs = serverLogs.get(project) || [];
+    logs.push(`> ${command}`);
+    serverLogs.set(project, logs);
+
+    // Send command with newline
+    await writer.write(encoder.encode(command + '\n'));
+    writer.releaseLock();
+
+    return { success: true, message: 'Command sent successfully' };
+  } catch (error) {
+    return { 
+      success: false, 
+      error: `Failed to send command: ${error instanceof Error ? error.message : String(error)}` 
+    };
+  }
 }

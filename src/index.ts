@@ -10,6 +10,10 @@ import {
   startServer,
   stopServer,
   getServerLogs,
+  sendServerCommand,
+  sendRconCommand,
+  enableRcon,
+  getRconStatus,
 } from "./services/serverService";
 import {
   listServerFiles,
@@ -119,6 +123,30 @@ const server = serve({
     "/api/server/logs": {
       async GET(req) {
         return await getServerLogs(req);
+      },
+    },
+
+    "/api/server/command": {
+      async POST(req) {
+        return await sendServerCommand(req);
+      },
+    },
+
+    "/api/server/rcon": {
+      async POST(req) {
+        return await sendRconCommand(req);
+      },
+    },
+
+    "/api/server/rcon/enable": {
+      async POST(req) {
+        return await enableRcon(req);
+      },
+    },
+
+    "/api/server/rcon/status": {
+      async GET(req) {
+        return await getRconStatus(req);
       },
     },
 

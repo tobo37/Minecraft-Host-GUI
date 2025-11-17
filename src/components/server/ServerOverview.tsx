@@ -23,6 +23,7 @@ interface ServerOverviewProps {
   onStopServer: () => void;
   onJavaClick: () => void;
   onConfigurationClick: () => void;
+  onRconClick: () => void;
   metadata: {
     isRenameDialogOpen: boolean;
     newName: string;
@@ -84,6 +85,7 @@ export function ServerOverview({
   onStopServer,
   onJavaClick,
   onConfigurationClick,
+  onRconClick,
   metadata,
   description,
   deleteServer,
@@ -142,12 +144,16 @@ export function ServerOverview({
                 onStop={onStopServer}
                 onFindStartFiles={startFile.handleFindStartFiles}
                 onConfiguration={onConfigurationClick}
+                onRcon={onRconClick}
               />
 
               {(serverStatus === "running" ||
                 serverStatus === "starting" ||
                 logs.length > 0) && (
-                <ServerLogs logs={logs} isPolling={isPollingLogs} />
+                <ServerLogs 
+                  logs={logs} 
+                  isPolling={isPollingLogs}
+                />
               )}
 
               <div className="mt-8 pt-6 border-t border-border">

@@ -12,6 +12,11 @@ export interface ServerMetadata {
     name: string;
     version: string;
   };
+  rcon?: {
+    host: string;
+    port: number;
+    password: string;
+  };
 }
 
 export interface Server {

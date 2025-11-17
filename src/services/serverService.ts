@@ -190,6 +190,203 @@ export async function stopServer(req: Request): Promise<Response> {
 }
 
 /**
+ * Send command to server via stdin
+ */
+export async function sendServerCommand(req: Request): Promise<Response> {
+  try {
+    const url = new URL(req.url);
+    const project = url.searchParams.get("project");
+    const body = await req.json();
+    const { command } = body;
+
+    if (!project) {
+      return Response.json(
+        {
+          success: false,
+          error: "Project parameter is required",
+        },
+        { status: 400 }
+      );
+    }
+
+    const { sendCommand } = await import('./server/serverLifecycle');
+    const result = await sendCommand(project, command);
+
+    if (!result.success) {
+      return Response.json(
+        {
+          success: false,
+          error: result.error,
+        },
+        { status: 400 }
+      );
+    }
+
+    return Response.json({
+      success: true,
+      message: result.message,
+    });
+  } catch (error) {
+    console.error("Error sending command:", error);
+    return Response.json(
+      {
+        success: false,
+        error: error instanceof Error ? error.message : "Unknown error",
+      },
+      { status: 500 }
+    );
+  }
+}
+
+/**
+ * Send command to server via RCON
+ */
+export async function sendRconCommand(req: Request): Promise<Response> {
+  try {
+    const url = new URL(req.url);
+    const project = url.searchParams.get("project");
+    const body = await req.json();
+    const { command } = body;
+
+    if (!project) {
+      return Response.json(
+        {
+          success: false,
+          error: "Project parameter is required",
+        },
+        { status: 400 }
+      );
+    }
+
+    const { sendRconCommand: sendRcon } = await import('./server/rconService');
+    const result = await sendRcon(project, command);
+
+    if (!result.success) {
+      return Response.json(
+        {
+          success: false,
+          error: result.error,
+        },
+        { status: 400 }
+      );
+    }
+
+    // Add response to logs for visibility
+    if (result.response) {
+      const logs = serverLogs.get(project) || [];
+      logs.push(`[RCON] ${result.response}`);
+      serverLogs.set(project, logs);
+    }
+
+    return Response.json({
+      success: true,
+      response: result.response,
+    });
+  } catch (error) {
+    console.error("Error sending RCON command:", error);
+    return Response.json(
+      {
+        success: false,
+        error: error instanceof Error ? error.message : "Unknown error",
+      },
+      { status: 500 }
+    );
+  }
+}
+
+/**
+ * Enable RCON for a server
+ */
+export async function enableRcon(req: Request): Promise<Response> {
+  try {
+    const url = new URL(req.url);
+    const project = url.searchParams.get("project");
+    const body = await req.json();
+    const { port = 25575, password = 'minecraft' } = body;
+
+    if (!project) {
+      return Response.json(
+        {
+          success: false,
+          error: "Project parameter is required",
+        },
+        { status: 400 }
+      );
+    }
+
+    const { enableRconInProperties } = await import('./server/rconService');
+    const result = await enableRconInProperties(project, port, password);
+
+    if (!result.success) {
+      return Response.json(
+        {
+          success: false,
+          error: result.error,
+        },
+        { status: 400 }
+      );
+    }
+
+    return Response.json({
+      success: true,
+      message: 'RCON enabled. Restart the server for changes to take effect.',
+    });
+  } catch (error) {
+    console.error("Error enabling RCON:", error);
+    return Response.json(
+      {
+        success: false,
+        error: error instanceof Error ? error.message : "Unknown error",
+      },
+      { status: 500 }
+    );
+  }
+}
+
+/**
+ * Check RCON status for a server
+ */
+export async function getRconStatus(req: Request): Promise<Response> {
+  try {
+    const url = new URL(req.url);
+    const project = url.searchParams.get("project");
+
+    if (!project) {
+      return Response.json(
+        {
+          success: false,
+          error: "Project parameter is required",
+        },
+        { status: 400 }
+      );
+    }
+
+    const { readMetadata } = await import('./metadataService');
+    const metadata = await readMetadata(project);
+    
+    const enabled = metadata && 'rcon' in metadata && metadata.rcon ? true : false;
+
+    return Response.json({
+      success: true,
+      enabled,
+      config: enabled && metadata.rcon ? {
+        host: metadata.rcon.host,
+        port: metadata.rcon.port,
+      } : null,
+    });
+  } catch (error) {
+    console.error("Error checking RCON status:", error);
+    return Response.json(
+      {
+        success: false,
+        error: error instanceof Error ? error.message : "Unknown error",
+      },
+      { status: 500 }
+    );
+  }
+}
+
+/**
  * Get server logs
  */
 export async function getServerLogs(req: Request): Promise<Response> {

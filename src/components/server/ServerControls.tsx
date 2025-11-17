@@ -9,6 +9,7 @@ interface ServerControlsProps {
   onStop: () => void;
   onFindStartFiles: () => void;
   onConfiguration: () => void;
+  onRcon: () => void;
 }
 
 export function ServerControls({
@@ -17,6 +18,7 @@ export function ServerControls({
   onStop,
   onFindStartFiles,
   onConfiguration,
+  onRcon,
 }: ServerControlsProps) {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -40,8 +42,13 @@ export function ServerControls({
       <Button size="lg" variant="outline" className="h-16">
         📁 Dateien verwalten
       </Button>
-      <Button size="lg" variant="outline" className="h-16">
-        📊 Logs anzeigen
+      <Button 
+        size="lg" 
+        variant="outline" 
+        className="h-16"
+        onClick={onRcon}
+      >
+        🎮 RCON Console
       </Button>
     </div>
   );
