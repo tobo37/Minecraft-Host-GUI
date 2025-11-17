@@ -2,6 +2,12 @@
 
 Eine moderne Web-Anwendung zur Verwaltung von Minecraft-Servern, gebaut mit Bun, React, TypeScript und Tailwind CSS.
 
+## ⚠️ Entwicklungsstatus
+
+**Dieses Projekt befindet sich noch in der Entwicklung und es existiert keine stabile Version.**
+
+Von der aktuellen produktiven Nutzung wird bis zum ersten Release abgeraten. Gerne darf man sich an der Mitentwicklung beteiligen!
+
 ## Features
 
 - 🎮 **Server-Management**: Starten, stoppen und überwachen von Minecraft-Servern
@@ -16,6 +22,7 @@ Eine moderne Web-Anwendung zur Verwaltung von Minecraft-Servern, gebaut mit Bun,
 ## Lokale Entwicklung
 
 ### Voraussetzungen
+
 - [Bun](https://bun.sh) (v1.1.34 oder höher)
 - Java 21 (für Minecraft-Server)
 - Keine zusätzlichen Tools nötig - ZIP-Extraktion erfolgt mit reinem TypeScript
@@ -109,6 +116,7 @@ Falls Podman verfügbar ist, verwendet das Skript automatisch `podman compose`; 
 ## Plattform-Unterstützung
 
 Die Anwendung ist **cross-platform** und läuft auf:
+
 - ✅ **Linux**
 - ✅ **Windows**
 - ✅ **macOS**
