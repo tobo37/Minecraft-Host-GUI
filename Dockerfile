@@ -1,5 +1,5 @@
 # Multi-stage Dockerfile for Bun + Java application
-FROM eclipse-temurin:24
+FROM eclipse-temurin:17
 
 # Install curl and unzip for Bun installation and server file extraction
 RUN apt-get update && apt-get install -y \
