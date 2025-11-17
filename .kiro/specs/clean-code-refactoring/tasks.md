@@ -102,29 +102,50 @@
   - Test all three upload methods (standard, chunked, stream)
   - _Requirements: 12.2_
 
-- [ ] 4. Refactor startFileService.ts
-- [ ] 4.1 Decompose findStartFiles function
+- [x] 4. Refactor startFileService.ts
+
+
+
+
+
+
+- [x] 4.1 Decompose findStartFiles function
+
   - Split findStartFiles() (103 lines) into validateServerPath(), scanServerDirectory(), filterStartFiles()
   - Ensure each function is under 50 lines
   - _Requirements: 3.2_
 
-- [ ] 4.2 Decompose searchDirectory function
+
+- [x] 4.2 Decompose searchDirectory function
+
   - Reduce searchDirectory() from 53 lines to under 50
   - Reduce complexity from 18 to under 10
   - Reduce nesting from 4 to 3 using early returns
   - _Requirements: 3.2, 3.3, 4.2, 4.3_
 
-- [ ] 4.3 Decompose setStartFile function
+
+
+- [x] 4.3 Decompose setStartFile function
+
   - Split setStartFile() (57 lines) into validateStartFile() and updateMetadata()
   - Ensure each function is under 50 lines
   - _Requirements: 3.2_
 
-- [ ] 5. Refactor configService.ts
+- [x] 5. Refactor configService.ts
+
+
+
+
+
   - Decompose listConfigFiles() (93 lines) into validateConfigPath(), scanConfigDirectory(), parseConfigFiles(), formatConfigList()
   - Ensure all functions are under 50 lines
   - _Requirements: 3.2_
 
-- [ ] 6. Refactor metadataApiService.ts
+- [-] 6. Refactor metadataApiService.ts
+
+
+
+
 - [ ] 6.1 Decompose updateServerMetadata function
   - Split updateServerMetadata() (96 lines, complexity 16) into validateMetadata(), loadExistingMetadata(), mergeMetadata(), saveMetadata()
   - Reduce complexity to under 10
@@ -137,6 +158,7 @@
   - _Requirements: 3.2_
 
 - [ ] 7. Refactor JavaManagement.tsx into feature structure
+
 - [ ] 7.1 Create Java feature directory and extract hooks
   - Create `features/java/` directory
   - Create `features/java/useJavaInfo.ts` hook for Java info fetching logic
@@ -158,6 +180,7 @@
   - _Requirements: 2.5, 3.2, 3.3, 6.5, 12.4_
 
 - [ ] 8. Refactor ConfigurationManagement.tsx into feature structure
+
 - [ ] 8.1 Create config feature directory and extract hook
   - Create `features/config/` directory
   - Create `features/config/useConfigFiles.ts` hook for config file operations
@@ -177,6 +200,7 @@
   - _Requirements: 2.4, 3.2, 3.3, 6.5, 12.3_
 
 - [ ] 9. Refactor ProjectSelection.tsx
+
   - Extract `ServerCard.tsx` component for individual server cards
   - Create `useServerList.ts` hook for server list management
   - Reduce main component size from 146 lines
