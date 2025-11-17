@@ -1,0 +1,12 @@
+node_modules
+dist
+build
+.git
+.kiro
+server
+serverfiles
+*.lock
+bun.lock
+package-lock.json
+*.min.js
+*.min.css
