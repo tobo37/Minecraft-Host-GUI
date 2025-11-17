@@ -1,7 +1,11 @@
-import { listServers as listServersCore } from './server/serverList';
-import { createServer as createServerCore } from './server/serverCreate';
-import { startServer as startServerCore, stopServer as stopServerCore } from './server/serverLifecycle';
-import type { ServerProcess } from './server/server.types';
+import { listServers as listServersCore } from "./server/serverList";
+import { createServer as createServerCore } from "./server/serverCreate";
+import {
+  startServer as startServerCore,
+  stopServer as stopServerCore,
+} from "./server/serverLifecycle";
+import type { ServerProcess } from "./server/server.types";
+import { logger } from "@/lib/logger";
 
 // Global server process management
 export const runningServers = new Map<string, ServerProcess>();
@@ -39,15 +43,22 @@ export async function createServer(req: Request): Promise<Response> {
     const body = await req.json();
     const { serverFile, customName, description } = body;
 
-    const result = await createServerCore({ serverFile, customName, description });
+    const result = await createServerCore({
+      serverFile,
+      customName,
+      description,
+    });
 
     if (!result.success) {
-      const status = result.message.includes('already exists') ? 200 : 
-                     result.message.includes('not found') ? 404 : 400;
+      const status = result.message.includes("already exists")
+        ? 200
+        : result.message.includes("not found")
+        ? 404
+        : 400;
       return Response.json(
         {
           message: result.message,
-          status: result.success ? 'success' : 'error',
+          status: result.success ? "success" : "error",
           serverPath: result.serverPath,
         },
         { status }
@@ -56,7 +67,7 @@ export async function createServer(req: Request): Promise<Response> {
 
     return Response.json({
       message: result.message,
-      status: 'success',
+      status: "success",
       serverPath: result.serverPath,
       createdAt: result.createdAt,
       usedServerFile: result.usedServerFile,
@@ -124,10 +135,13 @@ export async function startServer(req: Request): Promise<Response> {
     const body = await req.json();
     const { project } = body;
 
+    logger.info(`API: Start server request for project: ${project}`);
+
     const result = await startServerCore(project);
 
     if (!result.success) {
-      const status = result.error?.includes('not found') ? 404 : 400;
+      logger.error(`API: Failed to start server ${project}: ${result.error}`);
+      const status = result.error?.includes("not found") ? 404 : 400;
       return Response.json(
         {
           success: false,
@@ -137,11 +151,13 @@ export async function startServer(req: Request): Promise<Response> {
       );
     }
 
+    logger.info(`API: Server ${project} started successfully`);
     return Response.json({
       success: true,
       message: result.message,
     });
   } catch (error) {
+    logger.error(`API: Error starting server: ${error}`);
     console.error("Error starting server:", error);
     return Response.json(
       {
@@ -209,7 +225,7 @@ export async function sendServerCommand(req: Request): Promise<Response> {
       );
     }
 
-    const { sendCommand } = await import('./server/serverLifecycle');
+    const { sendCommand } = await import("./server/serverLifecycle");
     const result = await sendCommand(project, command);
 
     if (!result.success) {
@@ -258,7 +274,7 @@ export async function sendRconCommand(req: Request): Promise<Response> {
       );
     }
 
-    const { sendRconCommand: sendRcon } = await import('./server/rconService');
+    const { sendRconCommand: sendRcon } = await import("./server/rconService");
     const result = await sendRcon(project, command);
 
     if (!result.success) {
@@ -302,7 +318,7 @@ export async function enableRcon(req: Request): Promise<Response> {
     const url = new URL(req.url);
     const project = url.searchParams.get("project");
     const body = await req.json();
-    const { port = 25575, password = 'minecraft' } = body;
+    const { port = 25575, password = "minecraft" } = body;
 
     if (!project) {
       return Response.json(
@@ -314,7 +330,7 @@ export async function enableRcon(req: Request): Promise<Response> {
       );
     }
 
-    const { enableRconInProperties } = await import('./server/rconService');
+    const { enableRconInProperties } = await import("./server/rconService");
     const result = await enableRconInProperties(project, port, password);
 
     if (!result.success) {
@@ -329,7 +345,7 @@ export async function enableRcon(req: Request): Promise<Response> {
 
     return Response.json({
       success: true,
-      message: 'RCON enabled. Restart the server for changes to take effect.',
+      message: "RCON enabled. Restart the server for changes to take effect.",
     });
   } catch (error) {
     console.error("Error enabling RCON:", error);
@@ -361,18 +377,22 @@ export async function getRconStatus(req: Request): Promise<Response> {
       );
     }
 
-    const { readMetadata } = await import('./metadataService');
+    const { readMetadata } = await import("./metadataService");
     const metadata = await readMetadata(project);
-    
-    const enabled = metadata && 'rcon' in metadata && metadata.rcon ? true : false;
+
+    const enabled =
+      metadata && "rcon" in metadata && metadata.rcon ? true : false;
 
     return Response.json({
       success: true,
       enabled,
-      config: enabled && metadata.rcon ? {
-        host: metadata.rcon.host,
-        port: metadata.rcon.port,
-      } : null,
+      config:
+        enabled && metadata.rcon
+          ? {
+              host: metadata.rcon.host,
+              port: metadata.rcon.port,
+            }
+          : null,
     });
   } catch (error) {
     console.error("Error checking RCON status:", error);

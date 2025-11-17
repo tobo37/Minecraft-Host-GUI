@@ -3,24 +3,24 @@
  * Uses console.warn and console.error to comply with ESLint rules
  */
 
+const timestamp = () => new Date().toISOString();
+
 export const logger = {
   info: (message: string, ...args: unknown[]) => {
-    if (process.env.NODE_ENV !== "production") {
-      console.warn(`[INFO] ${message}`, ...args);
-    }
+    // Always log in production for debugging
+    console.warn(`[${timestamp()}] [INFO] ${message}`, ...args);
   },
 
   warn: (message: string, ...args: unknown[]) => {
-    console.warn(`[WARN] ${message}`, ...args);
+    console.warn(`[${timestamp()}] [WARN] ${message}`, ...args);
   },
 
   error: (message: string, ...args: unknown[]) => {
-    console.error(`[ERROR] ${message}`, ...args);
+    console.error(`[${timestamp()}] [ERROR] ${message}`, ...args);
   },
 
   debug: (message: string, ...args: unknown[]) => {
-    if (process.env.NODE_ENV !== "production") {
-      console.warn(`[DEBUG] ${message}`, ...args);
-    }
+    // Always log in production for debugging
+    console.warn(`[${timestamp()}] [DEBUG] ${message}`, ...args);
   },
 };

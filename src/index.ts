@@ -41,8 +41,89 @@ import {
   loadJabbaEnvironment,
 } from "./services/javaService";
 
+// Startup logging
+logger.info("=".repeat(60));
+logger.info("🚀 Minecraft Server Manager - Starting up...");
+logger.info("=".repeat(60));
+logger.info(`Node Environment: ${process.env.NODE_ENV || "development"}`);
+logger.info(`Platform: ${process.platform}`);
+logger.info(`Architecture: ${process.arch}`);
+logger.info(`Bun Version: ${Bun.version}`);
+logger.info(`Working Directory: ${process.cwd()}`);
+
+// Check critical directories
+const fs = await import("fs/promises");
+const path = await import("path");
+
+const serverDir = path.join(process.cwd(), "server");
+const serverFilesDir = path.join(process.cwd(), "serverfiles");
+
+try {
+  await fs.access(serverDir);
+  logger.info(`✓ Server directory exists: ${serverDir}`);
+} catch {
+  logger.warn(`⚠ Server directory not found: ${serverDir}`);
+  try {
+    await fs.mkdir(serverDir, { recursive: true });
+    logger.info(`✓ Created server directory: ${serverDir}`);
+  } catch (error) {
+    logger.error(`✗ Failed to create server directory: ${error}`);
+  }
+}
+
+try {
+  await fs.access(serverFilesDir);
+  logger.info(`✓ Serverfiles directory exists: ${serverFilesDir}`);
+} catch {
+  logger.warn(`⚠ Serverfiles directory not found: ${serverFilesDir}`);
+  try {
+    await fs.mkdir(serverFilesDir, { recursive: true });
+    logger.info(`✓ Created serverfiles directory: ${serverFilesDir}`);
+  } catch (error) {
+    logger.error(`✗ Failed to create serverfiles directory: ${error}`);
+  }
+}
+
+// Check Java availability
+logger.info("Checking Java installation...");
+try {
+  const javaCheck = Bun.spawn(["java", "-version"], {
+    stdout: "pipe",
+    stderr: "pipe",
+  });
+
+  const exitCode = await javaCheck.exited;
+  if (exitCode === 0) {
+    logger.info("✓ Java is available");
+
+    // Try to get Java version
+    try {
+      const stderr = await new Response(javaCheck.stderr).text();
+      const versionMatch = stderr.match(/version "([^"]+)"/);
+      if (versionMatch) {
+        logger.info(`  Java Version: ${versionMatch[1]}`);
+      }
+    } catch {
+      // Ignore version parsing errors
+    }
+  } else {
+    logger.warn(`⚠ Java check failed with exit code: ${exitCode}`);
+  }
+} catch (error) {
+  logger.error(`✗ Java check failed: ${error}`);
+}
+
 // Load Jabba environment on startup if available
-await loadJabbaEnvironment();
+logger.info("Loading Jabba environment...");
+try {
+  await loadJabbaEnvironment();
+  logger.info("✓ Jabba environment loaded");
+} catch (error) {
+  logger.warn(`⚠ Jabba environment not available: ${error}`);
+}
+
+logger.info("=".repeat(60));
+logger.info("Starting HTTP server...");
 
 const server = serve({
   // Bind to all interfaces for Docker compatibility
@@ -218,7 +299,9 @@ const server = serve({
 
     "/api/server/browse-directory": {
       async GET(req) {
-        const { handleBrowseDirectory } = await import("./services/directoryBrowser");
+        const { handleBrowseDirectory } = await import(
+          "./services/directoryBrowser"
+        );
         return await handleBrowseDirectory(req);
       },
     },
@@ -236,4 +319,11 @@ const server = serve({
   },
 });
 
-logger.info(`🚀 Server running at ${server.url}`);
+logger.info("=".repeat(60));
+logger.info(`✓ HTTP Server successfully started!`);
+logger.info(`  URL: ${server.url}`);
+logger.info(`  Hostname: ${server.hostname}`);
+logger.info(`  Port: ${server.port}`);
+logger.info("=".repeat(60));
+logger.info("Server is ready to accept connections");
+logger.info("=".repeat(60));
