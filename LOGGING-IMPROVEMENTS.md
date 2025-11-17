@@ -28,8 +28,24 @@ Enhanced logging for server start/stop operations:
 - **Process launch**: Command being executed, working directory, platform
 - **Java version**: Jabba environment setup and JAVA_HOME configuration
 - **Process exit**: Exit codes with helpful hints for common errors (127, 126, 1)
+- **Script permissions**: Automatic chmod +x for all .sh files before server start
 
-### 4. API Endpoint Logging (`src/services/serverService.ts`)
+### 4. Server Creation Logging (`src/services/server/serverCreate.ts`)
+
+Added ZIP extraction logging:
+
+- **ZIP extraction**: Logs extraction progress and completion
+
+### 5. Start File Selection (`src/services/startFileService.ts`)
+
+Added automatic chmod when selecting start file:
+
+- **Smart chmod**: Only applied when user selects a .sh file as start file
+- **Automatic execution**: Makes the selected .sh file executable (Linux/Unix only)
+- **Logging**: Reports success or failure of chmod operation
+- **Fallback safety**: Additional chmod at server start as backup
+
+### 6. API Endpoint Logging (`src/services/serverService.ts`)
 
 Added request/response logging:
 
@@ -90,12 +106,37 @@ Added request/response logging:
 [2025-11-17T10:32:00.125Z] [ERROR] [my-server] Hint: Command not found - check if startserver.sh exists and is executable
 ```
 
+### When Creating a Server (ZIP Upload):
+
+```
+[2025-11-17T10:30:00.123Z] [INFO] Extracting ZIP file: /app/serverfiles/my-server.zip
+[2025-11-17T10:30:00.124Z] [INFO] Target directory: /app/server/2025-11-17
+[2025-11-17T10:30:00.234Z] [INFO] ZIP extraction completed
+```
+
+### When Selecting a Start File:
+
+```
+[2025-11-17T10:30:10.123Z] [INFO] Making start file executable: startserver.sh
+[2025-11-17T10:30:10.124Z] [INFO] ✓ Successfully made startserver.sh executable
+```
+
 ## Common Exit Codes
 
 - **0**: Normal shutdown
 - **1**: General error (check Java installation and server files)
-- **126**: Permission denied (script not executable)
+- **126**: Permission denied (script not executable - chmod failed)
 - **127**: Command not found (script doesn't exist or path issue)
+
+## chmod Timing
+
+The application handles file permissions intelligently:
+
+1. **When selecting start file**: If you select a `.sh` file, it's automatically made executable
+2. **Before server start**: As a fallback, all `.sh` files in the server directory are made executable
+3. **Windows**: chmod is skipped entirely on Windows systems
+
+This double-safety approach ensures your scripts are executable even if something goes wrong.
 
 ## Debugging Tips
 
@@ -105,6 +146,7 @@ Added request/response logging:
 4. **Java availability**: Ensure Java version is detected
 5. **Directory permissions**: Check if directories are writable
 6. **Server start failures**: Look for exit codes and hints
+7. **chmod operations**: Look for "Making start file executable" messages
 
 ## Next Steps
 
