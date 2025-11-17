@@ -128,6 +128,12 @@ const server = serve({
   maxRequestBodySize: 2 * 1024 * 1024 * 1024,
 
   routes: {
+    "/api/health": {
+      async GET(_req) {
+        return Response.json({ status: "ok", timestamp: new Date().toISOString() });
+      },
+    },
+
     "/api/servers": {
       async GET(_req) {
         return await listServers();

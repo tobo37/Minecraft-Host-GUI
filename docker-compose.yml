@@ -1,0 +1,20 @@
+services:
+  minecraft-manager:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"      # Web UI
+      - "25565:25565"    # Minecraft Server (TCP)
+    volumes:
+      - ./server:/app/server           # Persistent server data
+      - ./serverfiles:/app/serverfiles # Uploaded ZIP files
+    environment:
+      NODE_ENV: production
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
