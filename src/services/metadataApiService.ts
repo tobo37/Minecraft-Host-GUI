@@ -5,6 +5,170 @@ import {
   readMetadata,
 } from "./metadataService";
 import { runningServers } from "./serverService";
+import { logger } from "@/lib/logger";
+
+interface MetadataUpdateRequest {
+  project: string;
+  customName?: string;
+  description?: string;
+}
+
+interface ValidationResult {
+  valid: boolean;
+  error?: string;
+  status?: number;
+}
+
+/**
+ * Validate project parameter
+ */
+function validateProject(project: string): ValidationResult {
+  if (!project) {
+    return {
+      valid: false,
+      error: "Project parameter is required",
+      status: 400,
+    };
+  }
+
+  if (
+    project.includes("..") ||
+    project.includes("/") ||
+    project.includes("\\")
+  ) {
+    return {
+      valid: false,
+      error: "Invalid project path",
+      status: 403,
+    };
+  }
+
+  return { valid: true };
+}
+
+/**
+ * Check if server directory exists
+ */
+async function checkServerExists(project: string): Promise<ValidationResult> {
+  const serverPath = `./server/${project}`;
+  const fs = require("fs").promises;
+  try {
+    await fs.access(serverPath);
+    return { valid: true };
+  } catch {
+    return {
+      valid: false,
+      error: "Server not found",
+      status: 404,
+    };
+  }
+}
+
+/**
+ * Validate custom name field
+ */
+function validateCustomNameField(customName?: string): ValidationResult {
+  if (customName === undefined) {
+    return { valid: true };
+  }
+
+  if (!customName || customName.trim().length === 0) {
+    return {
+      valid: false,
+      error: "Custom name cannot be empty when updating",
+      status: 400,
+    };
+  }
+
+  const nameValidation = validateCustomName(customName);
+  if (!nameValidation.valid) {
+    return {
+      valid: false,
+      error: nameValidation.error,
+      status: 400,
+    };
+  }
+
+  return { valid: true };
+}
+
+/**
+ * Validate description field
+ */
+function validateDescriptionField(description?: string): ValidationResult {
+  if (description === undefined) {
+    return { valid: true };
+  }
+
+  const descValidation = validateDescription(description);
+  if (!descValidation.valid) {
+    return {
+      valid: false,
+      error: descValidation.error,
+      status: 400,
+    };
+  }
+
+  return { valid: true };
+}
+
+/**
+ * Validate metadata update request
+ */
+async function validateMetadata(
+  project: string,
+  customName?: string,
+  description?: string
+): Promise<ValidationResult> {
+  const projectValidation = validateProject(project);
+  if (!projectValidation.valid) {
+    return projectValidation;
+  }
+
+  const existsValidation = await checkServerExists(project);
+  if (!existsValidation.valid) {
+    return existsValidation;
+  }
+
+  const nameValidation = validateCustomNameField(customName);
+  if (!nameValidation.valid) {
+    return nameValidation;
+  }
+
+  const descValidation = validateDescriptionField(description);
+  if (!descValidation.valid) {
+    return descValidation;
+  }
+
+  return { valid: true };
+}
+
+/**
+ * Merge new metadata with existing metadata
+ */
+function mergeMetadata(
+  customName?: string,
+  description?: string
+): Record<string, string> {
+  const updates: Record<string, string> = {};
+
+  if (customName !== undefined) {
+    updates.customName = customName;
+  }
+  if (description !== undefined) {
+    updates.description = description;
+  }
+
+  return updates;
+}
+
+/**
+ * Save updated metadata to disk
+ */
+async function saveMetadata(project: string, updates: Record<string, string>) {
+  await updateMetadata(project, updates);
+  return await readMetadata(project);
+}
 
 /**
  * Update server metadata (rename, change description)
@@ -13,109 +177,32 @@ import { runningServers } from "./serverService";
 export async function updateServerMetadata(req: Request): Promise<Response> {
   try {
     const body = await req.json();
-    const { project, customName, description } = body;
+    const { project, customName, description } = body as MetadataUpdateRequest;
 
-    // Validate required parameter
-    if (!project) {
+    // Validate metadata
+    const validation = await validateMetadata(project, customName, description);
+    if (!validation.valid) {
       return Response.json(
         {
           success: false,
-          error: "Project parameter is required",
+          error: validation.error,
         },
-        { status: 400 }
+        { status: validation.status || 400 }
       );
     }
 
-    // Validate project path to prevent traversal attacks
-    if (
-      project.includes("..") ||
-      project.includes("/") ||
-      project.includes("\\")
-    ) {
-      return Response.json(
-        {
-          success: false,
-          error: "Invalid project path",
-        },
-        { status: 403 }
-      );
-    }
+    // Merge updates
+    const updates = mergeMetadata(customName, description);
 
-    // Check if server directory exists
-    const serverPath = `./server/${project}`;
-    const fs = require("fs").promises;
-    try {
-      await fs.access(serverPath);
-    } catch {
-      return Response.json(
-        {
-          success: false,
-          error: "Server not found",
-        },
-        { status: 404 }
-      );
-    }
-
-    // Validate custom name if provided
-    if (customName !== undefined) {
-      // When updating, empty names are not allowed
-      if (!customName || customName.trim().length === 0) {
-        return Response.json(
-          {
-            success: false,
-            error: "Custom name cannot be empty when updating",
-          },
-          { status: 400 }
-        );
-      }
-      
-      const nameValidation = validateCustomName(customName);
-      if (!nameValidation.valid) {
-        return Response.json(
-          {
-            success: false,
-            error: nameValidation.error,
-          },
-          { status: 400 }
-        );
-      }
-    }
-
-    // Validate description if provided
-    if (description !== undefined) {
-      const descValidation = validateDescription(description);
-      if (!descValidation.valid) {
-        return Response.json(
-          {
-            success: false,
-            error: descValidation.error,
-          },
-          { status: 400 }
-        );
-      }
-    }
-
-    // Build updates object with only provided fields
-    const updates: any = {};
-    if (customName !== undefined) {
-      updates.customName = customName;
-    }
-    if (description !== undefined) {
-      updates.description = description;
-    }
-
-    // Update metadata
-    await updateMetadata(project, updates);
-
-    // Read and return updated metadata
-    const updatedMetadata = await readMetadata(project);
+    // Save metadata and get updated version
+    const updatedMetadata = await saveMetadata(project, updates);
 
     return Response.json({
       success: true,
       metadata: updatedMetadata,
     });
   } catch (error) {
-    console.error("Error updating metadata:", error);
+    logger.error("Error updating metadata:", error);
     return Response.json(
       {
         success: false,
@@ -127,6 +214,74 @@ export async function updateServerMetadata(req: Request): Promise<Response> {
 }
 
 /**
+ * Validate deletion request
+ */
+async function validateDeletion(project: string | null): Promise<ValidationResult> {
+  // Validate required parameter
+  if (!project) {
+    return {
+      valid: false,
+      error: "Project parameter is required",
+      status: 400,
+    };
+  }
+
+  // Validate project path to prevent traversal attacks
+  if (
+    project.includes("..") ||
+    project.includes("/") ||
+    project.includes("\\")
+  ) {
+    return {
+      valid: false,
+      error: "Invalid project path",
+      status: 403,
+    };
+  }
+
+  // Check if server directory exists
+  const serverPath = `./server/${project}`;
+  const fs = require("fs").promises;
+  try {
+    await fs.access(serverPath);
+  } catch {
+    return {
+      valid: false,
+      error: "Server not found",
+      status: 404,
+    };
+  }
+
+  return { valid: true };
+}
+
+/**
+ * Stop server if it's currently running
+ */
+async function stopServerIfRunning(project: string): Promise<void> {
+  const serverProcess = runningServers.get(project);
+  if (serverProcess && !serverProcess.killed) {
+    logger.info(`Stopping running server ${project} before deletion...`);
+    serverProcess.kill();
+    runningServers.delete(project);
+
+    // Wait a moment for the process to fully terminate
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+  }
+}
+
+/**
+ * Remove server files from disk
+ */
+async function removeServerFiles(project: string): Promise<void> {
+  const serverPath = `./server/${project}`;
+  const fs = require("fs").promises;
+
+  logger.info(`Deleting server directory: ${serverPath}`);
+  await fs.rm(serverPath, { recursive: true, force: true });
+}
+
+/**
  * Delete a server instance
  * DELETE /api/server/delete
  */
@@ -135,69 +290,30 @@ export async function deleteServerInstance(req: Request): Promise<Response> {
     const url = new URL(req.url);
     const project = url.searchParams.get("project");
 
-    // Validate required parameter
-    if (!project) {
+    // Validate deletion request
+    const validation = await validateDeletion(project);
+    if (!validation.valid) {
       return Response.json(
         {
           success: false,
-          error: "Project parameter is required",
+          error: validation.error,
         },
-        { status: 400 }
+        { status: validation.status || 400 }
       );
     }
 
-    // Validate project path to prevent traversal attacks
-    if (
-      project.includes("..") ||
-      project.includes("/") ||
-      project.includes("\\")
-    ) {
-      return Response.json(
-        {
-          success: false,
-          error: "Invalid project path",
-        },
-        { status: 403 }
-      );
-    }
+    // Stop server if running
+    await stopServerIfRunning(project!);
 
-    const serverPath = `./server/${project}`;
-
-    // Check if server directory exists
-    const fs = require("fs").promises;
-    try {
-      await fs.access(serverPath);
-    } catch {
-      return Response.json(
-        {
-          success: false,
-          error: "Server not found",
-        },
-        { status: 404 }
-      );
-    }
-
-    // Check if server is running and stop it if necessary
-    const serverProcess = runningServers.get(project);
-    if (serverProcess && !serverProcess.killed) {
-      console.log(`Stopping running server ${project} before deletion...`);
-      serverProcess.kill();
-      runningServers.delete(project);
-
-      // Wait a moment for the process to fully terminate
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-    }
-
-    // Delete the entire server directory recursively
-    console.log(`Deleting server directory: ${serverPath}`);
-    await fs.rm(serverPath, { recursive: true, force: true });
+    // Remove server files
+    await removeServerFiles(project!);
 
     return Response.json({
       success: true,
       message: `Server ${project} deleted successfully`,
     });
   } catch (error) {
-    console.error("Error deleting server:", error);
+    logger.error("Error deleting server:", error);
     return Response.json(
       {
         success: false,

@@ -6,8 +6,8 @@ import { useServerDescription } from "@/hooks/useServerDescription";
 import { useServerDelete } from "@/hooks/useServerDelete";
 import { useStartFile } from "@/hooks/useStartFile";
 import { ServerOverview } from "@/components/server/ServerOverview";
-import { ConfigurationManagement } from "./ConfigurationManagement";
-import { JavaManagement } from "./JavaManagement";
+import { ConfigurationManagement } from "@/features/config";
+import { JavaManagement } from "@/features/java/JavaManagement";
 
 interface ServerManagementProps {
   projectPath: string;

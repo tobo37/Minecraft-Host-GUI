@@ -141,58 +141,77 @@
   - Ensure all functions are under 50 lines
   - _Requirements: 3.2_
 
-- [-] 6. Refactor metadataApiService.ts
+- [x] 6. Refactor metadataApiService.ts
 
 
 
 
-- [ ] 6.1 Decompose updateServerMetadata function
+
+
+- [x] 6.1 Decompose updateServerMetadata function
+
   - Split updateServerMetadata() (96 lines, complexity 16) into validateMetadata(), loadExistingMetadata(), mergeMetadata(), saveMetadata()
   - Reduce complexity to under 10
   - Ensure all functions are under 50 lines
   - _Requirements: 3.2, 3.3_
 
-- [ ] 6.2 Decompose deleteServerInstance function
+- [x] 6.2 Decompose deleteServerInstance function
+
   - Split deleteServerInstance() (63 lines) into validateDeletion(), stopServerIfRunning(), removeServerFiles()
   - Ensure all functions are under 50 lines
   - _Requirements: 3.2_
 
-- [ ] 7. Refactor JavaManagement.tsx into feature structure
+- [x] 7. Refactor JavaManagement.tsx into feature structure
 
-- [ ] 7.1 Create Java feature directory and extract hooks
+
+
+
+- [x] 7.1 Create Java feature directory and extract hooks
+
+
   - Create `features/java/` directory
   - Create `features/java/useJavaInfo.ts` hook for Java info fetching logic
   - Create `features/java/useJabbaInstall.ts` hook for installation logic
   - _Requirements: 6.2, 6.3, 7.1, 7.2, 7.3, 7.5_
 
-- [ ] 7.2 Extract Java UI components
+- [x] 7.2 Extract Java UI components
+
+
   - Create `features/java/JavaInfo.tsx` for Java information display
   - Create `features/java/JabbaInstall.tsx` for installation UI
   - Create `features/java/JavaVersionSelector.tsx` for version selection
   - Ensure each component is under 150 lines
   - _Requirements: 2.5, 6.1, 6.4_
 
-- [ ] 7.3 Refactor main JavaManagement component
+- [x] 7.3 Refactor main JavaManagement component
+
+
   - Simplify `features/java/JavaManagement.tsx` to under 100 lines
   - Use extracted hooks and components
   - Reduce complexity from 13 to under 10
   - Verify Java management functionality works
   - _Requirements: 2.5, 3.2, 3.3, 6.5, 12.4_
+-
 
 - [ ] 8. Refactor ConfigurationManagement.tsx into feature structure
 
-- [ ] 8.1 Create config feature directory and extract hook
+- [x] 8.1 Create config feature directory and extract hook
+
+
   - Create `features/config/` directory
   - Create `features/config/useConfigFiles.ts` hook for config file operations
   - _Requirements: 6.2, 7.1, 7.4, 7.5_
 
-- [ ] 8.2 Extract config UI components
+- [x] 8.2 Extract config UI components
+
+
   - Create `features/config/ConfigFileList.tsx` for file list display
   - Create `features/config/ConfigEditor.tsx` for editor UI
   - Ensure each component is under 100 lines
   - _Requirements: 6.1, 6.4_
 
-- [ ] 8.3 Refactor main ConfigurationManagement component
+- [-] 8.3 Refactor main ConfigurationManagement component
+
   - Simplify `features/config/ConfigurationManagement.tsx` to under 80 lines
   - Use extracted hook and components
   - Reduce complexity from 13 to under 10
