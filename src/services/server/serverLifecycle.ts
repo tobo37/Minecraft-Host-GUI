@@ -291,11 +291,12 @@ async function launchServerProcess(
     }) as ServerProcess;
   }
 
-  const command = `cd "${serverPath}" && exec bash ./${startFileName}`;
+  // Use bash -x for debugging to see what commands are being executed
+  const command = `cd "${serverPath}" && bash -x ./${startFileName}`;
   logger.info(`[${project}] Spawning Unix process: bash -c "${command}"`);
 
   return Bun.spawn(
-    ["bash", "-c", `cd "${serverPath}" && exec bash ./${startFileName}`],
+    ["bash", "-c", `cd "${serverPath}" && bash -x ./${startFileName}`],
     {
       cwd: serverPath,
       stdout: "pipe",
@@ -400,13 +401,16 @@ function setupProcessHandlers(
       logs.push(
         `[${new Date().toLocaleTimeString()}] Server crashed or failed (exit code: ${exitCode})`
       );
+      logs.push(
+        `[${new Date().toLocaleTimeString()}] Check the output above for error details from the start script`
+      );
 
       if (exitCode === 1) {
         logger.error(
-          `[${project}] Hint: Check if Java is installed and server files are present`
+          `[${project}] Hint: Exit code 1 usually means the start script encountered an error`
         );
         logs.push(
-          `[${new Date().toLocaleTimeString()}] Hint: Check if Java is installed and server files are present`
+          `[${new Date().toLocaleTimeString()}] Common causes: Java not found, missing libraries, or script errors`
         );
       } else if (exitCode === 127) {
         logger.error(
@@ -533,6 +537,49 @@ export async function startServer(
     `[${new Date().toLocaleTimeString()}] Start file: ${startFileName}`,
   ];
   serverLogs.set(project, debugInfo);
+
+  // Test Java availability before starting server
+  try {
+    const metadata = await readMetadata(project);
+    let testEnv = { ...process.env } as Record<string, string>;
+
+    if (metadata?.javaVersion) {
+      const { getJabbaEnv } = await import("../java/jabbaUtils");
+      testEnv = { ...testEnv, ...(await getJabbaEnv(metadata.javaVersion)) };
+    }
+
+    const javaTest = Bun.spawn(["java", "-version"], {
+      env: testEnv,
+      stdout: "pipe",
+      stderr: "pipe",
+    });
+
+    const javaTestOutput = await new Response(javaTest.stderr).text();
+    const javaTestExitCode = await javaTest.exited;
+
+    const logs = serverLogs.get(project) || [];
+    if (javaTestExitCode === 0) {
+      logs.push(
+        `[${new Date().toLocaleTimeString()}] ✓ Java is accessible: ${javaTestOutput
+          .split("\n")[0]
+          .trim()}`
+      );
+    } else {
+      logs.push(
+        `[${new Date().toLocaleTimeString()}] ⚠ Java test failed with exit code ${javaTestExitCode}`
+      );
+      logs.push(
+        `[${new Date().toLocaleTimeString()}] This may cause the server to fail`
+      );
+    }
+    serverLogs.set(project, logs);
+  } catch (error) {
+    const logs = serverLogs.get(project) || [];
+    logs.push(
+      `[${new Date().toLocaleTimeString()}] ⚠ Could not test Java: ${error}`
+    );
+    serverLogs.set(project, logs);
+  }
 
   const serverProcess = await launchServerProcess(
     project,

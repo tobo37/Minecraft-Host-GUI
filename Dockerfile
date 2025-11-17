@@ -21,6 +21,11 @@ ENV PATH="$JABBA_HOME/bin:$PATH"
 # Install OpenJDK 17 as default Java version
 RUN bash -c "source ~/.jabba/jabba.sh && jabba install openjdk@1.17.0 && jabba alias default openjdk@1.17.0"
 
+# Set Java environment variables permanently
+RUN bash -c "source ~/.jabba/jabba.sh && jabba use default && echo 'export JAVA_HOME=$(jabba which default | xargs dirname | xargs dirname)' >> ~/.bashrc && echo 'export PATH=\$JAVA_HOME/bin:\$PATH' >> ~/.bashrc"
+ENV JAVA_HOME="/root/.jabba/jdk/openjdk@1.17.0"
+ENV PATH="$JAVA_HOME/bin:$PATH"
+
 # Set working directory
 WORKDIR /app
 
@@ -40,5 +45,5 @@ EXPOSE 3000 25565
 # Set environment variables
 ENV NODE_ENV=production
 
-# Start the application with Jabba environment loaded
-CMD ["bash", "-c", "source ~/.jabba/jabba.sh && jabba use default && bun run start"]
+# Start the application
+CMD ["bun", "run", "start"]
