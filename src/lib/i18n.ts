@@ -31,6 +31,9 @@ export interface Translations {
     renameButton: string;
     editDescriptionButton: string;
     deleteButton: string;
+    javaVersion: string;
+    systemDefault: string;
+    changeJava: string;
     renameDialog: {
       title: string;
       currentName: string;
@@ -128,6 +131,9 @@ export const translations: Record<Language, Translations> = {
       renameButton: "Umbenennen",
       editDescriptionButton: "Beschreibung bearbeiten",
       deleteButton: "Server löschen",
+      javaVersion: "Java Version",
+      systemDefault: "System Standard",
+      changeJava: "Ändern",
       renameDialog: {
         title: "Server umbenennen",
         currentName: "Aktueller Name",
@@ -175,7 +181,8 @@ export const translations: Record<Language, Translations> = {
       path: "Pfad",
       noJava: "Java ist nicht installiert",
       jabbaTitle: "Jabba - Java Version Manager",
-      jabbaDescription: "Jabba ermöglicht es Ihnen, mehrere Java-Versionen zu installieren und einfach zwischen ihnen zu wechseln.",
+      jabbaDescription:
+        "Jabba ermöglicht es Ihnen, mehrere Java-Versionen zu installieren und einfach zwischen ihnen zu wechseln.",
       installJabba: "Jabba installieren",
       installing: "Installiere...",
       jabbaInstalled: "Jabba ist installiert",
@@ -183,11 +190,13 @@ export const translations: Record<Language, Translations> = {
       availableVersions: "Installierte Versionen",
       active: "Aktiv",
       use: "Verwenden",
-      noVersionsInstalled: "Keine Java-Versionen installiert. Installieren Sie eine Version, um zu beginnen.",
+      noVersionsInstalled:
+        "Keine Java-Versionen installiert. Installieren Sie eine Version, um zu beginnen.",
       recommendedVersions: "Empfohlene Versionen:",
       install: "Installieren",
       refresh: "Aktualisieren",
-      installNote: "Nach der Installation wird Jabba direkt verwendet. Klicken Sie auf 'Aktualisieren', wenn die Versionen nicht angezeigt werden.",
+      installNote:
+        "Nach der Installation wird Jabba direkt verwendet. Klicken Sie auf 'Aktualisieren', wenn die Versionen nicht angezeigt werden.",
     },
   },
   en: {
@@ -227,6 +236,9 @@ export const translations: Record<Language, Translations> = {
       renameButton: "Rename",
       editDescriptionButton: "Edit Description",
       deleteButton: "Delete Server",
+      javaVersion: "Java Version",
+      systemDefault: "System Default",
+      changeJava: "Change",
       renameDialog: {
         title: "Rename Server",
         currentName: "Current Name",
@@ -273,7 +285,8 @@ export const translations: Record<Language, Translations> = {
       path: "Path",
       noJava: "Java is not installed",
       jabbaTitle: "Jabba - Java Version Manager",
-      jabbaDescription: "Jabba allows you to install multiple Java versions and easily switch between them.",
+      jabbaDescription:
+        "Jabba allows you to install multiple Java versions and easily switch between them.",
       installJabba: "Install Jabba",
       installing: "Installing...",
       jabbaInstalled: "Jabba is installed",
@@ -281,11 +294,13 @@ export const translations: Record<Language, Translations> = {
       availableVersions: "Installed Versions",
       active: "Active",
       use: "Use",
-      noVersionsInstalled: "No Java versions installed. Install a version to get started.",
+      noVersionsInstalled:
+        "No Java versions installed. Install a version to get started.",
       recommendedVersions: "Recommended versions:",
       install: "Install",
       refresh: "Refresh",
-      installNote: "After installation, Jabba will be used directly. Click 'Refresh' if versions don't appear.",
+      installNote:
+        "After installation, Jabba will be used directly. Click 'Refresh' if versions don't appear.",
     },
   },
 };

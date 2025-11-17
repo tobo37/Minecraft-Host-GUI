@@ -1,5 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { FolderOpen } from "lucide-react";
+import { useLanguage } from "@/hooks/useLanguage";
 import type { Server } from "@/services/types";
 
 type ServerStatus = "stopped" | "starting" | "running" | "stopping";
@@ -9,6 +10,7 @@ interface ServerInfoDetailsProps {
   projectPath: string;
   serverStatus: ServerStatus;
   onSetProjectPath: () => void;
+  onChangeJava?: () => void;
 }
 
 export function ServerInfoDetails({
@@ -16,7 +18,10 @@ export function ServerInfoDetails({
   projectPath,
   serverStatus,
   onSetProjectPath,
+  onChangeJava,
 }: ServerInfoDetailsProps) {
+  const { translations } = useLanguage();
+
   const getStatusColor = (status: ServerStatus) => {
     switch (status) {
       case "running":
@@ -46,6 +51,10 @@ export function ServerInfoDetails({
         return "Unbekannt";
     }
   };
+
+  const javaVersionDisplay = serverInfo?.javaVersion
+    ? serverInfo.javaVersion
+    : translations.serverManagement.systemDefault;
 
   return (
     <>
@@ -93,12 +102,29 @@ export function ServerInfoDetails({
         </span>
       </div>
 
+      <div className="flex justify-between items-center bg-muted/50 p-2 rounded-md">
+        <span className="text-muted-foreground text-xs">
+          {translations.serverManagement.javaVersion}:
+        </span>
+        <div className="flex items-center gap-2">
+          <span className="font-mono text-xs">{javaVersionDisplay}</span>
+          {onChangeJava && (
+            <Button
+              size="sm"
+              variant="ghost"
+              className="h-6 px-2 text-xs"
+              onClick={onChangeJava}
+            >
+              {translations.serverManagement.changeJava}
+            </Button>
+          )}
+        </div>
+      </div>
+
       {serverInfo?.sourceZipFile && (
         <div className="flex justify-between">
           <span className="text-muted-foreground">Source:</span>
-          <span className="font-mono text-xs">
-            {serverInfo.sourceZipFile}
-          </span>
+          <span className="font-mono text-xs">{serverInfo.sourceZipFile}</span>
         </div>
       )}
       {serverInfo?.createdAt && (

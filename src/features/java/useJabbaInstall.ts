@@ -15,7 +15,7 @@ export function useJabbaInstall(onSuccess: () => void) {
       const data = await response.json();
 
       if (data.success) {
-        await new Promise(resolve => setTimeout(resolve, 2000));
+        await new Promise((resolve) => setTimeout(resolve, 2000));
         onSuccess();
       } else {
         setError(data.error || "Failed to install Jabba");
@@ -28,57 +28,69 @@ export function useJabbaInstall(onSuccess: () => void) {
     }
   }, [onSuccess]);
 
-  const installVersion = useCallback(async (version: string) => {
-    setInstalling(true);
-    setError(null);
-    try {
-      const response = await fetch("/api/java/jabba/install-version", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ version }),
-      });
-      const data = await response.json();
+  const switchVersion = useCallback(
+    async (version: string) => {
+      setSwitching(true);
+      setError(null);
+      try {
+        const response = await fetch("/api/java/jabba/use", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ version }),
+        });
+        const data = await response.json();
 
-      if (data.success) {
-        onSuccess();
-      } else {
-        setError(data.error || "Failed to install Java version");
+        if (data.success) {
+          onSuccess();
+        } else {
+          setError(data.error || "Failed to switch Java version");
+        }
+      } catch (err) {
+        setError("Failed to switch Java version");
+        console.error(err);
+      } finally {
+        setSwitching(false);
       }
-    } catch (err) {
-      setError("Failed to install Java version");
-      console.error(err);
-    } finally {
-      setInstalling(false);
-    }
-  }, [onSuccess]);
+    },
+    [onSuccess]
+  );
 
-  const switchVersion = useCallback(async (version: string) => {
-    setSwitching(true);
-    setError(null);
-    try {
-      const response = await fetch("/api/java/jabba/use", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ version }),
-      });
-      const data = await response.json();
+  const installVersion = useCallback(
+    async (version: string) => {
+      setInstalling(true);
+      setError(null);
+      try {
+        const response = await fetch("/api/java/jabba/install-version", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ version }),
+        });
+        const data = await response.json();
 
-      if (data.success) {
-        onSuccess();
-      } else {
-        setError(data.error || "Failed to switch Java version");
+        if (data.success) {
+          // If version was already installed, switch to it directly
+          if (data.alreadyInstalled) {
+            // Switch to the version
+            await switchVersion(version);
+          } else {
+            onSuccess();
+          }
+        } else {
+          setError(data.error || "Failed to install Java version");
+        }
+      } catch (err) {
+        setError("Failed to install Java version");
+        console.error(err);
+      } finally {
+        setInstalling(false);
       }
-    } catch (err) {
-      setError("Failed to switch Java version");
-      console.error(err);
-    } finally {
-      setSwitching(false);
-    }
-  }, [onSuccess]);
+    },
+    [onSuccess, switchVersion]
+  );
 
   return {
     installing,

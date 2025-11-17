@@ -8,43 +8,83 @@ import { logger } from "@/lib/logger";
  */
 export function getJabbaPath(): string {
   const home = homedir();
-  const isWindows = process.platform === 'win32';
-  
+  const isWindows = process.platform === "win32";
+
   if (isWindows) {
-    return join(home, '.jabba', 'bin', 'jabba.exe');
+    return join(home, ".jabba", "bin", "jabba.exe");
   } else {
-    return join(home, '.jabba', 'bin', 'jabba');
+    return join(home, ".jabba", "bin", "jabba");
+  }
+}
+
+/**
+ * Check if a Java version directory exists
+ */
+async function isVersionDirectoryPresent(version: string): Promise<boolean> {
+  try {
+    const home = homedir();
+    const jabbaDir = join(home, ".jabba", "jdk", version);
+    const file = Bun.file(jabbaDir);
+    return await file.exists();
+  } catch (error) {
+    logger.error(`Error checking version directory for ${version}:`, error);
+    return false;
   }
 }
 
 /**
  * Get Jabba environment variables for a specific version
  */
-export async function getJabbaEnv(version: string): Promise<Record<string, string>> {
+export async function getJabbaEnv(
+  version: string
+): Promise<Record<string, string>> {
+  logger.info(`Loading Jabba environment for version: ${version}`);
+
+  // Validate that the version is installed
+  const versionExists = await isVersionDirectoryPresent(version);
+  if (!versionExists) {
+    const errorMessage = `Java version ${version} is not installed. Cannot load environment.`;
+    logger.error(errorMessage);
+    throw new Error(errorMessage);
+  }
+
   const home = homedir();
-  const isWindows = process.platform === 'win32';
-  
-  const jabbaDir = join(home, '.jabba', 'jdk', version);
-  
+  const isWindows = process.platform === "win32";
+
+  const jabbaDir = join(home, ".jabba", "jdk", version);
+  const binPath = join(jabbaDir, "bin");
+
+  let env: Record<string, string>;
+
   if (isWindows) {
-    return {
+    env = {
       JAVA_HOME: jabbaDir,
-      PATH: `${join(jabbaDir, 'bin')};${process.env.PATH || ''}`,
+      PATH: `${binPath};${process.env.PATH || ""}`,
     };
   } else {
-    return {
+    env = {
       JAVA_HOME: jabbaDir,
-      PATH: `${join(jabbaDir, 'bin')}:${process.env.PATH || ''}`,
+      PATH: `${binPath}:${process.env.PATH || ""}`,
     };
   }
+
+  logger.info(`Jabba environment loaded successfully`);
+  logger.info(`JAVA_HOME: ${env.JAVA_HOME}`);
+  logger.info(`PATH prefix: ${binPath}`);
+
+  return env;
 }
 
 /**
  * Execute Jabba command directly
  */
-export async function execJabba(args: string[]): Promise<{ exitCode: number; stdout: string; stderr: string }> {
+export async function execJabba(args: string[]): Promise<{
+  exitCode: number;
+  stdout: string;
+  stderr: string;
+}> {
   const jabbaPath = getJabbaPath();
-  
+
   try {
     const result = await $`${jabbaPath} ${args}`.quiet().nothrow();
     return {
@@ -65,16 +105,19 @@ export async function execJabba(args: string[]): Promise<{ exitCode: number; std
 /**
  * Parse Jabba version list output
  */
-export function parseJabbaVersions(output: string): { versions: string[]; current?: string } {
+export function parseJabbaVersions(output: string): {
+  versions: string[];
+  current?: string;
+} {
   const versions: string[] = [];
   let current: string | undefined;
-  
-  const lines = output.split('\n').filter(line => line.trim());
-  
+
+  const lines = output.split("\n").filter((line) => line.trim());
+
   for (const line of lines) {
     const trimmed = line.trim();
-    
-    if (trimmed.startsWith('*')) {
+
+    if (trimmed.startsWith("*")) {
       const version = trimmed.substring(1).trim();
       versions.push(version);
       current = version;
@@ -82,6 +125,6 @@ export function parseJabbaVersions(output: string): { versions: string[]; curren
       versions.push(trimmed);
     }
   }
-  
+
   return { versions, current };
 }

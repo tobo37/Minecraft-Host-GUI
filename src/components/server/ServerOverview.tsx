@@ -136,6 +136,7 @@ export function ServerOverview({
                 }}
                 onSaveDescription={description.handleUpdateDescription}
                 onSetProjectPath={projectPathHook.openDialog}
+                onChangeJava={onJavaClick}
               />
 
               <ServerControls
@@ -150,10 +151,7 @@ export function ServerOverview({
               {(serverStatus === "running" ||
                 serverStatus === "starting" ||
                 logs.length > 0) && (
-                <ServerLogs 
-                  logs={logs} 
-                  isPolling={isPollingLogs}
-                />
+                <ServerLogs logs={logs} isPolling={isPollingLogs} />
               )}
 
               <div className="mt-8 pt-6 border-t border-border">

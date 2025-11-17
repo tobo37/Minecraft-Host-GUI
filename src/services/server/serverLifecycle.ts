@@ -46,66 +46,76 @@ async function loadServerConfiguration(project: string): Promise<{
 }
 
 /**
- * Ensure Java is available
+ * Validate Java availability before server start
+ * Checks if configured Java version is installed or if system Java is available
  */
-async function ensureJavaAvailable(
-  project: string,
-  serverPath: string
-): Promise<void> {
-  const projectLogs = serverLogs.get(project) || [];
-  projectLogs.push(
-    `[${new Date().toLocaleTimeString()}] Java version check...`
-  );
-  serverLogs.set(project, projectLogs);
+async function validateJavaAvailability(
+  project: string
+): Promise<{ valid: boolean; error?: string }> {
+  logger.info(`[${project}] Validating Java availability...`);
 
-  logger.info(`[${project}] Checking Java availability in: ${serverPath}`);
+  const metadata = await readMetadata(project);
+
+  // If a specific Jabba version is configured, validate it's installed
+  if (metadata?.javaVersion) {
+    logger.info(
+      `[${project}] Checking if configured Java version is installed: ${metadata.javaVersion}`
+    );
+
+    try {
+      const { getJabbaInfo } = await import("../java/jabbaInfo");
+      const jabbaInfo = await getJabbaInfo();
+
+      if (!jabbaInfo.installed) {
+        const errorMsg =
+          "Jabba is not installed. Please install Jabba or remove the Java version configuration.";
+        logger.error(`[${project}] ${errorMsg}`);
+        return { valid: false, error: errorMsg };
+      }
+
+      if (!jabbaInfo.versions?.includes(metadata.javaVersion)) {
+        const errorMsg = `Java version ${metadata.javaVersion} is not installed. Please install it first or select a different version.`;
+        logger.error(`[${project}] ${errorMsg}`);
+        return { valid: false, error: errorMsg };
+      }
+
+      logger.info(
+        `[${project}] ✓ Configured Java version ${metadata.javaVersion} is installed`
+      );
+      return { valid: true };
+    } catch (error) {
+      const errorMsg = `Failed to validate Java version: ${
+        error instanceof Error ? error.message : String(error)
+      }`;
+      logger.error(`[${project}] ${errorMsg}`);
+      return { valid: false, error: errorMsg };
+    }
+  }
+
+  // No Jabba version configured - check for system Java
+  logger.info(`[${project}] No Jabba version configured, checking system Java`);
 
   try {
-    const javaCheck = Bun.spawn(["java", "-version"], {
-      cwd: serverPath,
-      stdout: "pipe",
-      stderr: "pipe",
-      env: {
-        ...process.env,
-        PATH: process.env.PATH + ":/usr/bin:/bin:/usr/local/bin",
-      },
-    });
+    const { getJavaInfo } = await import("../java/javaInfo");
+    const javaInfo = await getJavaInfo();
 
-    const javaExitCode = await javaCheck.exited;
-    const logs = serverLogs.get(project) || [];
-
-    if (javaExitCode === 0) {
-      // Try to get Java version from stderr
-      try {
-        const stderr = await new Response(javaCheck.stderr).text();
-        const versionMatch = stderr.match(/version "([^"]+)"/);
-        const versionInfo = versionMatch ? ` (${versionMatch[1]})` : "";
-        logs.push(
-          `[${new Date().toLocaleTimeString()}] Java is available${versionInfo}`
-        );
-        logger.info(`[${project}] Java is available${versionInfo}`);
-      } catch {
-        logs.push(`[${new Date().toLocaleTimeString()}] Java is available`);
-        logger.info(`[${project}] Java is available`);
-      }
-    } else {
-      logs.push(
-        `[${new Date().toLocaleTimeString()}] WARNING: Java check failed (exit code: ${javaExitCode})`
-      );
-      logger.warn(
-        `[${project}] Java check failed with exit code: ${javaExitCode}`
-      );
+    if (!javaInfo.installed) {
+      const errorMsg =
+        "No Java installation found. Please install Java or configure a Jabba version.";
+      logger.error(`[${project}] ${errorMsg}`);
+      return { valid: false, error: errorMsg };
     }
 
-    serverLogs.set(project, logs);
-  } catch (error) {
-    const logs = serverLogs.get(project) || [];
-    const errorMsg = error instanceof Error ? error.message : String(error);
-    logs.push(
-      `[${new Date().toLocaleTimeString()}] ERROR: Java check failed: ${errorMsg}`
+    logger.info(
+      `[${project}] ✓ System Java is available (version: ${javaInfo.version})`
     );
-    logger.error(`[${project}] Java check failed: ${errorMsg}`);
-    serverLogs.set(project, logs);
+    return { valid: true };
+  } catch (error) {
+    const errorMsg = `Failed to check system Java: ${
+      error instanceof Error ? error.message : String(error)
+    }`;
+    logger.error(`[${project}] ${errorMsg}`);
+    return { valid: false, error: errorMsg };
   }
 }
 
@@ -166,8 +176,12 @@ async function launchServerProcess(
   // If a specific Java version is configured, set Jabba environment
   if (metadata?.javaVersion) {
     logger.info(
+      `[${project}] ========== Java Configuration (Jabba) ==========`
+    );
+    logger.info(
       `[${project}] Configured Java version: ${metadata.javaVersion}`
     );
+
     try {
       const { getJabbaEnv } = await import("../java/jabbaUtils");
       const jabbaEnv = await getJabbaEnv(metadata.javaVersion);
@@ -175,16 +189,22 @@ async function launchServerProcess(
       // Override environment with Jabba-specific Java
       if (jabbaEnv.JAVA_HOME) {
         env.JAVA_HOME = jabbaEnv.JAVA_HOME;
-        logger.info(`[${project}]   JAVA_HOME: ${jabbaEnv.JAVA_HOME}`);
+        logger.info(`[${project}] JAVA_HOME: ${jabbaEnv.JAVA_HOME}`);
       }
       if (jabbaEnv.PATH) {
         env.PATH = jabbaEnv.PATH;
-        logger.info(`[${project}]   PATH updated for Jabba`);
+        // Log the Java bin directory that was prepended to PATH
+        const javaBinPath = jabbaEnv.PATH.split(
+          process.platform === "win32" ? ";" : ":"
+        )[0];
+        logger.info(`[${project}] PATH (Java bin): ${javaBinPath}`);
       }
+
+      logger.info(`[${project}] ✓ Jabba environment loaded successfully`);
 
       const logs = serverLogs.get(project) || [];
       logs.push(
-        `[${new Date().toLocaleTimeString()}] Using Java version: ${
+        `[${new Date().toLocaleTimeString()}] Using Jabba Java version: ${
           metadata.javaVersion
         }`
       );
@@ -196,19 +216,63 @@ async function launchServerProcess(
       serverLogs.set(project, logs);
     } catch (error) {
       const errorMsg = error instanceof Error ? error.message : String(error);
-      logger.warn(
-        `[${project}] Could not load Java version ${metadata.javaVersion}: ${errorMsg}`
+      logger.error(
+        `[${project}] Failed to load Java version ${metadata.javaVersion}: ${errorMsg}`
       );
+      logger.warn(
+        `[${project}] This should not happen as validation passed. Check Jabba installation.`
+      );
+
       const logs = serverLogs.get(project) || [];
       logs.push(
-        `[${new Date().toLocaleTimeString()}] WARNING: Could not load Java version ${
+        `[${new Date().toLocaleTimeString()}] ERROR: Could not load Java version ${
           metadata.javaVersion
         }: ${errorMsg}`
+      );
+      logs.push(
+        `[${new Date().toLocaleTimeString()}] Server may fail to start without proper Java configuration`
       );
       serverLogs.set(project, logs);
     }
   } else {
+    // Using system Java - log information about it
+    logger.info(
+      `[${project}] ========== Java Configuration (System) ==========`
+    );
     logger.info(`[${project}] Using system default Java`);
+
+    try {
+      const { getJavaInfo } = await import("../java/javaInfo");
+      const javaInfo = await getJavaInfo();
+
+      if (javaInfo.installed) {
+        logger.info(
+          `[${project}] System Java version: ${javaInfo.version || "Unknown"}`
+        );
+        if (javaInfo.path) {
+          logger.info(`[${project}] System Java path: ${javaInfo.path}`);
+        }
+        if (process.env.JAVA_HOME) {
+          logger.info(`[${project}] JAVA_HOME: ${process.env.JAVA_HOME}`);
+        } else {
+          logger.info(`[${project}] JAVA_HOME: not set (using system PATH)`);
+        }
+
+        const logs = serverLogs.get(project) || [];
+        logs.push(
+          `[${new Date().toLocaleTimeString()}] Using system Java: ${
+            javaInfo.version || "Unknown"
+          }`
+        );
+        serverLogs.set(project, logs);
+      } else {
+        logger.warn(`[${project}] System Java information not available`);
+      }
+    } catch (error) {
+      logger.warn(
+        `[${project}] Could not retrieve system Java information: ${error}`
+      );
+    }
   }
 
   const isWindowsScript =
@@ -381,6 +445,15 @@ export async function startServer(
     return { success: false, error: validation.error };
   }
 
+  // Validate Java availability before proceeding
+  const javaValidation = await validateJavaAvailability(project);
+  if (!javaValidation.valid) {
+    logger.error(
+      `[${project}] Java validation failed: ${javaValidation.error}`
+    );
+    return { success: false, error: javaValidation.error };
+  }
+
   const { serverPath, startFileName, startScript } =
     await loadServerConfiguration(project);
 
@@ -460,8 +533,6 @@ export async function startServer(
     `[${new Date().toLocaleTimeString()}] Start file: ${startFileName}`,
   ];
   serverLogs.set(project, debugInfo);
-
-  await ensureJavaAvailable(project, serverPath);
 
   const serverProcess = await launchServerProcess(
     project,
