@@ -14,7 +14,7 @@ import { ServerFileSelector } from "./ServerFileSelector";
 import { useServerFileUpload } from "./useServerFileUpload";
 
 export interface WelcomePageProps {
-  onServerCreated: (serverPath: string) => void;
+  onServerCreated: (_serverPath: string) => void;
 }
 
 interface ServerFile {

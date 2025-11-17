@@ -19,8 +19,8 @@ interface RenameDialogProps {
   projectPath: string;
   newName: string;
   validationError: string;
-  onOpenChange: (open: boolean) => void;
-  onNameChange: (value: string) => void;
+  onOpenChange: (_open: boolean) => void;
+  onNameChange: (_value: string) => void;
   onSave: () => void;
   onCancel: () => void;
 }

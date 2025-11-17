@@ -8,7 +8,7 @@ interface ServerFile {
 
 interface ServerFileListProps {
   files: ServerFile[];
-  onDelete: (filename: string) => void;
+  onDelete: (_filename: string) => void;
 }
 
 function formatFileSize(bytes: number): string {

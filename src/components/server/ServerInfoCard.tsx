@@ -15,7 +15,7 @@ interface ServerInfoCardProps {
   newDescription: string;
   onRenameClick: () => void;
   onEditDescriptionClick: () => void;
-  onDescriptionChange: (value: string) => void;
+  onDescriptionChange: (_value: string) => void;
   onCancelDescription: () => void;
   onSaveDescription: () => void;
 }

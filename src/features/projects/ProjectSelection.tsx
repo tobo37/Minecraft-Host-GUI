@@ -11,7 +11,7 @@ import { useServerList } from "./useServerList";
 import { ServerCard } from "./ServerCard";
 
 interface ProjectSelectionProps {
-  onSelectProject: (projectPath: string) => void;
+  onSelectProject: (_projectPath: string) => void;
   onCreateNew: () => void;
 }
 

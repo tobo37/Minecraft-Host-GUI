@@ -20,9 +20,9 @@ interface ServerFileSelectorProps {
   selectedFile: string;
   customName: string;
   description: string;
-  onFileChange: (value: string) => void;
-  onNameChange: (value: string) => void;
-  onDescriptionChange: (value: string) => void;
+  onFileChange: (_value: string) => void;
+  onNameChange: (_value: string) => void;
+  onDescriptionChange: (_value: string) => void;
 }
 
 function formatFileSize(bytes: number): string {

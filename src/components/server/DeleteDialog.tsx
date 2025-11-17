@@ -19,8 +19,8 @@ interface DeleteDialogProps {
   projectPath: string;
   confirmName: string;
   validationError: string;
-  onOpenChange: (open: boolean) => void;
-  onConfirmNameChange: (value: string) => void;
+  onOpenChange: (_open: boolean) => void;
+  onConfirmNameChange: (_value: string) => void;
   onDelete: () => void;
   onCancel: () => void;
 }

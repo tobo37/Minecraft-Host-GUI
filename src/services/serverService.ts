@@ -1,9 +1,10 @@
 import { listServers as listServersCore } from './server/serverList';
 import { createServer as createServerCore } from './server/serverCreate';
 import { startServer as startServerCore, stopServer as stopServerCore } from './server/serverLifecycle';
+import type { ServerProcess } from './server/server.types';
 
 // Global server process management
-export const runningServers = new Map<string, any>();
+export const runningServers = new Map<string, ServerProcess>();
 export const serverLogs = new Map<string, string[]>();
 
 /**

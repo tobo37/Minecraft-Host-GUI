@@ -8,7 +8,7 @@ interface ConfigEditorProps {
   configContent: string;
   isLoading: boolean;
   isSaving: boolean;
-  onContentChange: (content: string) => void;
+  onContentChange: (_content: string) => void;
   onSave: () => void;
 }
 

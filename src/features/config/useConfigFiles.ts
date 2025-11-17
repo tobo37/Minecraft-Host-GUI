@@ -16,8 +16,8 @@ interface UseConfigFilesReturn {
   isLoading: boolean;
   isSaving: boolean;
   loadConfigFiles: () => Promise<void>;
-  selectConfig: (file: ConfigFile) => Promise<void>;
-  updateContent: (content: string) => void;
+  selectConfig: (_file: ConfigFile) => Promise<void>;
+  updateContent: (_content: string) => void;
   saveConfig: () => Promise<void>;
 }
 

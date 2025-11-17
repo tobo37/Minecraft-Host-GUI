@@ -5,7 +5,7 @@ import type { Server } from "@/services/types";
 
 interface ServerCardProps {
   server: Server;
-  onSelect: (path: string) => void;
+  onSelect: (_path: string) => void;
 }
 
 export function ServerCard({ server, onSelect }: ServerCardProps) {

@@ -333,7 +333,8 @@
   - _Requirements: 8.1, 8.2, 8.3, 8.4, 8.5_
 -
 
-- [-] 13. Fix React Hook dependencies
+- [x] 13. Fix React Hook dependencies
+
 
 
 
@@ -345,20 +346,33 @@
   - _Requirements: 10.1, 10.2, 10.3_
 
 
-- [ ] 13.2 Fix useEffect dependencies in hooks
+- [x] 13.2 Fix useEffect dependencies in hooks
+
   - Fix useServerInfo.ts fetchServerInfo dependency
   - Fix useServerStatus.ts checkServerStatus and startLogPolling dependencies
   - Fix WelcomePage.tsx loadServerFiles dependency
   - _Requirements: 10.1, 10.2, 10.4, 10.5_
 
-- [ ] 14. Remove TypeScript any types
+- [x] 14. Remove TypeScript any types
 
-- [ ] 14.1 Define interfaces for all data structures
+
+
+
+
+
+- [x] 14.1 Define interfaces for all data structures
+
   - Create interfaces for any types in services/types.ts
   - Create interfaces for any types in service files
   - _Requirements: 9.1, 9.2, 9.3, 9.4_
 
-- [ ] 14.2 Replace any with specific types
+-
+
+- [x] 14.2 Replace any with specific types
+
+
+
+
 
   - Fix any in services/types.ts:43
   - Fix any in services/serverService.ts:12
@@ -369,7 +383,11 @@
   - Use unknown where type is truly unknown
   - _Requirements: 9.1, 9.2, 9.5_
 
-- [ ] 15. Clean up unused variables
+
+- [x] 15. Clean up unused variables
+
+
+
 
   - Prefix intentionally unused catch block parameters with underscore (_error)
   - Fix unused variables in services/configService.ts (2 occurrences)

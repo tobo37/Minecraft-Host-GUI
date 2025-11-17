@@ -31,11 +31,20 @@ export function JavaManagement({ onBack }: JavaManagementProps) {
   const [switching, setSwitching] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    fetchJavaInfo();
+  const fetchAvailableVersions = useCallback(async () => {
+    try {
+      const response = await fetch("/api/java/jabba/ls-remote");
+      const data = await response.json();
+      
+      if (data.success && data.versions) {
+        setAvailableVersions(data.versions);
+      }
+    } catch (err) {
+      console.error("Failed to fetch available versions:", err);
+    }
   }, []);
 
-  const fetchJavaInfo = async () => {
+  const fetchJavaInfo = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
@@ -60,20 +69,11 @@ export function JavaManagement({ onBack }: JavaManagementProps) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [fetchAvailableVersions]);
 
-  const fetchAvailableVersions = async () => {
-    try {
-      const response = await fetch("/api/java/jabba/ls-remote");
-      const data = await response.json();
-      
-      if (data.success && data.versions) {
-        setAvailableVersions(data.versions);
-      }
-    } catch (err) {
-      console.error("Failed to fetch available versions:", err);
-    }
-  };
+  useEffect(() => {
+    fetchJavaInfo();
+  }, [fetchJavaInfo]);
 
   const handleInstallJabba = async () => {
     setInstalling(true);

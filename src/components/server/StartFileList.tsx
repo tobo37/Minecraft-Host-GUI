@@ -11,7 +11,7 @@ interface StartFileCandidate {
 interface StartFileListProps {
   candidates: StartFileCandidate[];
   selectedFile: string;
-  onSelectFile: (path: string) => void;
+  onSelectFile: (_path: string) => void;
 }
 
 function getConfidenceBadgeColor(confidence: string): string {

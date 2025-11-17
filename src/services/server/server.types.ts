@@ -2,6 +2,16 @@
  * Server type definitions
  */
 
+// Type for Bun subprocess - compatible with Bun.spawn return type
+export interface ServerProcess {
+  kill: () => void;
+  killed: boolean;
+  exited: Promise<number>;
+  stdout: globalThis.ReadableStream<Uint8Array> | null;
+  stderr: globalThis.ReadableStream<Uint8Array> | null;
+  stdin: unknown;
+}
+
 export interface ServerMetadata {
   customName?: string;
   description?: string;
@@ -28,15 +38,6 @@ export interface CreateServerData {
   serverFile?: string;
   customName?: string;
   description?: string;
-}
-
-export interface ServerProcess {
-  kill: () => void;
-  killed: boolean;
-  exited: Promise<number>;
-  stdout: unknown;
-  stderr: unknown;
-  stdin: unknown;
 }
 
 export interface ServerResult {

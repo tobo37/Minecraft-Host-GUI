@@ -7,8 +7,8 @@ interface JavaVersionSelectorProps {
   jabbaInfo: JabbaInfo | null;
   installing: boolean;
   switching: boolean;
-  onInstallVersion: (version: string) => void;
-  onSwitchVersion: (version: string) => void;
+  onInstallVersion: (_version: string) => void;
+  onSwitchVersion: (_version: string) => void;
 }
 
 const RECOMMENDED_VERSIONS = [

@@ -9,7 +9,7 @@ interface ServerInfoActionsProps {
   isEditingDescription: boolean;
   newDescription: string;
   onEditDescriptionClick: () => void;
-  onDescriptionChange: (value: string) => void;
+  onDescriptionChange: (_value: string) => void;
   onCancelDescription: () => void;
   onSaveDescription: () => void;
 }

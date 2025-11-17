@@ -136,7 +136,7 @@ function launchServerProcess(
       stderr: 'pipe',
       stdin: 'pipe',
       env,
-    });
+    }) as ServerProcess;
   }
 
   return Bun.spawn(
@@ -148,7 +148,7 @@ function launchServerProcess(
       stdin: 'pipe',
       env,
     }
-  );
+  ) as ServerProcess;
 }
 
 /**
@@ -160,8 +160,7 @@ function setupProcessHandlers(
 ): void {
   // Handle stdout
   if (serverProcess.stdout) {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const reader = (serverProcess.stdout as any).getReader();
+    const reader = serverProcess.stdout.getReader();
     const decoder = new TextDecoder();
 
     const readStdout = async () => {
@@ -200,8 +199,7 @@ function setupProcessHandlers(
 
   // Handle stderr
   if (serverProcess.stderr) {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const reader = (serverProcess.stderr as any).getReader();
+    const reader = serverProcess.stderr.getReader();
     const decoder = new TextDecoder();
 
     const readStderr = async () => {

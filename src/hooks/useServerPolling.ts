@@ -3,7 +3,7 @@ import type { ServerStatus } from "@/services/types";
 
 interface UseServerPollingProps {
   projectPath: string;
-  onStatusChange?: (status: ServerStatus) => void;
+  onStatusChange?: (_status: ServerStatus) => void;
 }
 
 export function useServerPolling({ projectPath, onStatusChange }: UseServerPollingProps) {

@@ -49,8 +49,7 @@ async function checkFileExists(filePath: string): Promise<boolean> {
 }
 
 async function streamToFile(
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  reader: any,
+  reader: globalThis.ReadableStreamDefaultReader<Uint8Array>,
   writeStream: NodeJS.WritableStream
 ): Promise<number> {
   let bytesWritten = 0;

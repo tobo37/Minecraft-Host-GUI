@@ -24,8 +24,8 @@ interface StartFileDialogProps {
   candidates: StartFileCandidate[];
   selectedFile: string;
   isSearching: boolean;
-  onOpenChange: (open: boolean) => void;
-  onSelectFile: (path: string) => void;
+  onOpenChange: (_open: boolean) => void;
+  onSelectFile: (_path: string) => void;
   onConfirm: () => void;
   onCancel: () => void;
 }

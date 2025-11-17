@@ -5,7 +5,7 @@ import type { ConfigFile } from "./useConfigFiles";
 interface ConfigFileListProps {
   configFiles: ConfigFile[];
   selectedConfig: ConfigFile | null;
-  onSelectConfig: (file: ConfigFile) => void;
+  onSelectConfig: (_file: ConfigFile) => void;
 }
 
 export function ConfigFileList({ 

@@ -9,6 +9,7 @@ import { RenameDialog } from "./RenameDialog";
 import { DeleteDialog } from "./DeleteDialog";
 import { StartFileDialog } from "./StartFileDialog";
 import type { Server, ServerStatus } from "@/services/types";
+import type { StartFileCandidate } from "@/services/startFileClient";
 
 interface ServerOverviewProps {
   projectPath: string;
@@ -25,40 +26,40 @@ interface ServerOverviewProps {
     isRenameDialogOpen: boolean;
     newName: string;
     validationError: string;
-    setNewName: (name: string) => void;
-    setValidationError: (error: string) => void;
+    setNewName: (_name: string) => void;
+    setValidationError: (_error: string) => void;
     handleRename: () => Promise<void>;
-    openRenameDialog: (currentName: string) => void;
-    closeRenameDialog: (currentName: string) => void;
+    openRenameDialog: (_currentName: string) => void;
+    closeRenameDialog: (_currentName: string) => void;
   };
   description: {
     isEditingDescription: boolean;
     newDescription: string;
-    setNewDescription: (desc: string) => void;
+    setNewDescription: (_desc: string) => void;
     handleUpdateDescription: () => Promise<void>;
-    startEditing: (currentDescription: string) => void;
-    cancelEditing: (currentDescription: string) => void;
+    startEditing: (_currentDescription: string) => void;
+    cancelEditing: (_currentDescription: string) => void;
   };
   deleteServer: {
     isDeleteDialogOpen: boolean;
     deleteConfirmName: string;
     deleteValidationError: string;
-    setDeleteConfirmName: (name: string) => void;
-    setDeleteValidationError: (error: string) => void;
-    handleDeleteServer: (serverName: string) => Promise<void>;
+    setDeleteConfirmName: (_name: string) => void;
+    setDeleteValidationError: (_error: string) => void;
+    handleDeleteServer: (_serverName: string) => Promise<void>;
     openDeleteDialog: () => void;
     closeDeleteDialog: () => void;
   };
   startFile: {
     isStartFileDialogOpen: boolean;
-    startFileCandidates: any[];
+    startFileCandidates: StartFileCandidate[];
     selectedStartFile: string;
     isSearchingStartFiles: boolean;
-    setSelectedStartFile: (file: string) => void;
+    setSelectedStartFile: (_file: string) => void;
     handleFindStartFiles: () => Promise<void>;
     handleSetStartFile: () => Promise<void>;
     closeStartFileDialog: () => void;
-    setIsStartFileDialogOpen: (open: boolean) => void;
+    setIsStartFileDialogOpen: (_open: boolean) => void;
   };
 }
 
