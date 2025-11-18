@@ -1,5 +1,8 @@
 # Dockerfile for Bun + Jabba Java Management
-FROM debian:bookworm-slim
+FROM ubuntu:24.04
+
+# Prevent interactive prompts during package installation
+ENV DEBIAN_FRONTEND=noninteractive
 
 # Install dependencies for Bun, Jabba, and server operations
 RUN apt-get update && apt-get install -y \
