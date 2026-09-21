@@ -54,7 +54,7 @@ export function App() {
 
   if (appState === "loading") {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-background to-muted/20 flex items-center justify-center">
+      <div className="app-page flex items-center justify-center">
         <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
       </div>
     );
@@ -62,12 +62,24 @@ export function App() {
 
   return (
     <div className="relative">
-      {/* Language Toggle - always visible */}
-      <div className="absolute top-4 right-4 z-50">
-        <Button variant="outline" size="sm" onClick={toggleLanguage} className="font-mono text-xs">
+      {/* Persistent navigation stays in document flow to avoid covering page controls. */}
+      <header className="app-header">
+        <div className="app-brand">
+          <span className="grass-block" aria-hidden="true" />
+          <span>
+            MINECRAFT HOST<small>SERVER CONTROL CENTER</small>
+          </span>
+        </div>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={toggleLanguage}
+          aria-label={language === "de" ? "Switch to English" : "Auf Deutsch wechseln"}
+          className="font-mono text-xs"
+        >
           {language.toUpperCase()}
         </Button>
-      </div>
+      </header>
 
       {appState === "welcome" && <WelcomePage onServerCreated={handleServerCreated} />}
 

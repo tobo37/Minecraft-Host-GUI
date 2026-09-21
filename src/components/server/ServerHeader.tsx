@@ -34,7 +34,7 @@ export function ServerHeader({ serverInfo, projectPath, onJavaClick }: ServerHea
   return (
     <CardHeader className="text-center space-y-4">
       {onJavaClick && (
-        <div className="absolute top-4 right-4">
+        <div className="flex justify-end">
           <Button
             variant="outline"
             size="sm"
@@ -45,10 +45,8 @@ export function ServerHeader({ serverInfo, projectPath, onJavaClick }: ServerHea
           </Button>
         </div>
       )}
-      <div className="mx-auto w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mb-4">
-        <div className="w-8 h-8 bg-primary rounded-sm"></div>
-      </div>
-      <CardTitle className="text-3xl font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
+      <span className="grass-block mx-auto" aria-hidden="true" />
+      <CardTitle className="text-3xl font-bold text-primary">
         {serverInfo?.customName || serverInfo?.name || projectPath}
       </CardTitle>
       <CardDescription className="text-lg text-muted-foreground">

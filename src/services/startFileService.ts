@@ -77,11 +77,12 @@ export async function findStartFiles(req: Request): Promise<Response> {
     console.error("Error finding start files:", error);
 
     const errorMessage = error instanceof Error ? error.message : "Unknown error";
-    const status = errorMessage.includes("required")
-      ? 400
-      : errorMessage.includes("not found")
-        ? 404
-        : 500;
+    const status =
+      errorMessage.includes("required") || errorMessage.includes("invalid")
+        ? 400
+        : errorMessage.includes("not found")
+          ? 404
+          : 500;
 
     return Response.json(
       {
@@ -232,28 +233,43 @@ async function searchDirectory(
 
 /**
  * Validate start file parameters and file existence
+ *
+ * Returns the start file as a server-relative path.
  */
 async function validateStartFile(
   project: string | undefined,
   startFile: string | undefined
-): Promise<void> {
+): Promise<string> {
   if (!project || !startFile) {
     throw new Error("Project and startFile parameters are required");
   }
 
   const { readMetadata } = await import("./metadataService");
-  const { getActualServerPath } = await import("./server/serverRepository");
+  const { getActualServerPath, isPathInside, normalizeStartFile } = await import(
+    "./server/serverRepository"
+  );
   const fs = require("fs").promises;
+
+  const normalized = normalizeStartFile(startFile);
+  if (!normalized) {
+    throw new Error("Project and startFile parameters are required");
+  }
 
   const metadata = await readMetadata(project);
   const serverPath = getActualServerPath(project, metadata?.projectPath);
-  const startFilePath = `${serverPath}/${startFile}`;
+  const startFilePath = `${serverPath}/${normalized}`;
+
+  if (!isPathInside(serverPath, startFilePath)) {
+    throw new Error("Start file path is invalid");
+  }
 
   try {
     await fs.access(startFilePath);
   } catch {
     throw new Error("Start file not found");
   }
+
+  return normalized;
 }
 
 /**
@@ -357,7 +373,7 @@ export async function setStartFile(req: Request): Promise<Response> {
     const body = await req.json();
     const { project, startFile } = body;
 
-    await validateStartFile(project, startFile);
+    const normalizedStartFile = await validateStartFile(project, startFile);
 
     // Get server path for chmod
     const { readMetadata } = await import("./metadataService");
@@ -365,12 +381,12 @@ export async function setStartFile(req: Request): Promise<Response> {
     const metadata = await readMetadata(project);
     const serverPath = getActualServerPath(project, metadata?.projectPath);
 
-    await updateMetadata(project, startFile, serverPath);
+    await updateMetadata(project, normalizedStartFile, serverPath);
 
     return Response.json({
       success: true,
       message: "Start file updated successfully",
-      startFile,
+      startFile: normalizedStartFile,
     });
   } catch (error) {
     console.error("Error setting start file:", error);

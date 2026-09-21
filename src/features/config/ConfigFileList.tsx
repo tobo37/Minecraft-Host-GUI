@@ -77,7 +77,7 @@ export function ConfigFileList({
           )}
 
           {configFiles.some((f) => !f.exists) && (
-            <div className="text-xs text-muted-foreground bg-blue-50 p-3 rounded mt-4">
+            <div className="text-xs text-muted-foreground bg-accent/40 p-3 rounded mt-4">
               💡 <strong>Hinweis:</strong> Einige Dateien werden erst nach dem ersten Serverstart
               erstellt. Starte den Server einmal, um alle Konfigurationsdateien zu generieren.
             </div>

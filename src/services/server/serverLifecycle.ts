@@ -4,11 +4,23 @@
 
 import type { ServerProcess } from "./server.types";
 import { readMetadata } from "../metadataService";
-import { fileExists } from "./serverRepository";
+import { fileExists, isPathInside, normalizeStartFile } from "./serverRepository";
 import { logger } from "@/lib/logger";
 
 // Import from main service for now (will be refactored)
 import { runningServers, serverLogs } from "../serverService";
+
+const DEFAULT_START_FILE = "startserver.sh";
+
+export interface StartServerResult {
+  success: boolean;
+  message?: string;
+  error?: string;
+  /** Start file that was looked for, when it could not be used */
+  expectedStartFile?: string;
+  /** Signals the UI to let the user pick a different start file */
+  requiresStartFileSelection?: boolean;
+}
 
 /**
  * Validate server can be started
@@ -35,14 +47,20 @@ async function loadServerConfiguration(project: string): Promise<{
   serverPath: string;
   startFileName: string;
   startScript: string;
+  isStartFileInsideServer: boolean;
 }> {
   const metadata = await readMetadata(project);
   const { getActualServerPath } = await import("./serverRepository");
   const serverPath = getActualServerPath(project, metadata?.projectPath);
-  const startFileName = metadata?.startFile || "startserver.sh";
+  const startFileName = normalizeStartFile(metadata?.startFile) || DEFAULT_START_FILE;
   const startScript = `${serverPath}/${startFileName}`;
 
-  return { serverPath, startFileName, startScript };
+  return {
+    serverPath,
+    startFileName,
+    startScript,
+    isStartFileInsideServer: isPathInside(serverPath, startScript),
+  };
 }
 
 /**
@@ -437,9 +455,7 @@ function setupProcessHandlers(
 /**
  * Start a server
  */
-export async function startServer(
-  project: string
-): Promise<{ success: boolean; message?: string; error?: string }> {
+export async function startServer(project: string): Promise<StartServerResult> {
   logger.info(`[${project}] ========== Starting Server ==========`);
   logger.info(`[${project}] Project: ${project}`);
 
@@ -458,11 +474,21 @@ export async function startServer(
     return { success: false, error: javaValidation.error };
   }
 
-  const { serverPath, startFileName, startScript } =
+  const { serverPath, startFileName, startScript, isStartFileInsideServer } =
     await loadServerConfiguration(project);
 
   logger.info(`[${project}] Server path: ${serverPath}`);
   logger.info(`[${project}] Start script: ${startScript}`);
+
+  if (!isStartFileInsideServer) {
+    logger.error(`[${project}] Start file escapes the server directory: ${startFileName}`);
+    return {
+      success: false,
+      error: `Invalid start file: ${startFileName}`,
+      expectedStartFile: startFileName,
+      requiresStartFileSelection: true,
+    };
+  }
 
   const serverPathExists = await fileExists(serverPath);
   const startScriptExists = await fileExists(startScript);
@@ -470,11 +496,19 @@ export async function startServer(
   logger.info(`[${project}] Server path exists: ${serverPathExists}`);
   logger.info(`[${project}] Start script exists: ${startScriptExists}`);
 
-  if (!serverPathExists || !startScriptExists) {
-    logger.error(`[${project}] Server directory or start script not found`);
+  if (!serverPathExists) {
+    logger.error(`[${project}] Server directory not found`);
+    return { success: false, error: "Server directory not found" };
+  }
+
+  if (!startScriptExists) {
+    // The server exists but its start file is missing, so the UI can offer to pick a new one.
+    logger.error(`[${project}] Start script not found: ${startFileName}`);
     return {
       success: false,
-      error: `Server directory or start script not found. Looking for: ${startFileName}`,
+      error: `Start script not found. Looking for: ${startFileName}`,
+      expectedStartFile: startFileName,
+      requiresStartFileSelection: true,
     };
   }
 

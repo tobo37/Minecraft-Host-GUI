@@ -43,16 +43,18 @@ export function ServerFileSelector({
 }: ServerFileSelectorProps) {
   return (
     <div className="space-y-3">
-      <label className="text-sm font-medium">Server-Datei auswählen:</label>
+      <label htmlFor="server-file" className="block text-sm font-medium">
+        Server-Datei auswählen:
+      </label>
       <Select value={selectedFile} onValueChange={onFileChange}>
-        <SelectTrigger>
-          <SelectValue placeholder="Wähle eine Server-Datei..." />
+        <SelectTrigger id="server-file">
+          <SelectValue placeholder="Wähle eine Server-Datei...">{selectedFile || undefined}</SelectValue>
         </SelectTrigger>
         <SelectContent>
           {files.map((file) => (
             <SelectItem key={file.name} value={file.name}>
               <div className="flex flex-col">
-                <span>{file.name}</span>
+                <span className="break-all">{file.name}</span>
                 <span className="text-xs text-muted-foreground">
                   {formatFileSize(file.size)} • {new Date(file.uploadedAt).toLocaleDateString()}
                 </span>

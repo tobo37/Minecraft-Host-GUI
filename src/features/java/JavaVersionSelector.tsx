@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useLanguage } from "@/hooks/useLanguage";
 import type { JabbaInfo } from "./useJavaInfo";
@@ -5,6 +6,7 @@ import type { Translations } from "@/lib/i18n";
 
 interface JavaVersionSelectorProps {
   jabbaInfo: JabbaInfo | null;
+  availableVersions?: string[];
   installing: boolean;
   switching: boolean;
   onInstallVersion: (_version: string) => void;
@@ -151,12 +153,14 @@ function RecommendedVersions({
 
 export function JavaVersionSelector({
   jabbaInfo,
+  availableVersions = [],
   installing,
   switching,
   onInstallVersion,
   onSwitchVersion,
 }: JavaVersionSelectorProps) {
   const { translations } = useLanguage();
+  const [showAllVersions, setShowAllVersions] = useState(false);
 
   if (!jabbaInfo?.installed) {
     return null;
@@ -186,6 +190,40 @@ export function JavaVersionSelector({
         onInstall={onInstallVersion}
         onSwitch={onSwitchVersion}
       />
+
+      {availableVersions.length > 0 && (
+        <div>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setShowAllVersions(!showAllVersions)}
+            className="w-full"
+          >
+            {showAllVersions
+              ? translations.javaManagement.hideAllVersions
+              : translations.javaManagement.showAllVersions}
+          </Button>
+
+          {showAllVersions && (
+            <div className="mt-2 max-h-96 overflow-y-auto border rounded-lg p-2">
+              <div className="grid gap-1">
+                {availableVersions.map((version) => (
+                  <Button
+                    key={version}
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => onInstallVersion(version)}
+                    disabled={installing}
+                    className="justify-start font-mono text-xs"
+                  >
+                    {version}
+                  </Button>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
 
       {jabbaInfo.versions && jabbaInfo.versions.length > 0 && (
         <InstalledVersionsList

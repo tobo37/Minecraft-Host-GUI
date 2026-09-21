@@ -15,10 +15,21 @@ export function useLanguage() {
   useEffect(() => {
     setTranslations(getTranslations(language));
     localStorage.setItem(LANGUAGE_KEY, language);
+    document.documentElement.lang = language;
   }, [language]);
 
+  useEffect(() => {
+    const syncLanguage = (event: Event) => {
+      const nextLanguage = (event as CustomEvent<Language>).detail;
+      setLanguage(nextLanguage);
+    };
+    window.addEventListener("minecraft-language-change", syncLanguage);
+    return () => window.removeEventListener("minecraft-language-change", syncLanguage);
+  }, []);
+
   const toggleLanguage = () => {
-    setLanguage((prev) => (prev === "de" ? "en" : "de"));
+    const nextLanguage: Language = language === "de" ? "en" : "de";
+    window.dispatchEvent(new CustomEvent("minecraft-language-change", { detail: nextLanguage }));
   };
 
   return {

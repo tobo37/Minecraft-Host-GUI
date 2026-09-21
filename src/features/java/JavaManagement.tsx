@@ -14,7 +14,7 @@ interface JavaManagementProps {
 
 export function JavaManagement({ onBack }: JavaManagementProps) {
   const { translations } = useLanguage();
-  const { javaInfo, jabbaInfo, loading, error, refresh } = useJavaInfo();
+  const { javaInfo, jabbaInfo, availableVersions, loading, error, refresh } = useJavaInfo();
   const {
     installing,
     switching,
@@ -28,14 +28,14 @@ export function JavaManagement({ onBack }: JavaManagementProps) {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-background to-muted/20 flex items-center justify-center">
+      <div className="app-page flex items-center justify-center">
         <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background to-muted/20 p-4">
+    <div className="app-page p-4">
       <div className="container mx-auto max-w-4xl">
         <div className="mb-4">
           <Button variant="outline" onClick={onBack}>
@@ -53,7 +53,7 @@ export function JavaManagement({ onBack }: JavaManagementProps) {
               size="sm"
               onClick={refresh}
               disabled={loading}
-              className="absolute top-4 right-4"
+              className="justify-self-end"
             >
               🔄 {translations.javaManagement.refresh}
             </Button>
@@ -82,6 +82,7 @@ export function JavaManagement({ onBack }: JavaManagementProps) {
                 ) : (
                   <JavaVersionSelector
                     jabbaInfo={jabbaInfo}
+                    availableVersions={availableVersions}
                     installing={installing}
                     switching={switching}
                     onInstallVersion={installVersion}

@@ -119,6 +119,27 @@ export function getActualServerPath(
 }
 
 /**
+ * Normalize a user supplied start file into a server-relative POSIX path
+ */
+export function normalizeStartFile(startFile?: string): string {
+  return (startFile || "")
+    .replace(/\\/g, "/")
+    .replace(/^\.\//, "")
+    .trim();
+}
+
+/**
+ * Check that a path stays inside a directory (guards against traversal)
+ */
+export function isPathInside(directory: string, target: string): boolean {
+  const relativePath = path.relative(path.resolve(directory), path.resolve(target));
+
+  return (
+    Boolean(relativePath) && !relativePath.startsWith("..") && !path.isAbsolute(relativePath)
+  );
+}
+
+/**
  * Get serverfiles base directory path
  */
 export function getServerFilesBasePath(): string {

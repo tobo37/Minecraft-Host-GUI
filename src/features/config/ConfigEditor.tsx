@@ -36,7 +36,7 @@ export function ConfigEditor({
 
     if (selectedConfig.name === "eula.txt") {
       return (
-        <div className="text-sm text-muted-foreground bg-blue-50 p-3 rounded">
+        <div className="text-sm text-muted-foreground bg-accent/40 p-3 rounded">
           <strong>EULA (End User License Agreement):</strong>
           <br />• Setze "eula=true" um die Minecraft EULA zu akzeptieren
           <br />• Der Server startet nur mit akzeptierter EULA
@@ -60,7 +60,7 @@ export function ConfigEditor({
 
     if (selectedConfig.name.endsWith(".json")) {
       return (
-        <div className="text-sm text-muted-foreground bg-yellow-50 p-3 rounded">
+        <div className="text-sm text-muted-foreground bg-accent/40 p-3 rounded">
           <strong>JSON-Datei:</strong>
           <br />• Achte auf korrekte JSON-Syntax
           <br />• Verwende doppelte Anführungszeichen für Strings

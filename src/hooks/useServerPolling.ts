@@ -4,9 +4,14 @@ import type { ServerStatus } from "@/services/types";
 interface UseServerPollingProps {
   projectPath: string;
   onStatusChange?: (_status: ServerStatus) => void;
+  onMissingStartFile?: (_expectedStartFile: string, _error: string) => void;
 }
 
-export function useServerPolling({ projectPath, onStatusChange }: UseServerPollingProps) {
+export function useServerPolling({
+  projectPath,
+  onStatusChange,
+  onMissingStartFile,
+}: UseServerPollingProps) {
   const [serverStatus, setServerStatus] = useState<ServerStatus>("stopped");
 
   const checkServerStatus = useCallback(async () => {
@@ -45,6 +50,9 @@ export function useServerPolling({ projectPath, onStatusChange }: UseServerPolli
       } else {
         setServerStatus("stopped");
         console.error("Failed to start server:", data.error);
+        if (data.requiresStartFileSelection) {
+          onMissingStartFile?.(data.expectedStartFile || "", data.error || "");
+        }
       }
     } catch (error) {
       setServerStatus("stopped");

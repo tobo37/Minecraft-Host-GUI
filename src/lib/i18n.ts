@@ -94,6 +94,8 @@ export interface Translations {
     jabbaInstallInstructions: string;
     jabbaInstallLink: string;
     systemJavaFallback: string;
+    showAllVersions: string;
+    hideAllVersions: string;
   };
 }
 
@@ -205,6 +207,8 @@ export const translations: Record<Language, Translations> = {
         "Um Jabba zu installieren und mehrere Java-Versionen zu verwalten, folgen Sie der Installationsanleitung:",
       jabbaInstallLink: "Jabba Installationsanleitung",
       systemJavaFallback: "Die Anwendung funktioniert weiterhin mit der System-Java-Installation.",
+      showAllVersions: "Alle verfügbaren Versionen anzeigen",
+      hideAllVersions: "Weniger anzeigen",
     },
   },
   en: {
@@ -313,6 +317,8 @@ export const translations: Record<Language, Translations> = {
       jabbaInstallLink: "Jabba Installation Guide",
       systemJavaFallback:
         "The application will continue to work with the system Java installation.",
+      showAllVersions: "Show all available versions",
+      hideAllVersions: "Show less",
     },
   },
 };

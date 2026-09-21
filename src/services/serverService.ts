@@ -146,6 +146,8 @@ export async function startServer(req: Request): Promise<Response> {
         {
           success: false,
           error: result.error,
+          expectedStartFile: result.expectedStartFile,
+          requiresStartFileSelection: result.requiresStartFileSelection,
         },
         { status }
       );

@@ -22,7 +22,7 @@ export function ConfigurationManagement({ projectPath, onBack }: ConfigurationMa
   } = useConfigFiles(projectPath);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background to-muted/20 p-4">
+    <div className="app-page p-4">
       <div className="container mx-auto max-w-6xl">
         <div className="mb-4">
           <Button variant="outline" onClick={onBack} className="mb-4">
@@ -35,7 +35,7 @@ export function ConfigurationManagement({ projectPath, onBack }: ConfigurationMa
             <div className="mx-auto w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mb-4">
               <div className="w-8 h-8 text-primary">⚙️</div>
             </div>
-            <CardTitle className="text-3xl font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
+            <CardTitle className="text-3xl font-bold text-primary">
               Konfiguration
             </CardTitle>
             <CardDescription className="text-lg text-muted-foreground">

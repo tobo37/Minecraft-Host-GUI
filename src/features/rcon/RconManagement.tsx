@@ -285,7 +285,7 @@ export function RconManagement({ projectPath, onBack }: RconManagementProps) {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background to-muted/20 p-4">
+    <div className="app-page p-4">
       <div className="container mx-auto max-w-4xl">
         <div className="mb-4">
           <Button variant="outline" onClick={onBack} className="mb-4">

@@ -112,6 +112,44 @@ function validateDescriptionField(description?: string): ValidationResult {
 }
 
 /**
+ * Validate the start file field and return it as a server-relative path
+ */
+async function validateStartFileField(
+  project: string,
+  startFile?: string
+): Promise<ValidationResult & { normalized?: string }> {
+  if (startFile === undefined) {
+    return { valid: true };
+  }
+
+  const { getActualServerPath, isPathInside, normalizeStartFile } = await import(
+    "./server/serverRepository"
+  );
+
+  const normalized = normalizeStartFile(startFile);
+  if (!normalized) {
+    return { valid: false, error: "Start file path is invalid", status: 400 };
+  }
+
+  const metadata = await readMetadata(project);
+  const serverPath = getActualServerPath(project, metadata?.projectPath);
+  const startFilePath = `${serverPath}/${normalized}`;
+
+  if (!isPathInside(serverPath, startFilePath)) {
+    return { valid: false, error: "Start file path is invalid", status: 400 };
+  }
+
+  const fs = require("fs").promises;
+  try {
+    await fs.access(startFilePath);
+  } catch {
+    return { valid: false, error: "Start file not found", status: 404 };
+  }
+
+  return { valid: true, normalized };
+}
+
+/**
  * Validate metadata update request
  */
 async function validateMetadata(
@@ -203,8 +241,26 @@ export async function updateServerMetadata(req: Request): Promise<Response> {
       );
     }
 
+    // Validate the start file separately, it has to resolve inside the server directory
+    const startFileValidation = await validateStartFileField(project, startFile);
+    if (!startFileValidation.valid) {
+      return Response.json(
+        {
+          success: false,
+          error: startFileValidation.error,
+        },
+        { status: startFileValidation.status || 400 }
+      );
+    }
+
     // Merge updates
-    const updates = mergeMetadata(customName, description, projectPath, startFile, javaVersion);
+    const updates = mergeMetadata(
+      customName,
+      description,
+      projectPath,
+      startFileValidation.normalized,
+      javaVersion
+    );
 
     // Save metadata and get updated version
     const updatedMetadata = await saveMetadata(project, updates);

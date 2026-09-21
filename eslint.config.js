@@ -49,6 +49,8 @@ export default [
         alert: "readonly",
         confirm: "readonly",
         prompt: "readonly",
+        Event: "readonly",
+        CustomEvent: "readonly",
         // TypeScript/DOM types
         HTMLElement: "readonly",
         HTMLDivElement: "readonly",

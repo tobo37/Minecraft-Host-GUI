@@ -49,7 +49,7 @@ export function ServerCard({ server, onSelect }: ServerCardProps) {
         </div>
 
         {/* Custom Name as Primary Heading */}
-        <h4 className="font-bold text-xl mb-2 pr-24">{server.customName || server.name}</h4>
+        <h4 className="font-bold text-xl mb-2 pr-24 break-all">{server.customName || server.name}</h4>
 
         {/* Description (truncated if long) */}
         {server.description && (

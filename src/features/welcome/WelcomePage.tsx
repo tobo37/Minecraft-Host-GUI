@@ -85,6 +85,9 @@ export function WelcomePage({ onServerCreated }: WelcomePageProps) {
   };
 
   const handleFileUpload = async (file: File) => {
+    // A second drop while an upload is running would race the first one.
+    if (isUploading) return;
+
     setUploadStatus(getUploadMessage(file.size));
 
     const result = await uploadFile(file);
@@ -216,23 +219,21 @@ export function WelcomePage({ onServerCreated }: WelcomePageProps) {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background to-muted/20 flex items-center justify-center p-4">
-      <div className="w-full max-w-2xl">
-        <Card className="shadow-2xl border-0 bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/60">
-          <CardHeader className="space-y-6 text-center">
-            <div className="mx-auto w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mb-4">
-              <div className="w-8 h-8 bg-primary rounded-sm"></div>
-            </div>
-            <CardTitle className="text-4xl font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
-              {translations.title}
-            </CardTitle>
-            <CardDescription className="text-lg text-muted-foreground max-w-md mx-auto">
-              {translations.description}
-            </CardDescription>
-          </CardHeader>
+    <div className="app-page flex items-center justify-center p-4">
+      <div className="welcome-layout">
+        <Card className="welcome-card">
+          <div className="welcome-intro">
+            <CardHeader className="space-y-6">
+              <span className="grass-block" aria-hidden="true" />
+              <CardTitle className="text-4xl font-bold text-primary">
+                {translations.title}
+              </CardTitle>
+              <CardDescription className="text-lg text-muted-foreground">
+                {translations.description}
+              </CardDescription>
+            </CardHeader>
 
-          <CardContent className="space-y-8">
-            <div className="grid gap-4 text-left">
+            <div className="welcome-features grid gap-4 text-left">
               <h3 className="font-semibold text-foreground mb-2">{translations.features.title}</h3>
               <div className="grid gap-3">
                 {translations.features.items.map((item, index) => (
@@ -243,7 +244,9 @@ export function WelcomePage({ onServerCreated }: WelcomePageProps) {
                 ))}
               </div>
             </div>
+          </div>
 
+          <CardContent className="welcome-form space-y-6">
             <ServerFileUpload
               isUploading={isUploading}
               isDragOver={isDragOver}
@@ -273,7 +276,7 @@ export function WelcomePage({ onServerCreated }: WelcomePageProps) {
             <div className="flex flex-col items-center gap-4 pt-4">
               <Button
                 onClick={handleCreateServer}
-                disabled={isCreating || !selectedServerFile}
+                disabled={isCreating || isUploading || !selectedServerFile}
                 size="lg"
                 className="text-lg px-12 py-6 font-semibold shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105 disabled:opacity-50"
               >

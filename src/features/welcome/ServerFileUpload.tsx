@@ -28,15 +28,24 @@ export function ServerFileUpload({
       <h3 className="font-semibold text-foreground">Server-Dateien verwalten</h3>
 
       <div
-        className={`border-2 border-dashed rounded-lg p-6 text-center transition-colors cursor-pointer ${
+        className={`upload-zone border-2 border-dashed rounded-lg p-6 text-center transition-colors cursor-pointer ${
           isDragOver
             ? "border-primary bg-primary/5"
             : "border-muted-foreground/25 hover:border-primary/50"
         }`}
+        role="button"
+        tabIndex={isUploading ? -1 : 0}
+        aria-disabled={isUploading}
+        onKeyDown={(event) => {
+          if (!isUploading && (event.key === "Enter" || event.key === " ")) {
+            event.preventDefault();
+            fileInputRef.current?.click();
+          }
+        }}
         onDragOver={onDragOver}
         onDragLeave={onDragLeave}
         onDrop={onDrop}
-        onClick={() => fileInputRef.current?.click()}
+        onClick={() => !isUploading && fileInputRef.current?.click()}
       >
         <input
           ref={fileInputRef}

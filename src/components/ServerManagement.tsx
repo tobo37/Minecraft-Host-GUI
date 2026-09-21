@@ -23,8 +23,21 @@ export function ServerManagement({ projectPath, onBack }: ServerManagementProps)
 
   // Server data and status
   const { serverInfo, refetch: refetchServerInfo } = useServerInfo(projectPath);
-  const { serverStatus, logs, isPollingLogs, startServer, stopServer } =
-    useServerStatus(projectPath);
+
+  // Start file management
+  const startFile = useStartFile({
+    projectPath,
+    currentStartFile: serverInfo?.startFile,
+    onSuccess: refetchServerInfo,
+  });
+
+  const { serverStatus, logs, isPollingLogs, startServer, stopServer } = useServerStatus(
+    projectPath,
+    {
+      // A start that failed because the start file is gone should offer to pick a new one.
+      onMissingStartFile: () => startFile.handleFindStartFiles(),
+    }
+  );
 
   // Server metadata management
   const metadata = useServerMetadata({
@@ -42,13 +55,6 @@ export function ServerManagement({ projectPath, onBack }: ServerManagementProps)
   const deleteServer = useServerDelete({
     projectPath,
     onSuccess: onBack,
-  });
-
-  // Start file management
-  const startFile = useStartFile({
-    projectPath,
-    currentStartFile: serverInfo?.startFile,
-    onSuccess: refetchServerInfo,
   });
 
   // Project path management
