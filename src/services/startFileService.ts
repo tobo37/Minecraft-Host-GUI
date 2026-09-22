@@ -245,7 +245,7 @@ async function validateStartFile(
   }
 
   const { readMetadata } = await import("./metadataService");
-  const { getActualServerPath, isPathInside, normalizeStartFile } = await import(
+  const { getActualServerPath, isPathInside, isDirectory, normalizeStartFile } = await import(
     "./server/serverRepository"
   );
   const fs = require("fs").promises;
@@ -266,6 +266,10 @@ async function validateStartFile(
   try {
     await fs.access(startFilePath);
   } catch {
+    throw new Error("Start file not found");
+  }
+
+  if (await isDirectory(startFilePath)) {
     throw new Error("Start file not found");
   }
 

@@ -122,7 +122,7 @@ async function validateStartFileField(
     return { valid: true };
   }
 
-  const { getActualServerPath, isPathInside, normalizeStartFile } = await import(
+  const { getActualServerPath, isPathInside, isDirectory, normalizeStartFile } = await import(
     "./server/serverRepository"
   );
 
@@ -143,6 +143,10 @@ async function validateStartFileField(
   try {
     await fs.access(startFilePath);
   } catch {
+    return { valid: false, error: "Start file not found", status: 404 };
+  }
+
+  if (await isDirectory(startFilePath)) {
     return { valid: false, error: "Start file not found", status: 404 };
   }
 

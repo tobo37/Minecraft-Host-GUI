@@ -63,6 +63,7 @@ export interface Translations {
   common: {
     cancel: string;
     save: string;
+    languageToggleLabel: string;
   };
   messages: {
     serverCreating: string;
@@ -171,6 +172,7 @@ export const translations: Record<Language, Translations> = {
     common: {
       cancel: "Abbrechen",
       save: "Speichern",
+      languageToggleLabel: "Switch to English",
     },
     messages: {
       serverCreating: "Server erfolgreich erstellt!",
@@ -281,6 +283,7 @@ export const translations: Record<Language, Translations> = {
     common: {
       cancel: "Cancel",
       save: "Save",
+      languageToggleLabel: "Auf Deutsch wechseln",
     },
     messages: {
       serverCreating: "Server created successfully!",

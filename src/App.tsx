@@ -9,7 +9,7 @@ import "./index.css";
 type AppState = "loading" | "welcome" | "projects" | "server";
 
 export function App() {
-  const { language, toggleLanguage } = useLanguage();
+  const { language, toggleLanguage, translations } = useLanguage();
   const [appState, setAppState] = useState<AppState>("loading");
   const [selectedProject, setSelectedProject] = useState<string | null>(null);
 
@@ -74,7 +74,7 @@ export function App() {
           variant="outline"
           size="sm"
           onClick={toggleLanguage}
-          aria-label={language === "de" ? "Switch to English" : "Auf Deutsch wechseln"}
+          aria-label={translations.common.languageToggleLabel}
           className="font-mono text-xs"
         >
           {language.toUpperCase()}

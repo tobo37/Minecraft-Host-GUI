@@ -28,8 +28,11 @@ export function useLanguage() {
   }, []);
 
   const toggleLanguage = () => {
-    const nextLanguage: Language = language === "de" ? "en" : "de";
-    window.dispatchEvent(new CustomEvent("minecraft-language-change", { detail: nextLanguage }));
+    setLanguage((prev) => {
+      const nextLanguage: Language = prev === "de" ? "en" : "de";
+      window.dispatchEvent(new CustomEvent("minecraft-language-change", { detail: nextLanguage }));
+      return nextLanguage;
+    });
   };
 
   return {
