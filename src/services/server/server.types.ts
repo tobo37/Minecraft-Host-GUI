@@ -45,6 +45,10 @@ export interface CreateServerData {
   serverFile?: string;
   customName?: string;
   description?: string;
+  modpackInfo?: {
+    name: string;
+    version: string;
+  };
 }
 
 export interface ServerResult {

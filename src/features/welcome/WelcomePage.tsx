@@ -5,6 +5,7 @@ import { useState, useEffect, useCallback } from "react";
 import { ServerFileUpload } from "./ServerFileUpload";
 import { ServerFileList } from "./ServerFileList";
 import { ServerFileSelector } from "./ServerFileSelector";
+import { ServerLinkImport } from "./ServerLinkImport";
 import { useServerFileUpload } from "./useServerFileUpload";
 
 export interface WelcomePageProps {
@@ -29,6 +30,10 @@ export function WelcomePage({ onServerCreated }: WelcomePageProps) {
   const [selectedServerFile, setSelectedServerFile] = useState<string>("");
   const [customName, setCustomName] = useState<string>("");
   const [description, setDescription] = useState<string>("");
+  const [sourceMode, setSourceMode] = useState<"upload" | "link">("upload");
+  const [modpackInfo, setModpackInfo] = useState<{ name: string; version: string } | undefined>(
+    undefined
+  );
 
   const loadServerFiles = useCallback(async () => {
     try {
@@ -94,6 +99,7 @@ export function WelcomePage({ onServerCreated }: WelcomePageProps) {
 
     if (result.success) {
       setUploadStatus(`✅ ${file.name} erfolgreich hochgeladen`);
+      setModpackInfo(undefined);
       await loadServerFiles();
       setSelectedServerFile(file.name);
       setTimeout(() => setUploadStatus(null), 3000);
@@ -101,6 +107,21 @@ export function WelcomePage({ onServerCreated }: WelcomePageProps) {
       setUploadStatus(`❌ Upload-Fehler: ${result.error}`);
       setTimeout(() => setUploadStatus(null), 5000);
     }
+  };
+
+  const handleLinkImported = async (
+    filename: string,
+    importedModpackInfo?: { name: string; version: string }
+  ) => {
+    setModpackInfo(importedModpackInfo);
+    setUploadStatus(`✅ ${filename} erfolgreich importiert`);
+    await loadServerFiles();
+    setSelectedServerFile(filename);
+    setTimeout(() => setUploadStatus(null), 3000);
+  };
+
+  const handleLinkImportError = (message: string) => {
+    showUploadError(message);
   };
 
   const getUploadMessage = (fileSize: number): string => {
@@ -163,6 +184,7 @@ export function WelcomePage({ onServerCreated }: WelcomePageProps) {
         serverFile: selectedServerFile,
         customName: customName.trim() || undefined,
         description: description.trim() || undefined,
+        modpackInfo,
       }),
       signal: controller.signal,
     });
@@ -247,16 +269,42 @@ export function WelcomePage({ onServerCreated }: WelcomePageProps) {
           </div>
 
           <CardContent className="welcome-form space-y-6">
-            <ServerFileUpload
-              isUploading={isUploading}
-              isDragOver={isDragOver}
-              uploadStatus={uploadStatus}
-              uploadProgress={uploadProgress}
-              onDragOver={handleDragOver}
-              onDragLeave={handleDragLeave}
-              onDrop={handleDrop}
-              onFileSelect={handleFileSelect}
-            />
+            <div className="flex gap-2" role="tablist" aria-label="Server-Quelle wählen">
+              <Button
+                type="button"
+                variant={sourceMode === "upload" ? "default" : "outline"}
+                size="sm"
+                onClick={() => setSourceMode("upload")}
+              >
+                ZIP hochladen
+              </Button>
+              <Button
+                type="button"
+                variant={sourceMode === "link" ? "default" : "outline"}
+                size="sm"
+                onClick={() => setSourceMode("link")}
+              >
+                Link verwenden
+              </Button>
+            </div>
+
+            {sourceMode === "upload" ? (
+              <ServerFileUpload
+                isUploading={isUploading}
+                isDragOver={isDragOver}
+                uploadStatus={uploadStatus}
+                uploadProgress={uploadProgress}
+                onDragOver={handleDragOver}
+                onDragLeave={handleDragLeave}
+                onDrop={handleDrop}
+                onFileSelect={handleFileSelect}
+              />
+            ) : (
+              <>
+                <ServerLinkImport onImported={handleLinkImported} onError={handleLinkImportError} />
+                {uploadStatus && <div className="text-sm text-center">{uploadStatus}</div>}
+              </>
+            )}
 
             {serverFiles.length > 0 && (
               <>

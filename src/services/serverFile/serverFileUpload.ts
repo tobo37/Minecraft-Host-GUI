@@ -1,4 +1,5 @@
 import { logger } from "@/lib/logger";
+import { ensureDirectoryExists, checkFileExists } from "./serverFileUtils";
 
 /**
  * Save a file using streaming to avoid memory issues with large files
@@ -66,25 +67,6 @@ async function validateUploadRequest(formData: FormData): Promise<{ file: File; 
   }
 
   return { file };
-}
-
-async function ensureDirectoryExists(dirPath: string): Promise<void> {
-  const fs = require("fs").promises;
-  try {
-    await fs.access(dirPath);
-  } catch (_error) {
-    await fs.mkdir(dirPath, { recursive: true });
-  }
-}
-
-async function checkFileExists(filePath: string): Promise<boolean> {
-  const fs = require("fs").promises;
-  try {
-    await fs.access(filePath);
-    return true;
-  } catch (_error) {
-    return false;
-  }
 }
 
 async function saveFile(file: File, filePath: string): Promise<void> {

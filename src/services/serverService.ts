@@ -41,12 +41,13 @@ export async function listServers(): Promise<Response> {
 export async function createServer(req: Request): Promise<Response> {
   try {
     const body = await req.json();
-    const { serverFile, customName, description } = body;
+    const { serverFile, customName, description, modpackInfo } = body;
 
     const result = await createServerCore({
       serverFile,
       customName,
       description,
+      modpackInfo,
     });
 
     if (!result.success) {

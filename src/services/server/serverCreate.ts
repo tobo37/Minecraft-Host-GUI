@@ -104,6 +104,7 @@ async function createServerMetadata(
     createdAt: createdTimestamp,
     lastModified: createdTimestamp,
     sourceZipFile: zipFileName,
+    ...(data.modpackInfo ? { modpackInfo: data.modpackInfo } : {}),
   };
 
   await writeMetadata(dateString, metadata);

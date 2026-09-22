@@ -303,6 +303,27 @@ const server = serve({
       },
     },
 
+    "/api/import-serverfile-url": {
+      async POST(req) {
+        const { importServerFileFromUrl } = await import("./services/modpackImport");
+        return await importServerFileFromUrl(req);
+      },
+    },
+
+    "/api/modpack/resolve": {
+      async POST(req) {
+        const { resolveModpack } = await import("./services/modpackImport");
+        return await resolveModpack(req);
+      },
+    },
+
+    "/api/modpack/import": {
+      async POST(req) {
+        const { importModpackFile } = await import("./services/modpackImport");
+        return await importModpackFile(req);
+      },
+    },
+
     // Serve index.html for all unmatched routes.
     "/*": index,
   },
