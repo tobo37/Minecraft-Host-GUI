@@ -135,8 +135,8 @@ async function writeStreamToDisk(
   try {
     await streamToFile(body.getReader(), writeStream);
     writeStream.end();
-    await new Promise((resolve, reject) => {
-      writeStream.on("finish", resolve);
+    await new Promise<void>((resolve, reject) => {
+      writeStream.on("finish", () => resolve());
       writeStream.on("error", reject);
     });
     await fs.rename(tempPath, filePath);

@@ -1,4 +1,5 @@
 import { Button } from "@/components/ui/button";
+import { useLanguage } from "@/hooks/useLanguage";
 import { ServerControlButtons } from "./ServerControlButtons";
 
 type ServerStatus = "stopped" | "starting" | "running" | "stopping";
@@ -9,6 +10,7 @@ interface ServerControlsProps {
   onStop: () => void;
   onFindStartFiles: () => void;
   onConfiguration: () => void;
+  onFiles: () => void;
   onRcon: () => void;
 }
 
@@ -18,8 +20,11 @@ export function ServerControls({
   onStop,
   onFindStartFiles,
   onConfiguration,
+  onFiles,
   onRcon,
 }: ServerControlsProps) {
+  const { translations } = useLanguage();
+
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
       <div className="flex gap-2">
@@ -39,8 +44,8 @@ export function ServerControls({
       >
         ⚙️ Konfiguration
       </Button>
-      <Button size="lg" variant="outline" className="h-16">
-        📁 Dateien verwalten
+      <Button size="lg" variant="outline" className="h-16" onClick={onFiles}>
+        📁 {translations.fileManagement.openButton}
       </Button>
       <Button 
         size="lg" 

@@ -10,13 +10,14 @@ import { ServerOverview } from "@/components/server/ServerOverview";
 import { ConfigurationManagement } from "@/features/config";
 import { JavaManagement } from "@/features/java/JavaManagement";
 import { RconManagement } from "@/features/rcon";
+import { FileManagement } from "@/features/files";
 
 interface ServerManagementProps {
   projectPath: string;
   onBack: () => void;
 }
 
-type ServerView = "overview" | "configuration" | "java" | "rcon";
+type ServerView = "overview" | "configuration" | "files" | "java" | "rcon";
 
 export function ServerManagement({ projectPath, onBack }: ServerManagementProps) {
   const [currentView, setCurrentView] = useState<ServerView>("overview");
@@ -74,6 +75,16 @@ export function ServerManagement({ projectPath, onBack }: ServerManagementProps)
     );
   }
 
+  if (currentView === "files") {
+    return (
+      <FileManagement
+        projectPath={projectPath}
+        serverStatus={serverStatus}
+        onBack={() => setCurrentView("overview")}
+      />
+    );
+  }
+
   if (currentView === "java") {
     return <JavaManagement onBack={() => setCurrentView("overview")} />;
   }
@@ -94,6 +105,7 @@ export function ServerManagement({ projectPath, onBack }: ServerManagementProps)
       onStopServer={stopServer}
       onJavaClick={() => setCurrentView("java")}
       onConfigurationClick={() => setCurrentView("configuration")}
+      onFilesClick={() => setCurrentView("files")}
       onRconClick={() => setCurrentView("rcon")}
       metadata={metadata}
       description={description}

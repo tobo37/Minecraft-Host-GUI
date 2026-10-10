@@ -23,6 +23,7 @@ interface ServerOverviewProps {
   onStopServer: () => void;
   onJavaClick: () => void;
   onConfigurationClick: () => void;
+  onFilesClick: () => void;
   onRconClick: () => void;
   metadata: {
     isRenameDialogOpen: boolean;
@@ -85,6 +86,7 @@ export function ServerOverview({
   onStopServer,
   onJavaClick,
   onConfigurationClick,
+  onFilesClick,
   onRconClick,
   metadata,
   description,
@@ -145,6 +147,7 @@ export function ServerOverview({
                 onStop={onStopServer}
                 onFindStartFiles={startFile.handleFindStartFiles}
                 onConfiguration={onConfigurationClick}
+                onFiles={onFilesClick}
                 onRcon={onRconClick}
               />
 
