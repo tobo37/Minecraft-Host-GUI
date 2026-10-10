@@ -22,6 +22,17 @@ import {
   deleteServerFile,
 } from "./services/serverFile";
 import { listConfigFiles, readConfigFile, saveConfigFile } from "./services/configService";
+import {
+  listFiles,
+  readFile,
+  saveFile,
+  downloadFile,
+  uploadFile,
+  downloadFromUrl,
+  deleteFile,
+  renameFile,
+  createFolder,
+} from "./services/fileManagerService";
 import { updateServerMetadata, deleteServerInstance } from "./services/metadataApiService";
 import { findStartFiles, setStartFile } from "./services/startFileService";
 import {
@@ -179,6 +190,60 @@ const server = serve({
     "/api/config/save": {
       async POST(req) {
         return await saveConfigFile(req);
+      },
+    },
+
+    "/api/files/list": {
+      async GET(req) {
+        return await listFiles(req);
+      },
+    },
+
+    "/api/files/read": {
+      async GET(req) {
+        return await readFile(req);
+      },
+    },
+
+    "/api/files/save": {
+      async POST(req) {
+        return await saveFile(req);
+      },
+    },
+
+    "/api/files/download": {
+      async GET(req) {
+        return await downloadFile(req);
+      },
+    },
+
+    "/api/files/upload": {
+      async POST(req) {
+        return await uploadFile(req);
+      },
+    },
+
+    "/api/files/download-url": {
+      async POST(req) {
+        return await downloadFromUrl(req);
+      },
+    },
+
+    "/api/files/delete": {
+      async DELETE(req) {
+        return await deleteFile(req);
+      },
+    },
+
+    "/api/files/rename": {
+      async POST(req) {
+        return await renameFile(req);
+      },
+    },
+
+    "/api/files/mkdir": {
+      async POST(req) {
+        return await createFolder(req);
       },
     },
 

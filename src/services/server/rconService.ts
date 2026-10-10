@@ -4,7 +4,7 @@
 
 import { Rcon } from 'rcon-client';
 import { readMetadata, writeMetadata } from '../metadataService';
-import { getActualServerPath } from './serverRepository';
+import { getServerRuntimePath } from './serverRepository';
 import { logger } from '@/lib/logger';
 
 // Store active RCON connections
@@ -61,7 +61,7 @@ export async function enableRconInProperties(
 ): Promise<{ success: boolean; error?: string }> {
   try {
     const metadata = await readMetadata(project);
-    const serverPath = getActualServerPath(project, metadata?.projectPath);
+    const serverPath = getServerRuntimePath(project, metadata?.projectPath, metadata?.startFile);
     const propertiesPath = `${serverPath}/server.properties`;
     
     const fs = require('fs').promises;

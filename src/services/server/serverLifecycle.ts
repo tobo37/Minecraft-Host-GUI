@@ -6,6 +6,7 @@ import type { ServerProcess } from "./server.types";
 import { readMetadata } from "../metadataService";
 import { fileExists, isPathInside, normalizeStartFile } from "./serverRepository";
 import { logger } from "@/lib/logger";
+import path from "path";
 
 // Import from main service for now (will be refactored)
 import { runningServers, serverLogs } from "../serverService";
@@ -474,6 +475,7 @@ export async function startServer(project: string): Promise<StartServerResult> {
     return { success: false, error: javaValidation.error };
   }
 
+  const metadata = await readMetadata(project);
   const { serverPath, startFileName, startScript, isStartFileInsideServer } =
     await loadServerConfiguration(project);
 
@@ -615,10 +617,14 @@ export async function startServer(project: string): Promise<StartServerResult> {
     serverLogs.set(project, logs);
   }
 
+  // Run the script from its own folder so files like eula.txt and
+  // server.properties end up next to it (modpacks often nest the server).
+  const { getServerRuntimePath } = await import("./serverRepository");
+  const runtimePath = getServerRuntimePath(project, metadata?.projectPath, startFileName);
   const serverProcess = await launchServerProcess(
     project,
-    serverPath,
-    startFileName
+    runtimePath,
+    path.posix.basename(startFileName)
   );
   runningServers.set(project, serverProcess);
 

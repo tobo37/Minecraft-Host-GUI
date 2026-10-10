@@ -145,10 +145,10 @@ export async function listConfigFiles(req: Request): Promise<Response> {
       return Response.json({ success: false, error: "Project is required" }, { status: 400 });
 
     const { readMetadata } = await import("./metadataService");
-    const { getActualServerPath } = await import("./server/serverRepository");
+    const { getServerRuntimePath } = await import("./server/serverRepository");
 
     const metadata = await readMetadata(project);
-    const serverPath = getActualServerPath(project, metadata?.projectPath);
+    const serverPath = getServerRuntimePath(project, metadata?.projectPath, metadata?.startFile);
 
     const dirError = await scanConfigDirectory(serverPath);
     if (dirError) return dirError;
@@ -188,11 +188,11 @@ export async function readConfigFile(req: Request): Promise<Response> {
     }
 
     const { readMetadata } = await import("./metadataService");
-    const { getActualServerPath } = await import("./server/serverRepository");
+    const { getServerRuntimePath } = await import("./server/serverRepository");
     const path = require("path");
 
     const metadata = await readMetadata(project);
-    const serverPath = getActualServerPath(project, metadata?.projectPath);
+    const serverPath = getServerRuntimePath(project, metadata?.projectPath, metadata?.startFile);
     const filePath = path.join(serverPath, file);
 
     // Security check: ensure file is within server directory
@@ -255,11 +255,11 @@ export async function saveConfigFile(req: Request): Promise<Response> {
     }
 
     const { readMetadata } = await import("./metadataService");
-    const { getActualServerPath } = await import("./server/serverRepository");
+    const { getServerRuntimePath } = await import("./server/serverRepository");
     const path = require("path");
 
     const metadata = await readMetadata(project);
-    const serverPath = getActualServerPath(project, metadata?.projectPath);
+    const serverPath = getServerRuntimePath(project, metadata?.projectPath, metadata?.startFile);
     const filePath = path.join(serverPath, file);
 
     // Security check: ensure file is within server directory

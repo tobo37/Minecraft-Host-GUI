@@ -119,6 +119,24 @@ export function getActualServerPath(
 }
 
 /**
+ * Get the directory the Minecraft server actually runs in.
+ * Modpack archives often nest the server in a subfolder; the start file's
+ * folder is where eula.txt, server.properties etc. live.
+ */
+export function getServerRuntimePath(
+  serverName: string,
+  projectPath?: string,
+  startFile?: string
+): string {
+  const serverPath = getActualServerPath(serverName, projectPath);
+  const startFileDir = path.posix.dirname(normalizeStartFile(startFile));
+  if (!startFileDir || startFileDir === ".") return serverPath;
+
+  const runtimePath = path.join(serverPath, startFileDir);
+  return isPathInside(serverPath, runtimePath) ? runtimePath : serverPath;
+}
+
+/**
  * Normalize a user supplied start file into a server-relative POSIX path
  */
 export function normalizeStartFile(startFile?: string): string {

@@ -284,6 +284,83 @@ export function RconManagement({ projectPath, onBack }: RconManagementProps) {
     }
   };
 
+  const commandInputCard = (
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg">Befehl senden</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <div className="relative">
+            <div className="flex gap-2">
+              <div className="relative flex-1">
+                <Input
+                  ref={inputRef}
+                  value={command}
+                  onChange={(e) => setCommand(e.target.value)}
+                  onKeyDown={handleKeyDown}
+                  placeholder="Minecraft-Befehl eingeben (z.B. 'list', 'help')..."
+                  className="font-mono text-sm"
+                  disabled={isSending}
+                  autoComplete="off"
+                />
+                {suggestions.length > 0 && (
+                  <div className="absolute z-10 w-full mt-1 bg-card border border-border rounded-md shadow-lg max-h-48 overflow-y-auto">
+                    {suggestions.map((suggestion, index) => (
+                      <div
+                        key={suggestion}
+                        className={`px-3 py-2 font-mono text-sm cursor-pointer ${
+                          index === selectedSuggestion
+                            ? "bg-accent text-accent-foreground"
+                            : "hover:bg-accent/50"
+                        }`}
+                        onClick={() => {
+                          setCommand(suggestion || "");
+                          setSuggestions([]);
+                          inputRef.current?.focus();
+                        }}
+                      >
+                        {suggestion}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+              <Button onClick={handleSendClick} disabled={!command.trim() || isSending}>
+                {isSending ? "Sende..." : "Senden"}
+              </Button>
+            </div>
+            <div className="text-xs text-muted-foreground mt-2">
+              💡 Tipp: Nutze Tab oder ↑↓ für Autocomplete, Enter zum Senden
+            </div>
+          </div>
+
+          <div className="bg-muted/50 rounded-lg p-3">
+            <p className="text-sm font-semibold mb-2">Häufige Befehle:</p>
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+              {[
+                "list",
+                "help",
+                "save-all",
+                "time set day",
+                "weather clear",
+                "gamemode survival",
+              ].map((cmd) => (
+                <Button
+                  key={cmd}
+                  variant="outline"
+                  size="sm"
+                  className="font-mono text-xs"
+                  onClick={() => setCommand(cmd)}
+                >
+                  {cmd}
+                </Button>
+              ))}
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+  );
+
   return (
     <div className="app-page p-4">
       <div className="container mx-auto max-w-4xl">
@@ -430,6 +507,9 @@ export function RconManagement({ projectPath, onBack }: RconManagementProps) {
                       )}
                   </div>
                 )}
+
+                {/* Commands still work via stdin without RCON (e.g. answering the EULA prompt) */}
+                {isServerRunning && commandInputCard}
               </div>
             ) : rconEnabled && isServerRunning ? (
               <div className="space-y-4">
@@ -476,80 +556,7 @@ export function RconManagement({ projectPath, onBack }: RconManagementProps) {
                   </Card>
                 )}
 
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-lg">Befehl senden</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-3">
-                    <div className="relative">
-                      <div className="flex gap-2">
-                        <div className="relative flex-1">
-                          <Input
-                            ref={inputRef}
-                            value={command}
-                            onChange={(e) => setCommand(e.target.value)}
-                            onKeyDown={handleKeyDown}
-                            placeholder="Minecraft-Befehl eingeben (z.B. 'list', 'help')..."
-                            className="font-mono text-sm"
-                            disabled={isSending}
-                            autoComplete="off"
-                          />
-                          {suggestions.length > 0 && (
-                            <div className="absolute z-10 w-full mt-1 bg-card border border-border rounded-md shadow-lg max-h-48 overflow-y-auto">
-                              {suggestions.map((suggestion, index) => (
-                                <div
-                                  key={suggestion}
-                                  className={`px-3 py-2 font-mono text-sm cursor-pointer ${
-                                    index === selectedSuggestion
-                                      ? "bg-accent text-accent-foreground"
-                                      : "hover:bg-accent/50"
-                                  }`}
-                                  onClick={() => {
-                                    setCommand(suggestion || "");
-                                    setSuggestions([]);
-                                    inputRef.current?.focus();
-                                  }}
-                                >
-                                  {suggestion}
-                                </div>
-                              ))}
-                            </div>
-                          )}
-                        </div>
-                        <Button onClick={handleSendClick} disabled={!command.trim() || isSending}>
-                          {isSending ? "Sende..." : "Senden"}
-                        </Button>
-                      </div>
-                      <div className="text-xs text-muted-foreground mt-2">
-                        💡 Tipp: Nutze Tab oder ↑↓ für Autocomplete, Enter zum Senden
-                      </div>
-                    </div>
-
-                    <div className="bg-muted/50 rounded-lg p-3">
-                      <p className="text-sm font-semibold mb-2">Häufige Befehle:</p>
-                      <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-                        {[
-                          "list",
-                          "help",
-                          "save-all",
-                          "time set day",
-                          "weather clear",
-                          "gamemode survival",
-                        ].map((cmd) => (
-                          <Button
-                            key={cmd}
-                            variant="outline"
-                            size="sm"
-                            className="font-mono text-xs"
-                            onClick={() => setCommand(cmd)}
-                          >
-                            {cmd}
-                          </Button>
-                        ))}
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
+                {commandInputCard}
               </div>
             ) : isServerRunning ? (
               <div className="space-y-4">
@@ -586,80 +593,7 @@ export function RconManagement({ projectPath, onBack }: RconManagementProps) {
                   </Card>
                 )}
 
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-lg">Befehl senden</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-3">
-                    <div className="relative">
-                      <div className="flex gap-2">
-                        <div className="relative flex-1">
-                          <Input
-                            ref={inputRef}
-                            value={command}
-                            onChange={(e) => setCommand(e.target.value)}
-                            onKeyDown={handleKeyDown}
-                            placeholder="Minecraft-Befehl eingeben (z.B. 'list', 'help')..."
-                            className="font-mono text-sm"
-                            disabled={isSending}
-                            autoComplete="off"
-                          />
-                          {suggestions.length > 0 && (
-                            <div className="absolute z-10 w-full mt-1 bg-card border border-border rounded-md shadow-lg max-h-48 overflow-y-auto">
-                              {suggestions.map((suggestion, index) => (
-                                <div
-                                  key={suggestion}
-                                  className={`px-3 py-2 font-mono text-sm cursor-pointer ${
-                                    index === selectedSuggestion
-                                      ? "bg-accent text-accent-foreground"
-                                      : "hover:bg-accent/50"
-                                  }`}
-                                  onClick={() => {
-                                    setCommand(suggestion || "");
-                                    setSuggestions([]);
-                                    inputRef.current?.focus();
-                                  }}
-                                >
-                                  {suggestion}
-                                </div>
-                              ))}
-                            </div>
-                          )}
-                        </div>
-                        <Button onClick={handleSendClick} disabled={!command.trim() || isSending}>
-                          {isSending ? "Sende..." : "Senden"}
-                        </Button>
-                      </div>
-                      <div className="text-xs text-muted-foreground mt-2">
-                        💡 Tipp: Nutze Tab oder ↑↓ für Autocomplete, Enter zum Senden
-                      </div>
-                    </div>
-
-                    <div className="bg-muted/50 rounded-lg p-3">
-                      <p className="text-sm font-semibold mb-2">Häufige Befehle:</p>
-                      <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-                        {[
-                          "list",
-                          "help",
-                          "save-all",
-                          "time set day",
-                          "weather clear",
-                          "gamemode survival",
-                        ].map((cmd) => (
-                          <Button
-                            key={cmd}
-                            variant="outline"
-                            size="sm"
-                            className="font-mono text-xs"
-                            onClick={() => setCommand(cmd)}
-                          >
-                            {cmd}
-                          </Button>
-                        ))}
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
+                {commandInputCard}
               </div>
             ) : (
               <div className="bg-muted/50 border border-border rounded-lg p-4">

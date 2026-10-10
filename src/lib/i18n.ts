@@ -98,6 +98,56 @@ export interface Translations {
     showAllVersions: string;
     hideAllVersions: string;
   };
+  fileManagement: {
+    title: string;
+    openButton: string;
+    back: string;
+    project: string;
+    root: string;
+    quickAccess: string;
+    mods: string;
+    config: string;
+    up: string;
+    refresh: string;
+    upload: string;
+    uploading: string;
+    uploadHint: string;
+    linkPlaceholder: string;
+    linkFileNamePlaceholder: string;
+    downloadLink: string;
+    downloading: string;
+    newFolder: string;
+    newFolderPrompt: string;
+    name: string;
+    size: string;
+    modified: string;
+    actions: string;
+    edit: string;
+    download: string;
+    rename: string;
+    renamePrompt: string;
+    delete: string;
+    deleteConfirm: string;
+    disable: string;
+    enable: string;
+    disabled: string;
+    emptyFolder: string;
+    overwriteConfirm: string;
+    save: string;
+    saving: string;
+    saved: string;
+    close: string;
+    unsavedChanges: string;
+    runningWarning: string;
+    modsHint: string;
+    success: {
+      uploaded: string;
+      downloaded: string;
+      deleted: string;
+      renamed: string;
+      folderCreated: string;
+    };
+  };
 }
 
 export const translations: Record<Language, Translations> = {
@@ -212,6 +262,56 @@ export const translations: Record<Language, Translations> = {
       showAllVersions: "Alle verfügbaren Versionen anzeigen",
       hideAllVersions: "Weniger anzeigen",
     },
+    fileManagement: {
+      title: "Dateiverwaltung",
+      openButton: "Dateien verwalten",
+      back: "← Zurück zur Serververwaltung",
+      project: "Projekt",
+      root: "Server",
+      quickAccess: "Schnellzugriff",
+      mods: "Mods",
+      config: "Mod-Konfiguration",
+      up: "Eine Ebene höher",
+      refresh: "Aktualisieren",
+      upload: "Dateien hochladen",
+      uploading: "Lade hoch...",
+      uploadHint: "Dateien hierher ziehen oder über den Button hochladen – sie landen im aktuellen Ordner.",
+      linkPlaceholder: "Direkter Download-Link (z.B. https://cdn.modrinth.com/.../mod.jar)",
+      linkFileNamePlaceholder: "Dateiname (optional)",
+      downloadLink: "Von Link laden",
+      downloading: "Lade herunter...",
+      newFolder: "Neuer Ordner",
+      newFolderPrompt: "Name des neuen Ordners:",
+      name: "Name",
+      size: "Größe",
+      modified: "Geändert",
+      actions: "Aktionen",
+      edit: "Bearbeiten",
+      download: "Herunterladen",
+      rename: "Umbenennen",
+      renamePrompt: "Neuer Name:",
+      delete: "Löschen",
+      deleteConfirm: "Soll \"{name}\" wirklich gelöscht werden? Ordner werden mit ihrem gesamten Inhalt gelöscht.",
+      disable: "Deaktivieren",
+      enable: "Aktivieren",
+      disabled: "deaktiviert",
+      emptyFolder: "Dieser Ordner ist leer",
+      overwriteConfirm: "\"{name}\" existiert bereits. Überschreiben?",
+      save: "Speichern",
+      saving: "Speichern...",
+      saved: "Gespeichert",
+      close: "Schließen",
+      unsavedChanges: "Es gibt ungespeicherte Änderungen. Trotzdem schließen?",
+      runningWarning: "Der Server läuft. Änderungen an Mods und Konfigurationen werden erst nach einem Neustart wirksam.",
+      modsHint: "Mods (.jar) hier hochladen oder per Link laden. Deaktivierte Mods (.disabled) werden vom Server ignoriert.",
+      success: {
+        uploaded: "Hochgeladen: {name}",
+        downloaded: "Heruntergeladen: {name}",
+        deleted: "Gelöscht: {name}",
+        renamed: "Umbenannt in {name}",
+        folderCreated: "Ordner erstellt: {name}",
+      },
+    },
   },
   en: {
     title: "Minecraft Server Manager",
@@ -322,6 +422,56 @@ export const translations: Record<Language, Translations> = {
         "The application will continue to work with the system Java installation.",
       showAllVersions: "Show all available versions",
       hideAllVersions: "Show less",
+    },
+    fileManagement: {
+      title: "File Management",
+      openButton: "Manage Files",
+      back: "← Back to Server Management",
+      project: "Project",
+      root: "Server",
+      quickAccess: "Quick access",
+      mods: "Mods",
+      config: "Mod config",
+      up: "Up one level",
+      refresh: "Refresh",
+      upload: "Upload files",
+      uploading: "Uploading...",
+      uploadHint: "Drop files here or use the button – they are stored in the current folder.",
+      linkPlaceholder: "Direct download link (e.g. https://cdn.modrinth.com/.../mod.jar)",
+      linkFileNamePlaceholder: "File name (optional)",
+      downloadLink: "Load from link",
+      downloading: "Downloading...",
+      newFolder: "New folder",
+      newFolderPrompt: "Name of the new folder:",
+      name: "Name",
+      size: "Size",
+      modified: "Modified",
+      actions: "Actions",
+      edit: "Edit",
+      download: "Download",
+      rename: "Rename",
+      renamePrompt: "New name:",
+      delete: "Delete",
+      deleteConfirm: "Really delete \"{name}\"? Folders are deleted including all of their contents.",
+      disable: "Disable",
+      enable: "Enable",
+      disabled: "disabled",
+      emptyFolder: "This folder is empty",
+      overwriteConfirm: "\"{name}\" already exists. Overwrite?",
+      save: "Save",
+      saving: "Saving...",
+      saved: "Saved",
+      close: "Close",
+      unsavedChanges: "There are unsaved changes. Close anyway?",
+      runningWarning: "The server is running. Changes to mods and configs take effect after a restart.",
+      modsHint: "Upload mods (.jar) here or load them from a link. Disabled mods (.disabled) are ignored by the server.",
+      success: {
+        uploaded: "Uploaded: {name}",
+        downloaded: "Downloaded: {name}",
+        deleted: "Deleted: {name}",
+        renamed: "Renamed to {name}",
+        folderCreated: "Folder created: {name}",
+      },
     },
   },
 };
