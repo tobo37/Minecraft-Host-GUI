@@ -3,19 +3,28 @@ import { Button } from "@/components/ui/button";
 import { useConfigFiles } from "./useConfigFiles";
 import { ConfigFileList } from "./ConfigFileList";
 import { ConfigEditor } from "./ConfigEditor";
+import { KnownPlayers } from "./KnownPlayers";
+import type { ServerStatus } from "@/services/types";
 
 interface ConfigurationManagementProps {
   projectPath: string;
+  serverStatus?: ServerStatus;
   onBack: () => void;
 }
 
-export function ConfigurationManagement({ projectPath, onBack }: ConfigurationManagementProps) {
+export function ConfigurationManagement({
+  projectPath,
+  serverStatus,
+  onBack,
+}: ConfigurationManagementProps) {
   const {
     configFiles,
     selectedConfig,
     configContent,
     isLoading,
     isSaving,
+    saveError,
+    loadConfigFiles,
     selectConfig,
     updateContent,
     saveConfig,
@@ -59,11 +68,22 @@ export function ConfigurationManagement({ projectPath, onBack }: ConfigurationMa
                   configContent={configContent}
                   isLoading={isLoading}
                   isSaving={isSaving}
+                  saveError={saveError}
                   onContentChange={updateContent}
                   onSave={saveConfig}
                 />
               </div>
             </div>
+
+            <KnownPlayers
+              projectPath={projectPath}
+              serverStatus={serverStatus}
+              onFileChanged={(fileName) => {
+                // Reload the editor so it does not show (and later save) stale content
+                if (selectedConfig?.name === fileName) selectConfig(selectedConfig);
+                loadConfigFiles();
+              }}
+            />
           </CardContent>
         </Card>
       </div>

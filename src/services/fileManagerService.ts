@@ -19,6 +19,31 @@ import { cleanupPartialFile, streamToFile } from "./serverFile/serverFileUtils";
 const MAX_UPLOAD_SIZE = 2 * 1024 * 1024 * 1024; // 2GB, same cap as server file uploads
 const MAX_EDITABLE_SIZE = 5 * 1024 * 1024; // Text editor limit
 
+/** Vanilla files that must stay strict JSON or the server ignores them */
+const STRICT_JSON_FILES = [
+  "ops.json",
+  "whitelist.json",
+  "banned-players.json",
+  "banned-ips.json",
+  "usercache.json",
+];
+
+/**
+ * Validate content of vanilla JSON files before it is written.
+ * Returns an error message, or null when the content is fine.
+ */
+export function validateServerJson(fileName: string, content: string): string | null {
+  const baseName = path.basename(fileName);
+  if (!STRICT_JSON_FILES.includes(baseName.toLowerCase())) return null;
+
+  try {
+    const parsed = JSON.parse(content);
+    return Array.isArray(parsed) ? null : `${baseName} must contain a JSON array ([ ... ])`;
+  } catch (error) {
+    return `Invalid JSON in ${baseName}: ${error instanceof Error ? error.message : "parse error"}`;
+  }
+}
+
 export interface FileEntry {
   name: string;
   path: string;
@@ -27,7 +52,7 @@ export interface FileEntry {
   modified: string;
 }
 
-class FileManagerError extends Error {
+export class FileManagerError extends Error {
   constructor(
     message: string,
     public status: number
@@ -36,7 +61,7 @@ class FileManagerError extends Error {
   }
 }
 
-function jsonError(error: unknown, fallbackMessage: string): Response {
+export function jsonError(error: unknown, fallbackMessage: string): Response {
   if (error instanceof FileManagerError) {
     return Response.json({ success: false, error: error.message }, { status: error.status });
   }
@@ -50,7 +75,7 @@ function jsonError(error: unknown, fallbackMessage: string): Response {
 /**
  * Resolve the root directory the file manager operates in for a project
  */
-async function resolveRoot(project: string | null | undefined): Promise<string> {
+export async function resolveRoot(project: string | null | undefined): Promise<string> {
   if (!project) {
     throw new FileManagerError("Project parameter is required", 400);
   }
@@ -236,6 +261,9 @@ export async function saveFile(req: Request): Promise<Response> {
 
     const stat = await fs.stat(filePath).catch(() => null);
     if (stat?.isDirectory()) throw new FileManagerError("Path is a directory", 400);
+
+    const jsonProblem = validateServerJson(filePath, content);
+    if (jsonProblem) throw new FileManagerError(jsonProblem, 400);
 
     await Bun.write(filePath, content);
     logger.info(`File saved: ${filePath}`);

@@ -8,6 +8,7 @@ interface ConfigEditorProps {
   configContent: string;
   isLoading: boolean;
   isSaving: boolean;
+  saveError?: string;
   onContentChange: (_content: string) => void;
   onSave: () => void;
 }
@@ -17,6 +18,7 @@ export function ConfigEditor({
   configContent,
   isLoading,
   isSaving,
+  saveError,
   onContentChange,
   onSave,
 }: ConfigEditorProps) {
@@ -98,6 +100,11 @@ export function ConfigEditor({
               placeholder={isLoading ? "Lade Konfiguration..." : "Konfiguration bearbeiten..."}
               disabled={isLoading}
             />
+            {saveError && (
+              <div className="text-sm text-destructive bg-destructive/10 p-3 rounded break-all">
+                {saveError}
+              </div>
+            )}
             {renderHelpText()}
           </div>
         ) : (

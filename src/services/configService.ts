@@ -276,6 +276,12 @@ export async function saveConfigFile(req: Request): Promise<Response> {
       );
     }
 
+    const { validateServerJson } = await import("./fileManagerService");
+    const jsonProblem = validateServerJson(file, content);
+    if (jsonProblem) {
+      return Response.json({ success: false, error: jsonProblem }, { status: 400 });
+    }
+
     try {
       await Bun.write(filePath, content);
       return Response.json({

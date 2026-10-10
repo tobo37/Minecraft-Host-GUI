@@ -704,8 +704,10 @@ export async function sendCommand(
     logs.push(`> ${command}`);
     serverLogs.set(project, logs);
 
-    // Write to stdin using Bun's FileSink API
+    // Write to stdin using Bun's FileSink API. FileSink buffers writes, so
+    // flush explicitly or the command never reaches the server process.
     serverProcess.stdin.write(command + "\n");
+    serverProcess.stdin.flush?.();
 
     return { success: true, message: "Command sent successfully" };
   } catch (error) {

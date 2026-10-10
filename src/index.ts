@@ -33,6 +33,7 @@ import {
   renameFile,
   createFolder,
 } from "./services/fileManagerService";
+import { listPlayers, setPlayerOp, setPlayerWhitelisted } from "./services/playerService";
 import { updateServerMetadata, deleteServerInstance } from "./services/metadataApiService";
 import { findStartFiles, setStartFile } from "./services/startFileService";
 import {
@@ -244,6 +245,24 @@ const server = serve({
     "/api/files/mkdir": {
       async POST(req) {
         return await createFolder(req);
+      },
+    },
+
+    "/api/players": {
+      async GET(req) {
+        return await listPlayers(req);
+      },
+    },
+
+    "/api/players/op": {
+      async POST(req) {
+        return await setPlayerOp(req);
+      },
+    },
+
+    "/api/players/whitelist": {
+      async POST(req) {
+        return await setPlayerWhitelisted(req);
       },
     },
 

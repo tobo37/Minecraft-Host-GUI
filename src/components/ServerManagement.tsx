@@ -70,6 +70,7 @@ export function ServerManagement({ projectPath, onBack }: ServerManagementProps)
     return (
       <ConfigurationManagement
         projectPath={projectPath}
+        serverStatus={serverStatus}
         onBack={() => setCurrentView("overview")}
       />
     );

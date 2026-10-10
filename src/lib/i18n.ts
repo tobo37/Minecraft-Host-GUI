@@ -98,6 +98,24 @@ export interface Translations {
     showAllVersions: string;
     hideAllVersions: string;
   };
+  players: {
+    title: string;
+    description: string;
+    refresh: string;
+    empty: string;
+    lastSeen: string;
+    never: string;
+    op: string;
+    whitelisted: string;
+    makeOp: string;
+    removeOp: string;
+    addWhitelist: string;
+    removeWhitelist: string;
+    restartHint: string;
+    runningHint: string;
+    invalidFile: string;
+    updated: string;
+  };
   fileManagement: {
     title: string;
     openButton: string;
@@ -112,6 +130,10 @@ export interface Translations {
     upload: string;
     uploading: string;
     uploadHint: string;
+    dropHere: string;
+    noFilesDropped: string;
+    folderDropNotSupported: string;
+    uploadSkipped: string;
     linkPlaceholder: string;
     linkFileNamePlaceholder: string;
     downloadLink: string;
@@ -262,6 +284,25 @@ export const translations: Record<Language, Translations> = {
       showAllVersions: "Alle verfügbaren Versionen anzeigen",
       hideAllVersions: "Weniger anzeigen",
     },
+    players: {
+      title: "Bekannte Spieler",
+      description: "Alle Spieler, die schon einmal auf dem Server waren (aus usercache.json).",
+      refresh: "Aktualisieren",
+      empty: "Noch keine Spieler bekannt – sie erscheinen hier, sobald sie einmal verbunden waren.",
+      lastSeen: "Zuletzt gesehen",
+      never: "unbekannt",
+      op: "OP",
+      whitelisted: "Whitelist",
+      makeOp: "OP geben",
+      removeOp: "OP entziehen",
+      addWhitelist: "Zur Whitelist",
+      removeWhitelist: "Von Whitelist entfernen",
+      restartHint: "Änderungen werden beim nächsten Serverstart übernommen.",
+      runningHint:
+        "Der Server läuft: Änderungen greifen erst nach einem Neustart. Am sichersten: Server stoppen, Rechte vergeben, Server starten.",
+      invalidFile: "{name} enthält ungültiges JSON und wird vom Server ignoriert. Sie wird bei der nächsten Änderung hier automatisch repariert.",
+      updated: "{name} aktualisiert.",
+    },
     fileManagement: {
       title: "Dateiverwaltung",
       openButton: "Dateien verwalten",
@@ -276,6 +317,11 @@ export const translations: Record<Language, Translations> = {
       upload: "Dateien hochladen",
       uploading: "Lade hoch...",
       uploadHint: "Dateien hierher ziehen oder über den Button hochladen – sie landen im aktuellen Ordner.",
+      dropHere: "Loslassen zum Hochladen nach \"{name}\"",
+      noFilesDropped:
+        "Es kamen keine Dateien an. Dateien direkt aus einem ZIP oder aus anderen Programmen gibt der Browser nicht weiter – bitte erst entpacken oder den Upload-Button verwenden.",
+      folderDropNotSupported: "Ordner können nicht hochgeladen werden – bitte die Dateien darin auswählen.",
+      uploadSkipped: "Übersprungen (bereits vorhanden): {name}",
       linkPlaceholder: "Direkter Download-Link (z.B. https://cdn.modrinth.com/.../mod.jar)",
       linkFileNamePlaceholder: "Dateiname (optional)",
       downloadLink: "Von Link laden",
@@ -423,6 +469,25 @@ export const translations: Record<Language, Translations> = {
       showAllVersions: "Show all available versions",
       hideAllVersions: "Show less",
     },
+    players: {
+      title: "Known Players",
+      description: "Every player who has joined the server before (from usercache.json).",
+      refresh: "Refresh",
+      empty: "No players known yet – they show up here once they have connected.",
+      lastSeen: "Last seen",
+      never: "unknown",
+      op: "OP",
+      whitelisted: "Whitelist",
+      makeOp: "Make OP",
+      removeOp: "Remove OP",
+      addWhitelist: "Add to whitelist",
+      removeWhitelist: "Remove from whitelist",
+      restartHint: "Changes are applied on the next server start.",
+      runningHint:
+        "The server is running: changes only take effect after a restart. Safest: stop the server, change permissions, start the server.",
+      invalidFile: "{name} contains invalid JSON and is ignored by the server. It will be repaired automatically on the next change here.",
+      updated: "{name} updated.",
+    },
     fileManagement: {
       title: "File Management",
       openButton: "Manage Files",
@@ -437,6 +502,11 @@ export const translations: Record<Language, Translations> = {
       upload: "Upload files",
       uploading: "Uploading...",
       uploadHint: "Drop files here or use the button – they are stored in the current folder.",
+      dropHere: "Release to upload to \"{name}\"",
+      noFilesDropped:
+        "No files were received. Browsers do not pass on files dragged straight out of a ZIP or from other apps – extract them first or use the upload button.",
+      folderDropNotSupported: "Folders cannot be uploaded – please select the files inside.",
+      uploadSkipped: "Skipped (already exists): {name}",
       linkPlaceholder: "Direct download link (e.g. https://cdn.modrinth.com/.../mod.jar)",
       linkFileNamePlaceholder: "File name (optional)",
       downloadLink: "Load from link",

@@ -15,6 +15,7 @@ interface UseConfigFilesReturn {
   configContent: string;
   isLoading: boolean;
   isSaving: boolean;
+  saveError: string;
   loadConfigFiles: () => Promise<void>;
   selectConfig: (_file: ConfigFile) => Promise<void>;
   updateContent: (_content: string) => void;
@@ -27,6 +28,7 @@ export function useConfigFiles(projectPath: string): UseConfigFilesReturn {
   const [configContent, setConfigContent] = useState<string>("");
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [saveError, setSaveError] = useState("");
 
   const loadConfigFiles = useCallback(async () => {
     try {
@@ -59,6 +61,7 @@ export function useConfigFiles(projectPath: string): UseConfigFilesReturn {
         if (data.success) {
           setConfigContent(data.content);
           setSelectedConfig(configFile);
+          setSaveError("");
         } else {
           console.error("Failed to load config:", data.error);
         }
@@ -93,11 +96,10 @@ export function useConfigFiles(projectPath: string): UseConfigFilesReturn {
       });
 
       const data = await response.json();
-      if (data.success) {
-        // Config saved successfully
-      }
+      setSaveError(data.success ? "" : data.error || "Failed to save configuration");
     } catch (error) {
       console.error("Error saving config:", error);
+      setSaveError(error instanceof Error ? error.message : "Failed to save configuration");
     } finally {
       setIsSaving(false);
     }
@@ -109,6 +111,7 @@ export function useConfigFiles(projectPath: string): UseConfigFilesReturn {
     configContent,
     isLoading,
     isSaving,
+    saveError,
     loadConfigFiles,
     selectConfig,
     updateContent,

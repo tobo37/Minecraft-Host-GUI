@@ -1,4 +1,4 @@
-import { useRef, useState, type DragEvent } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -16,6 +16,31 @@ interface FileManagementProps {
 
 function format(template: string, name: string): string {
   return template.replace("{name}", name);
+}
+
+/**
+ * Collect dropped files synchronously (the browser empties dataTransfer once
+ * the event returns). Folders cannot be uploaded and are reported separately.
+ */
+function collectDroppedFiles(dataTransfer: DataTransfer): { files: File[]; folders: string[] } {
+  const files: File[] = [];
+  const folders: string[] = [];
+
+  if (dataTransfer.items && dataTransfer.items.length > 0) {
+    for (const item of Array.from(dataTransfer.items)) {
+      if (item.kind !== "file") continue;
+      const entry = item.webkitGetAsEntry?.();
+      if (entry?.isDirectory) {
+        folders.push(entry.name);
+        continue;
+      }
+      const file = item.getAsFile();
+      if (file) files.push(file);
+    }
+    return { files, folders };
+  }
+
+  return { files: Array.from(dataTransfer.files), folders };
 }
 
 export function FileManagement({ projectPath, serverStatus, onBack }: FileManagementProps) {
@@ -41,40 +66,104 @@ export function FileManagement({ projectPath, serverStatus, onBack }: FileManage
   const inModsFolder = segments[segments.length - 1] === "mods";
   const isServerActive = serverStatus === "running" || serverStatus === "starting";
 
-  const handleUpload = async (fileList: FileList | File[]) => {
-    const selected = Array.from(fileList);
-    if (selected.length === 0) return;
+  const handleUpload = async (selected: File[], skippedFolders: string[] = []) => {
+    if (selected.length === 0) {
+      files.setNotice({
+        type: "error",
+        message: skippedFolders.length > 0 ? t.folderDropNotSupported : t.noFilesDropped,
+      });
+      return;
+    }
 
     files.setIsBusy(true);
     files.setNotice(null);
-    setBusyLabel(t.uploading);
 
     const uploaded: string[] = [];
-    let error = "";
+    const failed: string[] = skippedFolders.map((name) => `${name}: ${t.folderDropNotSupported}`);
+    const skipped: string[] = [];
 
-    for (const file of selected) {
+    for (const [index, file] of selected.entries()) {
+      setBusyLabel(`${t.uploading} (${index + 1}/${selected.length}) ${file.name}`);
+
       let result = await files.uploadFile(file, false);
-      if (result.status === 409 && window.confirm(format(t.overwriteConfirm, file.name))) {
+      if (result.status === 409) {
+        if (!window.confirm(format(t.overwriteConfirm, file.name))) {
+          skipped.push(file.name);
+          continue;
+        }
         result = await files.uploadFile(file, true);
       }
+
       if (result.success) {
         uploaded.push(file.name);
-      } else if (result.status !== 409) {
-        error = `${file.name}: ${result.error}`;
+      } else {
+        failed.push(`${file.name}: ${result.error || "Upload failed"}`);
       }
     }
 
     files.setIsBusy(false);
     setBusyLabel("");
-    files.setNotice(
-      error
-        ? { type: "error", message: error }
-        : uploaded.length > 0
-          ? { type: "success", message: format(t.success.uploaded, uploaded.join(", ")) }
-          : null
-    );
+
+    const lines = [
+      uploaded.length > 0 ? format(t.success.uploaded, uploaded.join(", ")) : "",
+      skipped.length > 0 ? format(t.uploadSkipped, skipped.join(", ")) : "",
+      ...failed,
+    ].filter(Boolean);
+
+    files.setNotice({ type: failed.length > 0 ? "error" : "success", message: lines.join("\n") });
     await files.refresh();
   };
+
+  // The whole page is a drop target, so a file dropped next to the box
+  // is still uploaded instead of being opened by the browser.
+  const handleUploadRef = useRef(handleUpload);
+  handleUploadRef.current = handleUpload;
+  const isBusyRef = useRef(files.isBusy);
+  isBusyRef.current = files.isBusy;
+
+  useEffect(() => {
+    let dragDepth = 0;
+    const hasFiles = (event: DragEvent) =>
+      Array.from(event.dataTransfer?.types || []).includes("Files");
+
+    const onDragEnter = (event: DragEvent) => {
+      if (!hasFiles(event)) return;
+      event.preventDefault();
+      dragDepth += 1;
+      setIsDragging(true);
+    };
+    const onDragOver = (event: DragEvent) => {
+      if (!hasFiles(event)) return;
+      event.preventDefault();
+      if (event.dataTransfer) event.dataTransfer.dropEffect = "copy";
+    };
+    const onDragLeave = (event: DragEvent) => {
+      if (!hasFiles(event)) return;
+      dragDepth = Math.max(0, dragDepth - 1);
+      if (dragDepth === 0) setIsDragging(false);
+    };
+    const onDrop = (event: DragEvent) => {
+      if (!hasFiles(event)) return;
+      event.preventDefault();
+      dragDepth = 0;
+      setIsDragging(false);
+      if (!event.dataTransfer || isBusyRef.current) return;
+
+      const dropped = collectDroppedFiles(event.dataTransfer);
+      handleUploadRef.current(dropped.files, dropped.folders);
+    };
+
+    window.addEventListener("dragenter", onDragEnter);
+    window.addEventListener("dragover", onDragOver);
+    window.addEventListener("dragleave", onDragLeave);
+    window.addEventListener("drop", onDrop);
+    return () => {
+      window.removeEventListener("dragenter", onDragEnter);
+      window.removeEventListener("dragover", onDragOver);
+      window.removeEventListener("dragleave", onDragLeave);
+      window.removeEventListener("drop", onDrop);
+    };
+  }, []);
 
   const handleDownloadFromLink = async () => {
     const url = linkUrl.trim();
@@ -178,14 +267,6 @@ export function FileManagement({ projectPath, serverStatus, onBack }: FileManage
     setEditingEntry(null);
   };
 
-  const handleDrop = (event: DragEvent<HTMLDivElement>) => {
-    event.preventDefault();
-    setIsDragging(false);
-    if (!files.isBusy && event.dataTransfer.files.length > 0) {
-      handleUpload(event.dataTransfer.files);
-    }
-  };
-
   return (
     <div className="app-page p-4">
       <div className="container mx-auto max-w-6xl">
@@ -270,12 +351,6 @@ export function FileManagement({ projectPath, serverStatus, onBack }: FileManage
               className={`rounded-md border-2 border-dashed p-4 space-y-3 transition-colors ${
                 isDragging ? "border-primary bg-primary/5" : "border-border"
               }`}
-              onDragOver={(e) => {
-                e.preventDefault();
-                setIsDragging(true);
-              }}
-              onDragLeave={() => setIsDragging(false)}
-              onDrop={handleDrop}
             >
               <div className="flex flex-wrap items-center gap-3">
                 <Button onClick={() => fileInputRef.current?.click()} disabled={files.isBusy}>
@@ -290,7 +365,7 @@ export function FileManagement({ projectPath, serverStatus, onBack }: FileManage
                   multiple
                   className="hidden"
                   onChange={(e) => {
-                    if (e.target.files) handleUpload(e.target.files);
+                    if (e.target.files) handleUpload(Array.from(e.target.files));
                     e.target.value = "";
                   }}
                 />
@@ -326,7 +401,7 @@ export function FileManagement({ projectPath, serverStatus, onBack }: FileManage
 
             {files.notice && (
               <div
-                className={`text-sm p-3 rounded break-all ${
+                className={`text-sm p-3 rounded break-all whitespace-pre-line ${
                   files.notice.type === "success"
                     ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300"
                     : "bg-destructive/10 text-destructive"
@@ -350,6 +425,14 @@ export function FileManagement({ projectPath, serverStatus, onBack }: FileManage
           </CardContent>
         </Card>
       </div>
+
+      {isDragging && (
+        <div className="fixed inset-0 z-40 flex items-center justify-center bg-primary/10 backdrop-blur-sm pointer-events-none">
+          <div className="rounded-lg border-2 border-dashed border-primary bg-card px-8 py-6 text-lg font-medium shadow-2xl">
+            ⬆️ {format(t.dropHere, files.currentPath || t.root)}
+          </div>
+        </div>
+      )}
 
       <FileEditorDialog
         filePath={editingEntry?.path ?? null}
