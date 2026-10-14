@@ -4,6 +4,7 @@
 
 // Type for Bun subprocess - compatible with Bun.spawn return type
 export interface ServerProcess {
+  pid: number;
   kill: () => void;
   killed: boolean;
   exited: Promise<number>;

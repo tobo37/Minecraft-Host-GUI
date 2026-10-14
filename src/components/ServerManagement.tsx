@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { useServerStatus } from "@/hooks/useServerStatus";
 import { useServerInfo } from "@/hooks/useServerInfo";
 import { useServerMetadata } from "@/hooks/useServerMetadata";
@@ -11,19 +10,52 @@ import { ConfigurationManagement } from "@/features/config";
 import { JavaManagement } from "@/features/java/JavaManagement";
 import { RconManagement } from "@/features/rcon";
 import { FileManagement } from "@/features/files";
+import { NotFoundPage } from "@/components/NotFoundPage";
+import { useLanguage } from "@/hooks/useLanguage";
+import { navigate, routes, type ServerView } from "@/lib/router";
+import type { Server } from "@/services/types";
 
 interface ServerManagementProps {
   projectPath: string;
-  onBack: () => void;
+  view: ServerView;
 }
 
-type ServerView = "overview" | "configuration" | "files" | "java" | "rcon";
+export function ServerManagement({ projectPath, view }: ServerManagementProps) {
+  const { translations } = useLanguage();
+  const { serverInfo, isLoading, notFound, refetch } = useServerInfo(projectPath);
 
-export function ServerManagement({ projectPath, onBack }: ServerManagementProps) {
-  const [currentView, setCurrentView] = useState<ServerView>("overview");
+  if (notFound) {
+    return <NotFoundPage description={translations.common.serverNotFoundDescription} />;
+  }
 
-  // Server data and status
-  const { serverInfo, refetch: refetchServerInfo } = useServerInfo(projectPath);
+  // Only block on the first load; refetches must not unmount the workspace and its polling.
+  if (!serverInfo && isLoading) {
+    return (
+      <div className="app-page flex items-center justify-center">
+        <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
+      </div>
+    );
+  }
+
+  return (
+    <ServerWorkspace
+      projectPath={projectPath}
+      view={view}
+      serverInfo={serverInfo}
+      refetchServerInfo={refetch}
+    />
+  );
+}
+
+interface ServerWorkspaceProps {
+  projectPath: string;
+  view: ServerView;
+  serverInfo: Server | null;
+  refetchServerInfo: () => Promise<void>;
+}
+
+function ServerWorkspace({ projectPath, view, serverInfo, refetchServerInfo }: ServerWorkspaceProps) {
+  const overviewHref = routes.server(projectPath);
 
   // Start file management
   const startFile = useStartFile({
@@ -32,7 +64,7 @@ export function ServerManagement({ projectPath, onBack }: ServerManagementProps)
     onSuccess: refetchServerInfo,
   });
 
-  const { serverStatus, logs, isPollingLogs, startServer, stopServer } = useServerStatus(
+  const { serverStatus, logs, isPollingLogs, startServer, killServer, shutdownServer } = useServerStatus(
     projectPath,
     {
       // A start that failed because the start file is gone should offer to pick a new one.
@@ -55,7 +87,7 @@ export function ServerManagement({ projectPath, onBack }: ServerManagementProps)
   // Delete management
   const deleteServer = useServerDelete({
     projectPath,
-    onSuccess: onBack,
+    onSuccess: () => navigate(routes.projects()),
   });
 
   // Project path management
@@ -66,32 +98,32 @@ export function ServerManagement({ projectPath, onBack }: ServerManagementProps)
   });
 
   // Handle different views
-  if (currentView === "configuration") {
+  if (view === "configuration") {
     return (
       <ConfigurationManagement
         projectPath={projectPath}
         serverStatus={serverStatus}
-        onBack={() => setCurrentView("overview")}
+        backHref={overviewHref}
       />
     );
   }
 
-  if (currentView === "files") {
+  if (view === "files") {
     return (
       <FileManagement
         projectPath={projectPath}
         serverStatus={serverStatus}
-        onBack={() => setCurrentView("overview")}
+        backHref={overviewHref}
       />
     );
   }
 
-  if (currentView === "java") {
-    return <JavaManagement onBack={() => setCurrentView("overview")} />;
+  if (view === "java") {
+    return <JavaManagement backHref={overviewHref} />;
   }
 
-  if (currentView === "rcon") {
-    return <RconManagement projectPath={projectPath} onBack={() => setCurrentView("overview")} />;
+  if (view === "rcon") {
+    return <RconManagement projectPath={projectPath} backHref={overviewHref} />;
   }
 
   return (
@@ -101,13 +133,14 @@ export function ServerManagement({ projectPath, onBack }: ServerManagementProps)
       serverStatus={serverStatus}
       logs={logs}
       isPollingLogs={isPollingLogs}
-      onBack={onBack}
+      backHref={routes.projects()}
       onStartServer={startServer}
-      onStopServer={stopServer}
-      onJavaClick={() => setCurrentView("java")}
-      onConfigurationClick={() => setCurrentView("configuration")}
-      onFilesClick={() => setCurrentView("files")}
-      onRconClick={() => setCurrentView("rcon")}
+      onShutdownServer={shutdownServer}
+      onKillServer={killServer}
+      javaHref={routes.server(projectPath, "java")}
+      configurationHref={routes.server(projectPath, "configuration")}
+      filesHref={routes.server(projectPath, "files")}
+      rconHref={routes.server(projectPath, "rcon")}
       metadata={metadata}
       description={description}
       deleteServer={deleteServer}

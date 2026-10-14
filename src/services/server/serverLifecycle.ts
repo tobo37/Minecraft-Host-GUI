@@ -7,9 +7,10 @@ import { readMetadata } from "../metadataService";
 import { fileExists, isPathInside, normalizeStartFile } from "./serverRepository";
 import { logger } from "@/lib/logger";
 import path from "path";
+import { killProcessTree } from "./processTree";
 
 // Import from main service for now (will be refactored)
-import { runningServers, serverLogs } from "../serverService";
+import { runningServers, serverLogs, stoppingServers } from "../serverService";
 
 const DEFAULT_START_FILE = "startserver.sh";
 
@@ -326,6 +327,13 @@ async function launchServerProcess(
   ) as ServerProcess;
 }
 
+/** Listeners that receive every server output line, e.g. to capture command feedback */
+const logLineListeners = new Map<string, Set<(line: string) => void>>();
+
+function notifyLogLine(project: string, line: string): void {
+  logLineListeners.get(project)?.forEach((listener) => listener(line));
+}
+
 /**
  * Process log lines and add to server logs
  */
@@ -339,6 +347,7 @@ function processLogLines(project: string, lines: string[]): void {
     if (logs.length > 300) {
       logs.shift();
     }
+    notifyLogLine(project, line);
   }
 
   serverLogs.set(project, logs);
@@ -353,6 +362,7 @@ function addBufferToLogs(project: string, buffer: string): void {
   const logs = serverLogs.get(project) || [];
   logs.push(buffer);
   serverLogs.set(project, logs);
+  notifyLogLine(project, buffer);
 }
 
 /**
@@ -647,10 +657,33 @@ export async function startServer(project: string): Promise<StartServerResult> {
   return { success: true, message: "Server started successfully" };
 }
 
+/** How long a graceful shutdown may take before it is reported as failed */
+const SHUTDOWN_TIMEOUT_MS = 180_000;
+
+function appendLog(project: string, message: string): void {
+  const logs = serverLogs.get(project) || [];
+  logs.push(`[${new Date().toLocaleTimeString()}] ${message}`);
+  serverLogs.set(project, logs);
+}
+
 /**
- * Stop a server
+ * Wait for a process to exit; resolves false when the timeout is reached first
  */
-export async function stopServer(
+async function waitForExit(serverProcess: ServerProcess, timeoutMs: number): Promise<boolean> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const timeout = new Promise<false>((resolve) => {
+    timer = setTimeout(() => resolve(false), timeoutMs);
+  });
+  const exited = await Promise.race([serverProcess.exited.then(() => true), timeout]);
+  clearTimeout(timer);
+  return exited;
+}
+
+/**
+ * Kill a server immediately, including the Java process started by the
+ * start script. Unsaved world changes are lost.
+ */
+export async function killServer(
   project: string
 ): Promise<{ success: boolean; message?: string; error?: string }> {
   if (!project) {
@@ -663,14 +696,113 @@ export async function stopServer(
     return { success: false, error: "Server is not running" };
   }
 
-  const logs = serverLogs.get(project) || [];
-  logs.push(`[${new Date().toLocaleTimeString()}] Stopping server...`);
-  serverLogs.set(project, logs);
-
-  serverProcess.kill();
+  appendLog(project, "Killing server process...");
+  await killProcessTree(serverProcess.pid);
+  await waitForExit(serverProcess, 10_000);
   runningServers.delete(project);
+  stoppingServers.delete(project);
 
-  return { success: true, message: "Server stopped successfully" };
+  return { success: true, message: "Server process killed" };
+}
+
+/**
+ * Save the world and shut the server down via its console. Returns as soon
+ * as the commands are sent; the status reports "stopping" until the process
+ * has exited (or the timeout is reached).
+ */
+export async function shutdownServer(
+  project: string
+): Promise<{ success: boolean; message?: string; error?: string }> {
+  if (!project) {
+    return { success: false, error: "Project parameter is required" };
+  }
+
+  const serverProcess = runningServers.get(project);
+
+  if (!serverProcess || serverProcess.killed) {
+    return { success: false, error: "Server is not running" };
+  }
+
+  if (!serverProcess.stdin) {
+    return { success: false, error: "Server stdin is not available" };
+  }
+
+  stoppingServers.add(project);
+  appendLog(project, "> save-all");
+  appendLog(project, "> stop");
+
+  try {
+    serverProcess.stdin.write("save-all\nstop\n");
+    serverProcess.stdin.flush?.();
+    // Closing stdin lets start scripts that wait for a key press after the
+    // server has stopped (e.g. WAIT_FOR_USER_INPUT) exit as well.
+    serverProcess.stdin.end?.();
+  } catch (error) {
+    stoppingServers.delete(project);
+    return {
+      success: false,
+      error: `Failed to send stop command: ${error instanceof Error ? error.message : error}`,
+    };
+  }
+
+  void waitForExit(serverProcess, SHUTDOWN_TIMEOUT_MS).then((exited) => {
+    stoppingServers.delete(project);
+    if (!exited) {
+      appendLog(
+        project,
+        `Server did not stop within ${SHUTDOWN_TIMEOUT_MS / 1000}s; kill the process if it hangs`
+      );
+    }
+  });
+
+  return { success: true, message: "Shutdown initiated" };
+}
+
+/** Max time to wait for console output after sending a command */
+const COMMAND_OUTPUT_MAX_WAIT_MS = 2500;
+/** Output is considered complete after this much silence */
+const COMMAND_OUTPUT_QUIET_MS = 400;
+const COMMAND_OUTPUT_MAX_LINES = 30;
+
+/**
+ * Run `send` and collect the server output that follows it, so stdin commands
+ * get feedback similar to RCON. Busy servers may mix in unrelated log lines.
+ */
+async function collectCommandOutput(project: string, send: () => void): Promise<string[]> {
+  const output: string[] = [];
+  let quietTimer: ReturnType<typeof setTimeout> | undefined;
+  let maxTimer: ReturnType<typeof setTimeout> | undefined;
+  let finish: () => void = () => {};
+  const finished = new Promise<void>((resolve) => {
+    finish = resolve;
+  });
+
+  const listener = (line: string) => {
+    if (output.length < COMMAND_OUTPUT_MAX_LINES) {
+      output.push(line);
+    }
+    clearTimeout(quietTimer);
+    quietTimer = setTimeout(finish, COMMAND_OUTPUT_QUIET_MS);
+  };
+
+  const listeners = logLineListeners.get(project) || new Set();
+  listeners.add(listener);
+  logLineListeners.set(project, listeners);
+
+  try {
+    send();
+    maxTimer = setTimeout(finish, COMMAND_OUTPUT_MAX_WAIT_MS);
+    await finished;
+  } finally {
+    clearTimeout(quietTimer);
+    clearTimeout(maxTimer);
+    listeners.delete(listener);
+    if (listeners.size === 0) {
+      logLineListeners.delete(project);
+    }
+  }
+
+  return output;
 }
 
 /**
@@ -679,7 +811,7 @@ export async function stopServer(
 export async function sendCommand(
   project: string,
   command: string
-): Promise<{ success: boolean; message?: string; error?: string }> {
+): Promise<{ success: boolean; message?: string; output?: string[]; error?: string }> {
   if (!project) {
     return { success: false, error: "Project parameter is required" };
   }
@@ -704,12 +836,15 @@ export async function sendCommand(
     logs.push(`> ${command}`);
     serverLogs.set(project, logs);
 
-    // Write to stdin using Bun's FileSink API. FileSink buffers writes, so
-    // flush explicitly or the command never reaches the server process.
-    serverProcess.stdin.write(command + "\n");
-    serverProcess.stdin.flush?.();
+    const stdin = serverProcess.stdin;
+    const output = await collectCommandOutput(project, () => {
+      // Write to stdin using Bun's FileSink API. FileSink buffers writes, so
+      // flush explicitly or the command never reaches the server process.
+      stdin.write(command + "\n");
+      stdin.flush?.();
+    });
 
-    return { success: true, message: "Command sent successfully" };
+    return { success: true, message: "Command sent successfully", output };
   } catch (error) {
     return {
       success: false,

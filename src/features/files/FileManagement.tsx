@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Link } from "@/components/ui/link";
 import { Input } from "@/components/ui/input";
 import { useLanguage } from "@/hooks/useLanguage";
 import type { ServerStatus } from "@/services/types";
@@ -11,7 +12,7 @@ import { FileEditorDialog } from "./FileEditorDialog";
 interface FileManagementProps {
   projectPath: string;
   serverStatus: ServerStatus;
-  onBack: () => void;
+  backHref: string;
 }
 
 function format(template: string, name: string): string {
@@ -43,7 +44,7 @@ function collectDroppedFiles(dataTransfer: DataTransfer): { files: File[]; folde
   return { files: Array.from(dataTransfer.files), folders };
 }
 
-export function FileManagement({ projectPath, serverStatus, onBack }: FileManagementProps) {
+export function FileManagement({ projectPath, serverStatus, backHref }: FileManagementProps) {
   const { translations } = useLanguage();
   const t = translations.fileManagement;
   const files = useFileManager(projectPath);
@@ -271,8 +272,8 @@ export function FileManagement({ projectPath, serverStatus, onBack }: FileManage
     <div className="app-page p-4">
       <div className="container mx-auto max-w-6xl">
         <div className="mb-4">
-          <Button variant="outline" onClick={onBack} className="mb-4">
-            {t.back}
+          <Button asChild variant="outline" className="mb-4">
+            <Link href={backHref}>{t.back}</Link>
           </Button>
         </div>
 

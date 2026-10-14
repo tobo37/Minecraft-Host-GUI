@@ -1,4 +1,5 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
+import { setSearchParam, useSearchParam } from "@/lib/router";
 
 export interface ConfigFile {
   name: string;
@@ -17,13 +18,17 @@ interface UseConfigFilesReturn {
   isSaving: boolean;
   saveError: string;
   loadConfigFiles: () => Promise<void>;
-  selectConfig: (_file: ConfigFile) => Promise<void>;
+  selectConfig: (_file: ConfigFile) => void;
+  reloadSelectedConfig: () => Promise<void>;
   updateContent: (_content: string) => void;
   saveConfig: () => Promise<void>;
 }
 
 export function useConfigFiles(projectPath: string): UseConfigFilesReturn {
-  const [configFiles, setConfigFiles] = useState<ConfigFile[]>([]);
+  // The open file lives in the URL (?file=) so it survives reloads and can be linked.
+  const requestedFile = useSearchParam("file");
+  const [configFiles, setConfigFiles] = useState<ConfigFile[] | null>(null);
+  const loadedFile = useRef<string | null>(null);
   const [selectedConfig, setSelectedConfig] = useState<ConfigFile | null>(null);
   const [configContent, setConfigContent] = useState<string>("");
   const [isLoading, setIsLoading] = useState(false);
@@ -47,10 +52,9 @@ export function useConfigFiles(projectPath: string): UseConfigFilesReturn {
     loadConfigFiles();
   }, [loadConfigFiles]);
 
-  const selectConfig = useCallback(
+  const loadConfig = useCallback(
     async (configFile: ConfigFile) => {
-      if (!configFile.enabled) return;
-
+      loadedFile.current = configFile.name;
       setIsLoading(true);
       try {
         const response = await fetch(
@@ -73,6 +77,32 @@ export function useConfigFiles(projectPath: string): UseConfigFilesReturn {
     },
     [projectPath]
   );
+
+  useEffect(() => {
+    if (!requestedFile) {
+      loadedFile.current = null;
+      setSelectedConfig(null);
+      setConfigContent("");
+      return;
+    }
+    if (!configFiles || loadedFile.current === requestedFile) return;
+
+    const configFile = configFiles.find((file) => file.name === requestedFile);
+    if (configFile?.enabled) {
+      loadConfig(configFile);
+    } else {
+      setSearchParam("file", null, { replace: true });
+    }
+  }, [requestedFile, configFiles, loadConfig]);
+
+  const selectConfig = useCallback((configFile: ConfigFile) => {
+    if (!configFile.enabled) return;
+    setSearchParam("file", configFile.name);
+  }, []);
+
+  const reloadSelectedConfig = useCallback(async () => {
+    if (selectedConfig) await loadConfig(selectedConfig);
+  }, [selectedConfig, loadConfig]);
 
   const updateContent = useCallback((content: string) => {
     setConfigContent(content);
@@ -106,7 +136,7 @@ export function useConfigFiles(projectPath: string): UseConfigFilesReturn {
   }, [selectedConfig, projectPath, configContent]);
 
   return {
-    configFiles,
+    configFiles: configFiles ?? [],
     selectedConfig,
     configContent,
     isLoading,
@@ -114,6 +144,7 @@ export function useConfigFiles(projectPath: string): UseConfigFilesReturn {
     saveError,
     loadConfigFiles,
     selectConfig,
+    reloadSelectedConfig,
     updateContent,
     saveConfig,
   };

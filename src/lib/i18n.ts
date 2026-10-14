@@ -34,6 +34,12 @@ export interface Translations {
     javaVersion: string;
     systemDefault: string;
     changeJava: string;
+    controls: {
+      shutdown: string;
+      shuttingDown: string;
+      shutdownTooltip: string;
+      killTooltip: string;
+    };
     renameDialog: {
       title: string;
       currentName: string;
@@ -64,6 +70,10 @@ export interface Translations {
     cancel: string;
     save: string;
     languageToggleLabel: string;
+    notFoundTitle: string;
+    notFoundDescription: string;
+    serverNotFoundDescription: string;
+    backToProjects: string;
   };
   messages: {
     serverCreating: string;
@@ -213,6 +223,12 @@ export const translations: Record<Language, Translations> = {
       javaVersion: "Java Version",
       systemDefault: "System Standard",
       changeJava: "Ändern",
+      controls: {
+        shutdown: "Herunterfahren",
+        shuttingDown: "Fährt herunter...",
+        shutdownTooltip: "Welt speichern (save-all) und Server geordnet herunterfahren",
+        killTooltip: "Prozess beenden (kill) – nicht gespeicherte Änderungen gehen verloren",
+      },
       renameDialog: {
         title: "Server umbenennen",
         currentName: "Aktueller Name",
@@ -245,6 +261,10 @@ export const translations: Record<Language, Translations> = {
       cancel: "Abbrechen",
       save: "Speichern",
       languageToggleLabel: "Switch to English",
+      notFoundTitle: "Seite nicht gefunden",
+      notFoundDescription: "Die aufgerufene Adresse existiert nicht.",
+      serverNotFoundDescription: "Es gibt keinen Server mit dieser Kennung.",
+      backToProjects: "Zur Projektübersicht",
     },
     messages: {
       serverCreating: "Server erfolgreich erstellt!",
@@ -398,6 +418,12 @@ export const translations: Record<Language, Translations> = {
       javaVersion: "Java Version",
       systemDefault: "System Default",
       changeJava: "Change",
+      controls: {
+        shutdown: "Shut down",
+        shuttingDown: "Shutting down...",
+        shutdownTooltip: "Save the world (save-all) and shut the server down gracefully",
+        killTooltip: "Kill process – unsaved changes are lost",
+      },
       renameDialog: {
         title: "Rename Server",
         currentName: "Current Name",
@@ -430,6 +456,10 @@ export const translations: Record<Language, Translations> = {
       cancel: "Cancel",
       save: "Save",
       languageToggleLabel: "Auf Deutsch wechseln",
+      notFoundTitle: "Page not found",
+      notFoundDescription: "The requested address does not exist.",
+      serverNotFoundDescription: "There is no server with this identifier.",
+      backToProjects: "Back to projects",
     },
     messages: {
       serverCreating: "Server created successfully!",

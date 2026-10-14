@@ -1,5 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Link } from "@/components/ui/link";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useLanguage } from "@/hooks/useLanguage";
 import { useJavaInfo } from "./useJavaInfo";
@@ -9,10 +10,10 @@ import { JabbaInstall } from "./JabbaInstall";
 import { JavaVersionSelector } from "./JavaVersionSelector";
 
 interface JavaManagementProps {
-  onBack: () => void;
+  backHref: string;
 }
 
-export function JavaManagement({ onBack }: JavaManagementProps) {
+export function JavaManagement({ backHref }: JavaManagementProps) {
   const { translations } = useLanguage();
   const { javaInfo, jabbaInfo, availableVersions, loading, error, refresh } = useJavaInfo();
   const {
@@ -38,8 +39,8 @@ export function JavaManagement({ onBack }: JavaManagementProps) {
     <div className="app-page p-4">
       <div className="container mx-auto max-w-4xl">
         <div className="mb-4">
-          <Button variant="outline" onClick={onBack}>
-            ← {translations.javaManagement.back}
+          <Button asChild variant="outline">
+            <Link href={backHref}>← {translations.javaManagement.back}</Link>
           </Button>
         </div>
 

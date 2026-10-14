@@ -1,4 +1,5 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
+import { setSearchParam, useSearchParam } from "@/lib/router";
 
 export interface FileEntry {
   name: string;
@@ -40,7 +41,11 @@ function postJson(url: string, body: unknown): Promise<ApiResult> {
 }
 
 export function useFileManager(projectPath: string) {
+  // The URL (?path=) is the source of truth for the open folder, so folders can be linked and
+  // the browser history steps through visited folders.
+  const requestedPath = useSearchParam("path") ?? "";
   const [currentPath, setCurrentPath] = useState("");
+  const latestRequest = useRef(0);
   const [entries, setEntries] = useState<FileEntry[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isBusy, setIsBusy] = useState(false);
@@ -54,8 +59,11 @@ export function useFileManager(projectPath: string) {
 
   const loadEntries = useCallback(
     async (path: string) => {
+      const request = ++latestRequest.current;
       setIsLoading(true);
       const result = await callApi(`/api/files/list?${query(path)}`);
+      // Ignore responses that were overtaken by a newer navigation.
+      if (request !== latestRequest.current) return false;
       setIsLoading(false);
 
       if (result.success) {
@@ -71,17 +79,30 @@ export function useFileManager(projectPath: string) {
   );
 
   useEffect(() => {
-    loadEntries("");
-  }, [loadEntries]);
+    loadEntries(requestedPath).then((loaded) => {
+      // A stale or mistyped folder link falls back to the root; the error notice stays visible.
+      if (!loaded && requestedPath) {
+        setSearchParam("path", null, { replace: true });
+      }
+    });
+  }, [loadEntries, requestedPath]);
 
   const refresh = useCallback(() => loadEntries(currentPath), [loadEntries, currentPath]);
 
-  const navigateTo = useCallback((path: string) => loadEntries(path), [loadEntries]);
+  const navigateTo = useCallback(
+    (path: string) => {
+      if (path === requestedPath) {
+        loadEntries(path);
+      } else {
+        setSearchParam("path", path || null);
+      }
+    },
+    [loadEntries, requestedPath]
+  );
 
   const navigateUp = useCallback(() => {
-    const parent = currentPath.split("/").slice(0, -1).join("/");
-    return loadEntries(parent);
-  }, [currentPath, loadEntries]);
+    navigateTo(currentPath.split("/").slice(0, -1).join("/"));
+  }, [currentPath, navigateTo]);
 
   const ensureDirectory = useCallback(
     async (path: string) => {
@@ -105,12 +126,12 @@ export function useFileManager(projectPath: string) {
   const openFolder = useCallback(
     async (path: string) => {
       if (await ensureDirectory(path)) {
-        await loadEntries(path);
+        navigateTo(path);
       } else {
         setNotice({ type: "error", message: `Folder "${path}" could not be opened` });
       }
     },
-    [ensureDirectory, loadEntries]
+    [ensureDirectory, navigateTo]
   );
 
   const uploadFile = useCallback(

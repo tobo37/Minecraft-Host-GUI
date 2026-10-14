@@ -19,7 +19,7 @@ export { listServers } from './serverList';
 export { createServer } from './serverCreate';
 
 // Server lifecycle
-export { startServer, stopServer } from './serverLifecycle';
+export { startServer, killServer, shutdownServer } from './serverLifecycle';
 
 // Repository (for internal use)
 export * from './serverRepository';

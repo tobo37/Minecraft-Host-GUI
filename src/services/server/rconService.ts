@@ -3,6 +3,7 @@
  */
 
 import { Rcon } from 'rcon-client';
+import { readFile } from 'fs/promises';
 import { readMetadata, writeMetadata } from '../metadataService';
 import { getServerRuntimePath } from './serverRepository';
 import { logger } from '@/lib/logger';
@@ -17,21 +18,37 @@ interface RconConfig {
 }
 
 /**
- * Get RCON configuration from server metadata
+ * Read a single key from server.properties content
  */
-async function getRconConfig(project: string): Promise<RconConfig | null> {
+function readProperty(content: string, key: string): string | undefined {
+  const escapedKey = key.replace(/\./g, '\\.');
+  const match = content.match(new RegExp(`^${escapedKey}=(.*)$`, 'm'));
+  return match?.[1]?.trim();
+}
+
+/**
+ * Get RCON configuration.
+ * server.properties in the runtime folder is the source of truth, because that
+ * is what the Minecraft server actually reads. Metadata only supplies the host.
+ */
+export async function getRconConfig(project: string): Promise<RconConfig | null> {
   try {
     const metadata = await readMetadata(project);
-    
-    if (metadata && 'rcon' in metadata && metadata.rcon) {
-      return {
-        host: metadata.rcon.host || 'localhost',
-        port: metadata.rcon.port || 25575,
-        password: metadata.rcon.password || 'minecraft',
-      };
+    const serverPath = getServerRuntimePath(project, metadata?.projectPath, metadata?.startFile);
+    const content = await readFile(`${serverPath}/server.properties`, 'utf-8');
+
+    const enabled = readProperty(content, 'enable-rcon') === 'true';
+    const password = readProperty(content, 'rcon.password');
+    if (!enabled || !password) {
+      return null;
     }
-    
-    return null;
+
+    const port = parseInt(readProperty(content, 'rcon.port') || '', 10);
+    return {
+      host: metadata?.rcon?.host || 'localhost',
+      port: Number.isNaN(port) ? 25575 : port,
+      password,
+    };
   } catch {
     return null;
   }
@@ -114,9 +131,13 @@ export async function enableRconInProperties(
   }
 }
 
-// Track failed connection attempts to avoid retry loops
-const failedConnections = new Map<string, number>();
-const MAX_RETRY_ATTEMPTS = 2;
+// The RCON listener only opens once the server has finished starting, which
+// can take minutes for modpacks. Instead of giving up for the whole session
+// after a few failures, just pause reconnect attempts briefly.
+const lastConnectFailure = new Map<string, number>();
+const RECONNECT_COOLDOWN_MS = 5000;
+// Commands like save-all can take several seconds on large modpacks
+const RCON_TIMEOUT_MS = 15000;
 
 /**
  * Connect to RCON server
@@ -130,59 +151,58 @@ export async function connectRcon(
     if (existing && existing.authenticated) {
       return { success: true };
     }
-    
-    // Check if we've failed too many times
-    const failCount = failedConnections.get(project) || 0;
-    if (failCount >= MAX_RETRY_ATTEMPTS) {
-      return { 
-        success: false, 
-        error: 'RCON unavailable. Using stdin instead.' 
-      };
+
+    const lastFailure = lastConnectFailure.get(project);
+    if (lastFailure && Date.now() - lastFailure < RECONNECT_COOLDOWN_MS) {
+      return { success: false, error: 'RCON not reachable yet' };
     }
-    
-    // Get config
+
     const config = await getRconConfig(project);
-    
+
     // If no config, RCON is not enabled
     if (!config) {
-      failedConnections.set(project, failCount + 1);
-      return { 
-        success: false, 
-        error: 'RCON not configured. Enable it first in the RCON management page.' 
+      return {
+        success: false,
+        error: 'RCON not configured. Enable it first in the RCON management page.'
       };
     }
-    
-    // Create connection with shorter timeout
-    const rcon = await Rcon.connect({
+
+    const rcon = new Rcon({
       host: config.host,
       port: config.port,
       password: config.password,
-      timeout: 2000,
+      timeout: RCON_TIMEOUT_MS,
     });
-    
-    rconConnections.set(project, rcon);
-    
-    // Reset fail counter on success
-    failedConnections.delete(project);
-    
+
+    // Socket errors are emitted as events; without a listener they would crash the process
+    rcon.on('error', (error) => {
+      logger.warn(`RCON socket error for ${project}:`, error);
+    });
+
     // Handle disconnect
     rcon.on('end', () => {
-      rconConnections.delete(project);
+      if (rconConnections.get(project) === rcon) {
+        rconConnections.delete(project);
+      }
     });
-    
+
+    await rcon.connect();
+    rconConnections.set(project, rcon);
+    lastConnectFailure.delete(project);
+
     return { success: true };
   } catch (error) {
-    const failCount = failedConnections.get(project) || 0;
-    failedConnections.set(project, failCount + 1);
-    
+    const isFirstFailure = !lastConnectFailure.has(project);
+    lastConnectFailure.set(project, Date.now());
+
     // Only log first failure to avoid spam
-    if (failCount === 0) {
+    if (isFirstFailure) {
       logger.warn(`RCON connection failed for ${project}, will use stdin fallback`);
     }
-    
-    return { 
-      success: false, 
-      error: 'RCON not available' 
+
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'RCON not available'
     };
   }
 }
@@ -191,51 +211,47 @@ export async function connectRcon(
  * Reset RCON connection state (call when server restarts)
  */
 export function resetRconState(project: string): void {
-  failedConnections.delete(project);
+  lastConnectFailure.delete(project);
   disconnectRcon(project);
 }
 
 /**
- * Send command via RCON
+ * Send command via RCON.
+ * `notConnected` tells the caller the command never reached the server, so
+ * retrying it over stdin cannot execute it twice.
  */
 export async function sendRconCommand(
   project: string,
   command: string
-): Promise<{ success: boolean; response?: string; error?: string }> {
+): Promise<{ success: boolean; response?: string; error?: string; notConnected?: boolean }> {
+  let rcon = rconConnections.get(project);
+
+  // Auto-connect if not connected
+  if (!rcon || !rcon.authenticated) {
+    const connectResult = await connectRcon(project);
+    rcon = rconConnections.get(project);
+    if (!connectResult.success || !rcon) {
+      return {
+        success: false,
+        notConnected: true,
+        error: connectResult.error || 'RCON not available'
+      };
+    }
+  }
+
   try {
-    let rcon = rconConnections.get(project);
-    
-    // Auto-connect if not connected
-    if (!rcon || !rcon.authenticated) {
-      const connectResult = await connectRcon(project);
-      if (!connectResult.success) {
-        return { 
-          success: false, 
-          error: 'RCON not available - server may not support it or needs restart' 
-        };
-      }
-      rcon = rconConnections.get(project);
-    }
-    
-    if (!rcon) {
-      return { success: false, error: 'RCON connection not available' };
-    }
-    
     const response = await rcon.send(command);
-    
-    return { 
-      success: true, 
-      response: response || 'Command executed' 
-    };
+    return { success: true, response };
   } catch (error) {
     logger.warn('RCON command failed:', error);
-    
-    // Try to reconnect on error
+
+    // Drop the connection so the next command reconnects
     rconConnections.delete(project);
-    
-    return { 
-      success: false, 
-      error: 'RCON connection failed - using stdin fallback' 
+    rcon.end().catch(() => {});
+
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'RCON command failed'
     };
   }
 }

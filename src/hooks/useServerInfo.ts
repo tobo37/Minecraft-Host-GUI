@@ -4,6 +4,7 @@ import type { Server } from "@/services/types";
 export function useServerInfo(projectPath: string) {
   const [serverInfo, setServerInfo] = useState<Server | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [notFound, setNotFound] = useState(false);
 
   const fetchServerInfo = useCallback(async () => {
     try {
@@ -15,6 +16,7 @@ export function useServerInfo(projectPath: string) {
         if (server) {
           setServerInfo(server);
         }
+        setNotFound(!server);
       }
     } catch (error) {
       console.error("Error fetching server info:", error);
@@ -27,5 +29,5 @@ export function useServerInfo(projectPath: string) {
     fetchServerInfo();
   }, [fetchServerInfo]);
 
-  return { serverInfo, isLoading, refetch: fetchServerInfo };
+  return { serverInfo, isLoading, notFound, refetch: fetchServerInfo };
 }

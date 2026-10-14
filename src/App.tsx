@@ -3,18 +3,22 @@ import { useLanguage } from "@/hooks/useLanguage";
 import { WelcomePage } from "@/components/WelcomePage";
 import { ProjectSelection } from "@/features/projects";
 import { ServerManagement } from "@/components/ServerManagement";
+import { NotFoundPage } from "@/components/NotFoundPage";
+import { Link } from "@/components/ui/link";
 import { useState, useEffect } from "react";
+import { navigate, routes, useRoute } from "@/lib/router";
 import "./index.css";
-
-type AppState = "loading" | "welcome" | "projects" | "server";
 
 export function App() {
   const { language, toggleLanguage, translations } = useLanguage();
-  const [appState, setAppState] = useState<AppState>("loading");
-  const [selectedProject, setSelectedProject] = useState<string | null>(null);
+  const route = useRoute();
+  // Only the start page decides between project list and onboarding; deep links render directly.
+  const [checkingServers, setCheckingServers] = useState(route.name === "projects");
 
   useEffect(() => {
-    checkExistingServers();
+    if (checkingServers) {
+      checkExistingServers();
+    }
   }, []);
 
   const checkExistingServers = async () => {
@@ -22,37 +26,18 @@ export function App() {
       const response = await fetch("/api/servers");
       const data = await response.json();
 
-      if (data.servers && data.servers.length > 0) {
-        setAppState("projects");
-      } else {
-        setAppState("welcome");
+      if (!data.servers || data.servers.length === 0) {
+        navigate(routes.create(), { replace: true });
       }
     } catch (error) {
       console.error("Error checking servers:", error);
-      setAppState("welcome");
+      navigate(routes.create(), { replace: true });
+    } finally {
+      setCheckingServers(false);
     }
   };
 
-  const handleServerCreated = (serverPath: string) => {
-    setSelectedProject(serverPath);
-    setAppState("server");
-  };
-
-  const handleSelectProject = (projectPath: string) => {
-    setSelectedProject(projectPath);
-    setAppState("server");
-  };
-
-  const handleCreateNew = () => {
-    setAppState("welcome");
-  };
-
-  const handleBackToProjects = () => {
-    setSelectedProject(null);
-    setAppState("projects");
-  };
-
-  if (appState === "loading") {
+  if (checkingServers) {
     return (
       <div className="app-page flex items-center justify-center">
         <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
@@ -64,12 +49,12 @@ export function App() {
     <div className="relative">
       {/* Persistent navigation stays in document flow to avoid covering page controls. */}
       <header className="app-header">
-        <div className="app-brand">
+        <Link href={routes.projects()} className="app-brand">
           <span className="grass-block" aria-hidden="true" />
           <span>
             MINECRAFT HOST<small>SERVER CONTROL CENTER</small>
           </span>
-        </div>
+        </Link>
         <Button
           variant="outline"
           size="sm"
@@ -81,15 +66,17 @@ export function App() {
         </Button>
       </header>
 
-      {appState === "welcome" && <WelcomePage onServerCreated={handleServerCreated} />}
-
-      {appState === "projects" && (
-        <ProjectSelection onSelectProject={handleSelectProject} onCreateNew={handleCreateNew} />
+      {route.name === "create" && (
+        <WelcomePage onServerCreated={(serverPath) => navigate(routes.server(serverPath))} />
       )}
 
-      {appState === "server" && selectedProject && (
-        <ServerManagement projectPath={selectedProject} onBack={handleBackToProjects} />
+      {route.name === "projects" && <ProjectSelection />}
+
+      {route.name === "server" && (
+        <ServerManagement key={route.serverId} projectPath={route.serverId} view={route.view} />
       )}
+
+      {route.name === "notFound" && <NotFoundPage />}
     </div>
   );
 }

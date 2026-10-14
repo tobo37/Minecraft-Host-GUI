@@ -19,7 +19,7 @@ interface ServerInfoCardProps {
   onCancelDescription: () => void;
   onSaveDescription: () => void;
   onSetProjectPath: () => void;
-  onChangeJava?: () => void;
+  javaHref?: string;
 }
 
 export function ServerInfoCard({
@@ -34,7 +34,7 @@ export function ServerInfoCard({
   onCancelDescription,
   onSaveDescription,
   onSetProjectPath,
-  onChangeJava,
+  javaHref,
 }: ServerInfoCardProps) {
   const { translations } = useLanguage();
 
@@ -68,7 +68,7 @@ export function ServerInfoCard({
             projectPath={projectPath}
             serverStatus={serverStatus}
             onSetProjectPath={onSetProjectPath}
-            onChangeJava={onChangeJava}
+            javaHref={javaHref}
           />
         </div>
       </CardContent>

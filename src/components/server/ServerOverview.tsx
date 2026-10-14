@@ -1,5 +1,6 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Link } from "@/components/ui/link";
 import { useLanguage } from "@/hooks/useLanguage";
 import { ServerHeader } from "./ServerHeader";
 import { ServerInfoCard } from "./ServerInfoCard";
@@ -18,13 +19,14 @@ interface ServerOverviewProps {
   serverStatus: ServerStatus;
   logs: string[];
   isPollingLogs: boolean;
-  onBack: () => void;
+  backHref: string;
   onStartServer: () => void;
-  onStopServer: () => void;
-  onJavaClick: () => void;
-  onConfigurationClick: () => void;
-  onFilesClick: () => void;
-  onRconClick: () => void;
+  onShutdownServer: () => void;
+  onKillServer: () => void;
+  javaHref: string;
+  configurationHref: string;
+  filesHref: string;
+  rconHref: string;
   metadata: {
     isRenameDialogOpen: boolean;
     newName: string;
@@ -81,13 +83,14 @@ export function ServerOverview({
   serverStatus,
   logs,
   isPollingLogs,
-  onBack,
+  backHref,
   onStartServer,
-  onStopServer,
-  onJavaClick,
-  onConfigurationClick,
-  onFilesClick,
-  onRconClick,
+  onShutdownServer,
+  onKillServer,
+  javaHref,
+  configurationHref,
+  filesHref,
+  rconHref,
   metadata,
   description,
   deleteServer,
@@ -100,8 +103,8 @@ export function ServerOverview({
     <div className="app-page p-4">
       <div className="container mx-auto max-w-4xl">
         <div className="mb-4">
-          <Button variant="outline" onClick={onBack} className="mb-4">
-            ← {translations.serverManagement.backToProjects}
+          <Button asChild variant="outline" className="mb-4">
+            <Link href={backHref}>← {translations.serverManagement.backToProjects}</Link>
           </Button>
         </div>
 
@@ -109,7 +112,7 @@ export function ServerOverview({
           <ServerHeader
             serverInfo={serverInfo}
             projectPath={projectPath}
-            onJavaClick={onJavaClick}
+            javaHref={javaHref}
           />
 
           <CardContent className="space-y-6">
@@ -138,17 +141,18 @@ export function ServerOverview({
                 }}
                 onSaveDescription={description.handleUpdateDescription}
                 onSetProjectPath={projectPathHook.openDialog}
-                onChangeJava={onJavaClick}
+                javaHref={javaHref}
               />
 
               <ServerControls
                 serverStatus={serverStatus}
                 onStart={onStartServer}
-                onStop={onStopServer}
+                onShutdown={onShutdownServer}
+                onKill={onKillServer}
                 onFindStartFiles={startFile.handleFindStartFiles}
-                onConfiguration={onConfigurationClick}
-                onFiles={onFilesClick}
-                onRcon={onRconClick}
+                configurationHref={configurationHref}
+                filesHref={filesHref}
+                rconHref={rconHref}
               />
 
               {(serverStatus === "running" ||

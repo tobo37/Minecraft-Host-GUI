@@ -1,15 +1,12 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useLanguage } from "@/hooks/useLanguage";
+import { Link } from "@/components/ui/link";
+import { routes } from "@/lib/router";
 import { useServerList } from "./useServerList";
 import { ServerCard } from "./ServerCard";
 
-interface ProjectSelectionProps {
-  onSelectProject: (_projectPath: string) => void;
-  onCreateNew: () => void;
-}
-
-export function ProjectSelection({ onSelectProject, onCreateNew }: ProjectSelectionProps) {
+export function ProjectSelection() {
   const { translations } = useLanguage();
   const { servers, loading } = useServerList();
 
@@ -37,8 +34,8 @@ export function ProjectSelection({ onSelectProject, onCreateNew }: ProjectSelect
 
           <CardContent className="space-y-6">
             <div className="flex justify-center mb-6">
-              <Button onClick={onCreateNew} size="lg" className="px-8 py-3">
-                {translations.projectSelection.createNew}
+              <Button asChild size="lg" className="px-8 py-3">
+                <Link href={routes.create()}>{translations.projectSelection.createNew}</Link>
               </Button>
             </div>
 
@@ -52,7 +49,7 @@ export function ProjectSelection({ onSelectProject, onCreateNew }: ProjectSelect
                   {translations.projectSelection.selectProject}
                 </h3>
                 {servers.map((server) => (
-                  <ServerCard key={server.path} server={server} onSelect={onSelectProject} />
+                  <ServerCard key={server.path} server={server} />
                 ))}
               </div>
             )}

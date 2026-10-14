@@ -5,6 +5,7 @@ import {
   readMetadata,
 } from "./metadataService";
 import { runningServers } from "./serverService";
+import { killServer } from "./server/serverLifecycle";
 import { logger } from "@/lib/logger";
 
 interface MetadataUpdateRequest {
@@ -330,11 +331,7 @@ async function stopServerIfRunning(project: string): Promise<void> {
   const serverProcess = runningServers.get(project);
   if (serverProcess && !serverProcess.killed) {
     logger.info(`Stopping running server ${project} before deletion...`);
-    serverProcess.kill();
-    runningServers.delete(project);
-
-    // Wait a moment for the process to fully terminate
-    await new Promise((resolve) => setTimeout(resolve, 1000));
+    await killServer(project);
   }
 }
 

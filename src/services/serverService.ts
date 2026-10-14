@@ -2,7 +2,8 @@ import { listServers as listServersCore } from "./server/serverList";
 import { createServer as createServerCore } from "./server/serverCreate";
 import {
   startServer as startServerCore,
-  stopServer as stopServerCore,
+  killServer as killServerCore,
+  shutdownServer as shutdownServerCore,
 } from "./server/serverLifecycle";
 import type { ServerProcess } from "./server/server.types";
 import { logger } from "@/lib/logger";
@@ -10,6 +11,8 @@ import { logger } from "@/lib/logger";
 // Global server process management
 export const runningServers = new Map<string, ServerProcess>();
 export const serverLogs = new Map<string, string[]>();
+/** Projects with a graceful shutdown in progress */
+export const stoppingServers = new Set<string>();
 
 /**
  * List all servers
@@ -109,7 +112,7 @@ export async function getServerStatus(req: Request): Promise<Response> {
     let status = "stopped";
 
     if (serverProcess && !serverProcess.killed) {
-      status = "running";
+      status = stoppingServers.has(project) ? "stopping" : "running";
     }
 
     return Response.json({
@@ -173,14 +176,28 @@ export async function startServer(req: Request): Promise<Response> {
 }
 
 /**
- * Stop a server
+ * Kill a server process immediately (no world save)
  */
 export async function stopServer(req: Request): Promise<Response> {
+  return handleStopRequest(req, killServerCore);
+}
+
+/**
+ * Save the world and shut the server down gracefully
+ */
+export async function shutdownServer(req: Request): Promise<Response> {
+  return handleStopRequest(req, shutdownServerCore);
+}
+
+async function handleStopRequest(
+  req: Request,
+  stop: (_project: string) => Promise<{ success: boolean; message?: string; error?: string }>
+): Promise<Response> {
   try {
     const body = await req.json();
     const { project } = body;
 
-    const result = await stopServerCore(project);
+    const result = await stop(project);
 
     if (!result.success) {
       return Response.json(
@@ -244,6 +261,7 @@ export async function sendServerCommand(req: Request): Promise<Response> {
     return Response.json({
       success: true,
       message: result.message,
+      output: result.output,
     });
   } catch (error) {
     console.error("Error sending command:", error);
@@ -285,17 +303,20 @@ export async function sendRconCommand(req: Request): Promise<Response> {
         {
           success: false,
           error: result.error,
+          // Only safe to resend via stdin if the command never reached the server
+          fallbackToStdin: result.notConnected === true,
         },
-        { status: 400 }
+        { status: result.notConnected ? 503 : 502 }
       );
     }
 
-    // Add response to logs for visibility
+    // Add command and response to logs for visibility
+    const logs = serverLogs.get(project) || [];
+    logs.push(`[RCON] > ${command}`);
     if (result.response) {
-      const logs = serverLogs.get(project) || [];
-      logs.push(`[RCON] ${result.response}`);
-      serverLogs.set(project, logs);
+      logs.push(...result.response.split("\n").map((line) => `[RCON] ${line}`));
     }
+    serverLogs.set(project, logs);
 
     return Response.json({
       success: true,
@@ -380,21 +401,14 @@ export async function getRconStatus(req: Request): Promise<Response> {
       );
     }
 
-    const { readMetadata } = await import("./metadataService");
-    const metadata = await readMetadata(project);
-
-    const enabled = metadata && "rcon" in metadata && metadata.rcon ? true : false;
+    // Check the server.properties the server actually reads, not just metadata
+    const { getRconConfig } = await import("./server/rconService");
+    const config = await getRconConfig(project);
 
     return Response.json({
       success: true,
-      enabled,
-      config:
-        enabled && metadata.rcon
-          ? {
-              host: metadata.rcon.host,
-              port: metadata.rcon.port,
-            }
-          : null,
+      enabled: config !== null,
+      config: config ? { host: config.host, port: config.port } : null,
     });
   } catch (error) {
     console.error("Error checking RCON status:", error);

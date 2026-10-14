@@ -1,4 +1,5 @@
 import { Button } from "@/components/ui/button";
+import { Link } from "@/components/ui/link";
 import { useLanguage } from "@/hooks/useLanguage";
 import { ServerControlButtons } from "./ServerControlButtons";
 
@@ -7,21 +8,23 @@ type ServerStatus = "stopped" | "starting" | "running" | "stopping";
 interface ServerControlsProps {
   serverStatus: ServerStatus;
   onStart: () => void;
-  onStop: () => void;
+  onShutdown: () => void;
+  onKill: () => void;
   onFindStartFiles: () => void;
-  onConfiguration: () => void;
-  onFiles: () => void;
-  onRcon: () => void;
+  configurationHref: string;
+  filesHref: string;
+  rconHref: string;
 }
 
 export function ServerControls({
   serverStatus,
   onStart,
-  onStop,
+  onShutdown,
+  onKill,
   onFindStartFiles,
-  onConfiguration,
-  onFiles,
-  onRcon,
+  configurationHref,
+  filesHref,
+  rconHref,
 }: ServerControlsProps) {
   const { translations } = useLanguage();
 
@@ -31,29 +34,20 @@ export function ServerControls({
         <ServerControlButtons
           serverStatus={serverStatus}
           onStart={onStart}
-          onStop={onStop}
+          onShutdown={onShutdown}
+          onKill={onKill}
           onFindStartFiles={onFindStartFiles}
         />
       </div>
 
-      <Button
-        size="lg"
-        variant="outline"
-        className="h-16"
-        onClick={onConfiguration}
-      >
-        ⚙️ Konfiguration
+      <Button asChild size="lg" variant="outline" className="h-16">
+        <Link href={configurationHref}>⚙️ Konfiguration</Link>
       </Button>
-      <Button size="lg" variant="outline" className="h-16" onClick={onFiles}>
-        📁 {translations.fileManagement.openButton}
+      <Button asChild size="lg" variant="outline" className="h-16">
+        <Link href={filesHref}>📁 {translations.fileManagement.openButton}</Link>
       </Button>
-      <Button 
-        size="lg" 
-        variant="outline" 
-        className="h-16"
-        onClick={onRcon}
-      >
-        🎮 RCON Console
+      <Button asChild size="lg" variant="outline" className="h-16">
+        <Link href={rconHref}>🎮 RCON Console</Link>
       </Button>
     </div>
   );

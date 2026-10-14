@@ -9,6 +9,7 @@ import {
   getServerStatus,
   startServer,
   stopServer,
+  shutdownServer,
   getServerLogs,
   sendServerCommand,
   sendRconCommand,
@@ -133,7 +134,7 @@ logger.info("Starting HTTP server...");
 const server = serve({
   // Bind to all interfaces for Docker compatibility
   hostname: "0.0.0.0",
-  port: 3000,
+  port: Number(process.env.PORT) || 3000,
   // Increase timeout for server creation operations and large file uploads
   idleTimeout: 255, // Maximum allowed timeout (255 seconds)
   // Increase max request size for file uploads (2GB)
@@ -281,6 +282,12 @@ const server = serve({
     "/api/server/stop": {
       async POST(req) {
         return await stopServer(req);
+      },
+    },
+
+    "/api/server/shutdown": {
+      async POST(req) {
+        return await shutdownServer(req);
       },
     },
 

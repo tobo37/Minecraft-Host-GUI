@@ -1,4 +1,5 @@
 import { Button } from "@/components/ui/button";
+import { Link } from "@/components/ui/link";
 import { FolderOpen } from "lucide-react";
 import { useLanguage } from "@/hooks/useLanguage";
 import type { Server } from "@/services/types";
@@ -10,7 +11,7 @@ interface ServerInfoDetailsProps {
   projectPath: string;
   serverStatus: ServerStatus;
   onSetProjectPath: () => void;
-  onChangeJava?: () => void;
+  javaHref?: string;
 }
 
 export function ServerInfoDetails({
@@ -18,7 +19,7 @@ export function ServerInfoDetails({
   projectPath,
   serverStatus,
   onSetProjectPath,
-  onChangeJava,
+  javaHref,
 }: ServerInfoDetailsProps) {
   const { translations } = useLanguage();
 
@@ -108,14 +109,9 @@ export function ServerInfoDetails({
         </span>
         <div className="flex items-center gap-2">
           <span className="font-mono text-xs">{javaVersionDisplay}</span>
-          {onChangeJava && (
-            <Button
-              size="sm"
-              variant="ghost"
-              className="h-6 px-2 text-xs"
-              onClick={onChangeJava}
-            >
-              {translations.serverManagement.changeJava}
+          {javaHref && (
+            <Button asChild size="sm" variant="ghost" className="h-6 px-2 text-xs">
+              <Link href={javaHref}>{translations.serverManagement.changeJava}</Link>
             </Button>
           )}
         </div>

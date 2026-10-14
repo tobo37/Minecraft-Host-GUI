@@ -6,7 +6,7 @@ interface UseServerStatusOptions {
 }
 
 export function useServerStatus(projectPath: string, options: UseServerStatusOptions = {}) {
-  const { serverStatus, startServer, stopServer } = useServerPolling({
+  const { serverStatus, startServer, killServer, shutdownServer } = useServerPolling({
     projectPath,
     onMissingStartFile: options.onMissingStartFile,
   });
@@ -21,6 +21,7 @@ export function useServerStatus(projectPath: string, options: UseServerStatusOpt
     logs,
     isPollingLogs,
     startServer,
-    stopServer,
+    killServer,
+    shutdownServer,
   };
 }

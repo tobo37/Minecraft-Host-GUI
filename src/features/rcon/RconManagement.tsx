@@ -1,13 +1,14 @@
 import { useState, useEffect, useRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Link } from "@/components/ui/link";
 import { Input } from "@/components/ui/input";
 import { ServerLogs } from "@/components/server/ServerLogs";
 import { useServerStatus } from "@/hooks/useServerStatus";
 
 interface RconManagementProps {
   projectPath: string;
-  onBack: () => void;
+  backHref: string;
 }
 
 const MINECRAFT_COMMANDS = [
@@ -35,12 +36,12 @@ const MINECRAFT_COMMANDS = [
   "save-off",
 ];
 
-export function RconManagement({ projectPath, onBack }: RconManagementProps) {
+export function RconManagement({ projectPath, backHref }: RconManagementProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const responseEndRef = useRef<HTMLDivElement>(null);
 
   // Get server status and logs
-  const { serverStatus, logs, isPollingLogs, startServer, stopServer } =
+  const { serverStatus, logs, isPollingLogs, startServer, shutdownServer } =
     useServerStatus(projectPath);
 
   const [command, setCommand] = useState("");
@@ -139,8 +140,8 @@ export function RconManagement({ projectPath, onBack }: RconManagementProps) {
     setResponses((prev) => [...prev, "", "🔄 Starte Server neu..."]);
 
     try {
-      // Stop server
-      await stopServer();
+      // Save and stop server; resolves once the process has exited
+      await shutdownServer();
       setResponses((prev) => [...prev, "⏹️ Server wird gestoppt..."]);
 
       // Wait a bit for server to stop
@@ -226,23 +227,30 @@ export function RconManagement({ projectPath, onBack }: RconManagementProps) {
       });
 
       const result = await res.json();
+      const usedRcon = rconEnabled && !useStdin;
 
       if (res.ok) {
-        if (result.response) {
-          setResponses((prev) => [...prev, result.response]);
+        if (usedRcon) {
+          setResponses((prev) => [
+            ...prev,
+            result.response || "✓ Befehl ausgeführt (keine Rückmeldung vom Server)",
+          ]);
+        } else if (Array.isArray(result.output) && result.output.length > 0) {
+          setResponses((prev) => [...prev, ...result.output]);
         } else {
-          setResponses((prev) => [...prev, "✓ Befehl gesendet"]);
+          setResponses((prev) => [...prev, "✓ Befehl gesendet (keine Ausgabe, siehe Server-Logs)"]);
         }
+      } else if (usedRcon && result.fallbackToStdin) {
+        // The command never reached the server via RCON, so resending it is safe
+        setResponses((prev) => [
+          ...prev,
+          `ℹ️ RCON nicht erreichbar (${result.error}) – sende über die Server-Konsole`,
+        ]);
+        setIsSending(false);
+        await handleSendCommand(true, true);
+        return;
       } else {
-        // If RCON fails and we haven't tried stdin yet, try stdin
-        if (!useStdin && rconEnabled) {
-          setIsSending(false);
-          // Retry with stdin silently - no warning needed as fallback is expected
-          await handleSendCommand(true, true);
-          return;
-        } else {
-          setResponses((prev) => [...prev, `❌ Fehler: ${result.error}`]);
-        }
+        setResponses((prev) => [...prev, `❌ Fehler: ${result.error}`]);
       }
     } catch (error) {
       setResponses((prev) => [...prev, `❌ Verbindungsfehler: ${error}`]);
@@ -365,8 +373,8 @@ export function RconManagement({ projectPath, onBack }: RconManagementProps) {
     <div className="app-page p-4">
       <div className="container mx-auto max-w-4xl">
         <div className="mb-4">
-          <Button variant="outline" onClick={onBack} className="mb-4">
-            ← Zurück zur Übersicht
+          <Button asChild variant="outline" className="mb-4">
+            <Link href={backHref}>← Zurück zur Übersicht</Link>
           </Button>
         </div>
 

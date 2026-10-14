@@ -1,5 +1,6 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Link } from "@/components/ui/link";
 import { useConfigFiles } from "./useConfigFiles";
 import { ConfigFileList } from "./ConfigFileList";
 import { ConfigEditor } from "./ConfigEditor";
@@ -9,13 +10,13 @@ import type { ServerStatus } from "@/services/types";
 interface ConfigurationManagementProps {
   projectPath: string;
   serverStatus?: ServerStatus;
-  onBack: () => void;
+  backHref: string;
 }
 
 export function ConfigurationManagement({
   projectPath,
   serverStatus,
-  onBack,
+  backHref,
 }: ConfigurationManagementProps) {
   const {
     configFiles,
@@ -26,6 +27,7 @@ export function ConfigurationManagement({
     saveError,
     loadConfigFiles,
     selectConfig,
+    reloadSelectedConfig,
     updateContent,
     saveConfig,
   } = useConfigFiles(projectPath);
@@ -34,8 +36,8 @@ export function ConfigurationManagement({
     <div className="app-page p-4">
       <div className="container mx-auto max-w-6xl">
         <div className="mb-4">
-          <Button variant="outline" onClick={onBack} className="mb-4">
-            ← Zurück zur Serververwaltung
+          <Button asChild variant="outline" className="mb-4">
+            <Link href={backHref}>← Zurück zur Serververwaltung</Link>
           </Button>
         </div>
 
@@ -80,7 +82,7 @@ export function ConfigurationManagement({
               serverStatus={serverStatus}
               onFileChanged={(fileName) => {
                 // Reload the editor so it does not show (and later save) stale content
-                if (selectedConfig?.name === fileName) selectConfig(selectedConfig);
+                if (selectedConfig?.name === fileName) reloadSelectedConfig();
                 loadConfigFiles();
               }}
             />

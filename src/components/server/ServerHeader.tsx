@@ -1,15 +1,16 @@
 import { CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Link } from "@/components/ui/link";
 import type { Server } from "@/services/types";
 import { useState, useEffect } from "react";
 
 interface ServerHeaderProps {
   serverInfo: Server | null;
   projectPath: string;
-  onJavaClick?: () => void;
+  javaHref?: string;
 }
 
-export function ServerHeader({ serverInfo, projectPath, onJavaClick }: ServerHeaderProps) {
+export function ServerHeader({ serverInfo, projectPath, javaHref }: ServerHeaderProps) {
   const [javaVersion, setJavaVersion] = useState<string | null>(null);
 
   useEffect(() => {
@@ -33,15 +34,10 @@ export function ServerHeader({ serverInfo, projectPath, onJavaClick }: ServerHea
 
   return (
     <CardHeader className="text-center space-y-4">
-      {onJavaClick && (
+      {javaHref && (
         <div className="flex justify-end">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={onJavaClick}
-            className="font-mono text-xs"
-          >
-            ☕ Java {javaVersion ? `(${javaVersion})` : ""}
+          <Button asChild variant="outline" size="sm" className="font-mono text-xs">
+            <Link href={javaHref}>☕ Java {javaVersion ? `(${javaVersion})` : ""}</Link>
           </Button>
         </div>
       )}
